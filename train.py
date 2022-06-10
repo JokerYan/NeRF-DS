@@ -200,7 +200,7 @@ def main(argv):
   logging.info('Initializing models.')
   rng, key = random.split(rng)
   params = {}
-  model, params['model'] = models.construct_nerf(
+  model, params['model'] = models.construct_nerf(   # Zhiwen: model param referenced here
       key,
       batch_size=train_config.batch_size,
       embeddings_dict=datasource.embeddings_dict,
