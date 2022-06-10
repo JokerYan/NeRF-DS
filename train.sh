@@ -1,5 +1,5 @@
 export DATASET_PATH=dataset/espresso
-export EXPERIMENT_PATH=experiments
+export EXPERIMENT_PATH=experiments/exp01
 python train.py \
     --base_folder $EXPERIMENT_PATH \
     --gin_bindings="data_dir='$DATASET_PATH'" \
