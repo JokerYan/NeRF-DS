@@ -71,5 +71,5 @@ docs/_build/
 target/
 
 # Data
-./zip
-./dataset
+zip/
+dataset/
