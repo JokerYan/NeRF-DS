@@ -4,7 +4,7 @@ gin-config @ git+https://github.com/google/gin-config@243ba87b3fcfeb2efb4a920b8f
 imageio==2.9.0
 immutabledict==2.2.0
 jax==0.2.20
-jaxlib==0.1.71+cuda111
+# jaxlib==0.1.71+cuda111
 Markdown==3.3.4
 matplotlib==3.4.3
 numpy==1.21.0
@@ -14,5 +14,5 @@ opt-einsum==3.3.0
 optax==0.0.9
 Pillow==9.0.0
 scipy==1.7.1
-tensorflow==2.6.3
+tensorflow>=2.6.3
 tqdm==4.62.2

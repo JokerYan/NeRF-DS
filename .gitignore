@@ -70,3 +70,6 @@ docs/_build/
 # PyBuilder
 target/
 
+# Data
+./zip
+./dataset
