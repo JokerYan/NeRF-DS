@@ -381,6 +381,7 @@ class NerfModel(nn.Module):
   def map_spatial_points(self, points, warp_embed, extra_params, use_warp=True,
                          return_warp_jacobian=False):
     warp_jacobian = None
+    screw_axis = None
     if self.use_warp and use_warp:
       warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None)),
                          in_axes=(0, 0, None, None))
@@ -391,10 +392,11 @@ class NerfModel(nn.Module):
       if return_warp_jacobian:
         warp_jacobian = warp_out['jacobian']
       warped_points = warp_out['warped_points']
+      screw_axis = warp_out['screw_axis']
     else:
       warped_points = points
 
-    return warped_points, warp_jacobian
+    return warped_points, warp_jacobian, screw_axis
 
   def map_hyper_points(self, points, hyper_embed, extra_params,
                        hyper_point_override=None):
@@ -445,7 +447,7 @@ class NerfModel(nn.Module):
       A tuple containing `(warped_points, warp_jacobian)`.
     """
     # Map input points to warped spatial and hyper points.
-    spatial_points, warp_jacobian = self.map_spatial_points(
+    spatial_points, warp_jacobian, screw_axis = self.map_spatial_points(
         points, warp_embed, extra_params, use_warp=use_warp,
         return_warp_jacobian=return_warp_jacobian)
     hyper_points = self.map_hyper_points(
@@ -458,7 +460,7 @@ class NerfModel(nn.Module):
     else:
       warped_points = spatial_points
 
-    return warped_points, warp_jacobian
+    return warped_points, warp_jacobian, screw_axis
 
   def apply_warp(self, points, warp_embed, extra_params):
     warp_embed = self.warp_embed(warp_embed)
@@ -513,7 +515,7 @@ class NerfModel(nn.Module):
           shape=(*batch_shape, hyper_embed.shape[-1]))
 
     # Map input points to warped spatial and hyper points.
-    warped_points, warp_jacobian = self.map_points(
+    warped_points, warp_jacobian, screw_axis = self.map_points(
         points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
         return_warp_jacobian=return_warp_jacobian,
         # Override hyper points if present in metadata dict.

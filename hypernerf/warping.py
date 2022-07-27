@@ -197,7 +197,9 @@ class SE3Field(nn.Module):
   def warp(self,
            points: jnp.ndarray,
            metadata_embed: jnp.ndarray,
-           extra_params: Dict[str, Any]):
+           extra_params: Dict[str, Any],
+           return_screw: bool = False
+           ):
     points_embed = model_utils.posenc(points,
                                       min_deg=self.min_deg,
                                       max_deg=self.max_deg,
@@ -218,7 +220,10 @@ class SE3Field(nn.Module):
     warped_points = rigid.from_homogenous(
         utils.matmul(transform, rigid.to_homogenous(warped_points)))
 
-    return warped_points
+    if return_screw:
+      return warped_points, screw_axis
+    else:
+      return warped_points
 
   def __call__(self,
                points: jnp.ndarray,
@@ -240,8 +245,10 @@ class SE3Field(nn.Module):
         True.
     """
 
+    warped_points, screw_axis = self.warp(points, metadata, extra_params, return_screw=True)
     out = {
-        'warped_points': self.warp(points, metadata, extra_params)
+        'warped_points': warped_points,
+        "screw_axis": screw_axis
     }
 
     if return_jacobian:
