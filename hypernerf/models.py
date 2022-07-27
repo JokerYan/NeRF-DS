@@ -375,12 +375,9 @@ class NerfModel(nn.Module):
     if screw_axis_input == "none":
       pass
     elif screw_axis_input == "rotation":
-      print(points_feat.shape)
-      print(screw_axis.shape)
-      print(screw_axis[..., :3].shape)
-      points_feat = jnp.concatenate([points_feat, screw_axis[..., :3]])
+      points_feat = jnp.concatenate([points_feat, screw_axis[..., :3]], axis=-1)
     elif screw_axis_input == "full":
-      points_feat = jnp.concatenate([points_feat, screw_axis])
+      points_feat = jnp.concatenate([points_feat, screw_axis], axis=-1)
     else:
       raise NotImplementedError
 
