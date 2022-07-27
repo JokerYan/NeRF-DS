@@ -373,14 +373,15 @@ class NerfModel(nn.Module):
       points_feat = jnp.concatenate([points_feat, hyper_feats], axis=-1)
 
     if screw_axis_input == "none":
-      raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition)
+      pass
     elif screw_axis_input == "rotation":
-      raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_axis[..., :3])
+      points_feat = jnp.concatenate([points_feat, screw_axis[..., :3]])
     elif screw_axis_input == "full":
-      raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_axis)
+      points_feat = jnp.concatenate([points_feat, screw_axis])
     else:
       raise NotImplementedError
 
+    raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition)
     raw = model_utils.noise_regularize(
         self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
 
