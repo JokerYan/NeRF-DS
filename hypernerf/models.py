@@ -346,9 +346,12 @@ class NerfModel(nn.Module):
                      level,
                      points,
                      viewdirs,
+                     screw_axis,
                      metadata,
                      extra_params,
-                     metadata_encoded=False):
+                     metadata_encoded=False,
+                     screw_axis_input="none"    # none, rotation, full
+                     ):
     """Queries the NeRF template."""
     alpha_condition, rgb_condition = (
         self.get_condition_inputs(viewdirs, metadata, metadata_encoded))
@@ -369,7 +372,15 @@ class NerfModel(nn.Module):
           alpha=extra_params['hyper_alpha'])
       points_feat = jnp.concatenate([points_feat, hyper_feats], axis=-1)
 
-    raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition)
+    if screw_axis_input == "none":
+      raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition)
+    elif screw_axis_input == "rotation":
+      raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_axis[..., :3])
+    elif screw_axis_input == "full":
+      raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_axis)
+    else:
+      raise NotImplementedError
+
     raw = model_utils.noise_regularize(
         self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
 
@@ -525,9 +536,12 @@ class NerfModel(nn.Module):
         level,
         warped_points,
         viewdirs,
+        screw_axis,
         metadata,
         extra_params=extra_params,
-        metadata_encoded=metadata_encoded)
+        metadata_encoded=metadata_encoded,
+        screw_axis_input="rotation"
+    )
 
     # Filter densities based on rendering options.
     sigma = filter_sigma(points, sigma, render_opts)
