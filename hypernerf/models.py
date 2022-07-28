@@ -684,7 +684,7 @@ class NerfModel(nn.Module):
 
 
 def construct_nerf(key, batch_size: int, embeddings_dict: Dict[str, int],
-                   near: float, far: float):
+                   near: float, far: float, screw_input_mode: str):
   """Neural Randiance Field.
 
   Args:
@@ -721,11 +721,17 @@ def construct_nerf(key, batch_size: int, embeddings_dict: Dict[str, int],
       'hyper_sheet_alpha': 0.0,
   }
 
+  screw_input_mode = screw_input_mode
+
   key, key1, key2 = random.split(key, 3)
-  params = model.init({
+  params = model.init(
+    {
       'params': key,
       'coarse': key1,
       'fine': key2
-  }, init_rays_dict, extra_params=extra_params)['params']
+    },
+    init_rays_dict,
+    extra_params=extra_params,
+    screw_input_mode=screw_input_mode)['params']
 
   return model, params

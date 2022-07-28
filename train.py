@@ -206,7 +206,9 @@ def main(argv):
       batch_size=train_config.batch_size,
       embeddings_dict=datasource.embeddings_dict,
       near=datasource.near,
-      far=datasource.far)
+      far=datasource.far,
+      screw_input_mode=spec_config.screw_input_mode
+  )
 
   # Create Jax iterator.
   logging.info('Creating dataset iterator.')

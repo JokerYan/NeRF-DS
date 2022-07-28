@@ -293,6 +293,7 @@ def main(argv):
   exp_config = configs.ExperimentConfig()
   train_config = configs.TrainConfig()
   eval_config = configs.EvalConfig()
+  spec_config = configs.SpecularConfig()
 
   # Get directory information.
   exp_dir = gpath.GPath(FLAGS.base_folder)
@@ -376,7 +377,9 @@ def main(argv):
       batch_size=eval_config.chunk,
       embeddings_dict=datasource.embeddings_dict,
       near=datasource.near,
-      far=datasource.far)
+      far=datasource.far,
+      screw_input_mode=spec_config.screw_input_mode
+  )
 
   optimizer_def = optim.Adam(0.0)
   if train_config.use_weight_norm:
