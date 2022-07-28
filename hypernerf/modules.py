@@ -186,6 +186,10 @@ class NerfMLP(nn.Module):
     else:
       rgb_input = rgb_input
 
+    print("-----------------")
+    print(rgb_input.shape)
+    print(self.rgb_branch_width)
+
     rgb = rgb_mlp(rgb_input)
 
     return {
