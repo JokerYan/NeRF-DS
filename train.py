@@ -145,6 +145,7 @@ def main(argv):
   # Load configurations.
   exp_config = configs.ExperimentConfig()
   train_config = configs.TrainConfig()
+  spec_config = configs.SpecularConfig()
   dummy_model = models.NerfModel({}, 0, 0)
 
   # Get directory information.
@@ -283,6 +284,7 @@ def main(argv):
       use_background_loss=train_config.use_background_loss,
       use_warp_reg_loss=train_config.use_warp_reg_loss,
       use_hyper_reg_loss=train_config.use_hyper_reg_loss,
+      screw_input_mode=spec_config.screw_input_mode,
   )
   ptrain_step = jax.pmap(
       train_step,

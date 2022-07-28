@@ -381,6 +381,8 @@ class NerfModel(nn.Module):
     else:
       raise NotImplementedError
 
+    print(screw_condition.shape)
+
     raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_condition)
     raw = model_utils.noise_regularize(
         self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
