@@ -181,6 +181,7 @@ class NerfMLP(nn.Module):
       rgb_input = x
 
     if screw_condition is not None:
+      screw_condition = jnp.reshape(screw_condition, [-1, screw_condition.shape[-1]])
       rgb_input = jnp.concatenate([rgb_input, screw_condition], axis=-1)
     else:
       rgb_input = rgb_input
