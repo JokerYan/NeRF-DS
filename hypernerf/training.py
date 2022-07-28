@@ -171,7 +171,8 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'elastic_loss_type',
                                     'use_background_loss',
                                     'use_warp_reg_loss',
-                                    'use_hyper_reg_loss'))
+                                    'use_hyper_reg_loss',
+                                    'screw_input_mode'))
 def train_step(model: models.NerfModel,
                rng_key: Callable[[int], jnp.ndarray],
                state: model_utils.TrainState,
@@ -185,7 +186,9 @@ def train_step(model: models.NerfModel,
                elastic_loss_type: str = 'log_svals',
                use_background_loss: bool = False,
                use_warp_reg_loss: bool = False,
-               use_hyper_reg_loss: bool = False):
+               use_hyper_reg_loss: bool = False,
+               screw_input_mode: str = None,
+               ):
   """One optimization step.
 
   Args:
@@ -206,6 +209,7 @@ def train_step(model: models.NerfModel,
     use_background_loss: if True use the background regularization loss.
     use_warp_reg_loss: if True use the warp regularization loss.
     use_hyper_reg_loss: if True regularize the hyper points.
+    screw_input_mode: whether screw axis is used in rgb rendering ["None", "rotation", "full"]
 
   Returns:
     new_state: model_utils.TrainState, new training state.
@@ -306,7 +310,9 @@ def train_step(model: models.NerfModel,
                       rngs={
                           'fine': fine_key,
                           'coarse': coarse_key
-                      })
+                      },
+                      screw_input_mode=screw_input_mode
+                      )
 
     losses = {}
     stats = {}

@@ -79,4 +79,4 @@ EvalConfig.num_val_eval = 5
 
 
 # Specular configs
-SpecularConfig.screw_input_mode = None
+SpecularConfig.screw_input_mode = "rotation"

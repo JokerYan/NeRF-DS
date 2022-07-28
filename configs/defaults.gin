@@ -122,3 +122,7 @@ EvalConfig.save_output = True
 EvalConfig.chunk = %eval_batch_size
 
 EvalConfig.num_val_eval = None
+
+
+# Specular configs
+SpecularConfig.screw_input_mode = None

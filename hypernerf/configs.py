@@ -40,6 +40,15 @@ gin.config.external_configurable(jax.nn.silu, module='jax.nn')
 gin.config.external_configurable(jax.nn.gelu, module='jax.nn')
 
 
+
+@gin.configurable()
+@dataclasses.dataclass
+class SpecularConfig:
+  """Specular modelling configuration"""
+  # whether screw axis is used in rgb rendering ["None", "rotation", "full"]
+  screw_input_mode: str = None
+
+
 @gin.configurable()
 @dataclasses.dataclass
 class ExperimentConfig:

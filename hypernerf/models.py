@@ -350,7 +350,7 @@ class NerfModel(nn.Module):
                      metadata,
                      extra_params,
                      metadata_encoded=False,
-                     screw_axis_input="none"    # none, rotation, full
+                     screw_input_mode=None    # None, rotation, full
                      ):
     """Queries the NeRF template."""
     alpha_condition, rgb_condition = (
@@ -372,16 +372,16 @@ class NerfModel(nn.Module):
           alpha=extra_params['hyper_alpha'])
       points_feat = jnp.concatenate([points_feat, hyper_feats], axis=-1)
 
-    if screw_axis_input == "none":
-      pass
-    elif screw_axis_input == "rotation":
-      points_feat = jnp.concatenate([points_feat, screw_axis[..., :3]], axis=-1)
-    elif screw_axis_input == "full":
-      points_feat = jnp.concatenate([points_feat, screw_axis], axis=-1)
+    if screw_input_mode is None or screw_input_mode == "none" or screw_input_mode == "None":
+      screw_condition = None
+    elif screw_input_mode == "rotation":
+      screw_condition = screw_axis[..., :3]
+    elif screw_input_mode == "full":
+      screw_condition = screw_axis
     else:
       raise NotImplementedError
 
-    raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition)
+    raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_condition)
     raw = model_utils.noise_regularize(
         self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
 
@@ -490,7 +490,9 @@ class NerfModel(nn.Module):
                      metadata_encoded=False,
                      return_warp_jacobian=False,
                      use_sample_at_infinity=False,
-                     render_opts=None):
+                     render_opts=None,
+                     screw_input_mode=None,
+                     ):
     out = {'points': points}
 
     batch_shape = points.shape[:-1]
@@ -541,7 +543,7 @@ class NerfModel(nn.Module):
         metadata,
         extra_params=extra_params,
         metadata_encoded=metadata_encoded,
-        screw_axis_input="rotation"
+        screw_input_mode=screw_input_mode
     )
 
     # Filter densities based on rendering options.
@@ -581,6 +583,7 @@ class NerfModel(nn.Module):
       use_sample_at_infinity=None,
       render_opts=None,
       deterministic=False,
+      screw_input_mode=None,
   ):
     """Nerf Model.
 
@@ -639,7 +642,9 @@ class NerfModel(nn.Module):
         use_warp=use_warp,
         metadata_encoded=metadata_encoded,
         return_warp_jacobian=return_warp_jacobian,
-        use_sample_at_infinity=self.use_sample_at_infinity)
+        use_sample_at_infinity=self.use_sample_at_infinity,
+        screw_input_mode=screw_input_mode
+    )
     out = {'coarse': coarse_ret}
 
     # Evaluate fine samples.
@@ -661,7 +666,9 @@ class NerfModel(nn.Module):
           metadata_encoded=metadata_encoded,
           return_warp_jacobian=return_warp_jacobian,
           use_sample_at_infinity=use_sample_at_infinity,
-          render_opts=render_opts)
+          render_opts=render_opts,
+          screw_input_mode=screw_input_mode
+      )
 
     if not return_weights:
       del out['coarse']['weights']

@@ -112,7 +112,7 @@ class NerfMLP(nn.Module):
   skips: Tuple[int] = (4,)
 
   @nn.compact
-  def __call__(self, x, alpha_condition, rgb_condition):
+  def __call__(self, x, alpha_condition, rgb_condition, screw_condition=None):
     """Multi-layer perception for nerf.
 
     Args:
@@ -179,6 +179,12 @@ class NerfMLP(nn.Module):
       rgb_input = jnp.concatenate([bottleneck, rgb_condition], axis=-1)
     else:
       rgb_input = x
+
+    if screw_condition is not None:
+      rgb_input = jnp.concatenate([rgb_input, screw_condition], axis=-1)
+    else:
+      rgb_input = rgb_input
+
     rgb = rgb_mlp(rgb_input)
 
     return {
