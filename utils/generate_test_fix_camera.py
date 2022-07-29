@@ -7,7 +7,7 @@ train_camera_folder = os.path.join(data_dir, "camera")
 test_camera_folder = os.path.join(data_dir, "fix_camera")
 
 train_camera_name_list = []
-for file_path in glob(train_camera_folder):
+for file_path in glob(train_camera_folder + "/*"):
   filename = file_path.split('/')[-1]
   train_camera_name_list.append(filename)
 train_camera_name_list = sorted(train_camera_name_list)
