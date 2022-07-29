@@ -67,7 +67,7 @@ TrainConfig.warp_reg_loss_weight = 0.001
 TrainConfig.use_hyper_reg_loss = False
 TrainConfig.hyper_reg_loss_weight = 0.001
 
-TrainConfig.print_every = 10
+TrainConfig.print_every = 100
 TrainConfig.log_every = 100
 TrainConfig.histogram_every = 100
 TrainConfig.save_every = 1000
