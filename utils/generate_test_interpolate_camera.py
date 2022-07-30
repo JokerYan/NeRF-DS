@@ -30,5 +30,4 @@ for i, filename in enumerate(train_camera_name_list):
                      + np.array(position_second) * i) / (len(train_camera_name_list) - 1)
   target_position = target_position.tolist()
   target_json_template['position'] = target_position
-  print(target_json_template)
-  json.dump(target_json_template, open(target_camera_path, 'wb'), indent=4)
+  json.dump(target_json_template, open(target_camera_path, 'w+'), indent=4)
