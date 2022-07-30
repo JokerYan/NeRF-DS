@@ -21,13 +21,22 @@ reference_json_first = json.load(open(reference_camera_path_first, 'r'))
 reference_json_second = json.load(open(reference_camera_path_second, 'r'))
 position_first = reference_json_first['position']
 position_second = reference_json_second['position']
+orientation_first = reference_json_first['orientation']
+orientation_second = reference_json_second['orientation']
 
 os.makedirs(test_camera_folder, exist_ok=True)
 for i, filename in enumerate(train_camera_name_list):
   target_camera_path = os.path.join(test_camera_folder, filename)
   target_json_template = copy.deepcopy(reference_json_first)
+
   target_position = (np.array(position_first) * (len(train_camera_name_list) - 1 - i)
                      + np.array(position_second) * i) / (len(train_camera_name_list) - 1)
   target_position = target_position.tolist()
   target_json_template['position'] = target_position
+
+  target_orientation = (np.array(orientation_first) * (len(train_camera_name_list) - 1 - i)
+                     + np.array(orientation_second) * i) / (len(train_camera_name_list) - 1)
+  target_orientation = target_orientation.tolist()
+  target_json_template['orientation'] = target_orientation
+
   json.dump(target_json_template, open(target_camera_path, 'w+'), indent=4)
