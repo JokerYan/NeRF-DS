@@ -12,7 +12,7 @@ for file_path in glob(train_camera_folder + "/*"):
   train_camera_name_list.append(filename)
 train_camera_name_list = sorted(train_camera_name_list)
 
-reference_camera_path = os.path.join(train_camera_folder, train_camera_name_list[140])
+reference_camera_path = os.path.join(train_camera_folder, train_camera_name_list[322])
 os.makedirs(test_camera_folder, exist_ok=True)
 for filename in train_camera_name_list:
   target_camera_path = os.path.join(test_camera_folder, filename)
