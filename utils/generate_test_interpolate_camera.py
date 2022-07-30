@@ -28,6 +28,6 @@ for i, filename in enumerate(train_camera_name_list):
   target_json_template = copy.deepcopy(reference_json_first)
   target_position = (np.array(position_first) * (len(train_camera_name_list) - 1 - i)
                      + np.array(position_second) * i) / (len(train_camera_name_list) - 1)
-  target_position = list(target_position)
+  target_position = target_position.tolist()
   target_json_template['position'] = target_position
-  json.dump(target_json_template, open(target_camera_path, 'wb'))
+  json.dump(target_json_template, open(target_camera_path, 'wb'), indent=4)
