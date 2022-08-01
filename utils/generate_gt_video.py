@@ -3,11 +3,21 @@ import mediapy
 from glob import glob
 
 fps = 30
-data_dir = "/hdd/zhiwen/data/hypernerf/raw/americano"
+
+if os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
+    data_root = '/hdd/zhiwen/data/hypernerf/raw/'
+elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
+    data_root = '/home/zwyan/3d_cv/data/hypernerf/raw/'
+else:
+    raise NotImplemented
+data_dir = os.path.join(data_root, 'vrig-chicken')
+
 rgb_folder = os.path.join(data_dir, "rgb/1x")
 
+filename_regex = "left*"
+
 image_paths = []
-for file_path in glob(rgb_folder + "/*"):
+for file_path in glob(os.path.join(rgb_folder, filename_regex)):
   image_paths.append(file_path)
 image_paths = sorted(image_paths)
 
