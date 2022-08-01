@@ -546,6 +546,27 @@ class NerfModel(nn.Module):
         screw_input_mode=screw_input_mode
     )
 
+    def sigma_gradient(points):
+      # Map input points to warped spatial and hyper points.
+      warped_points, warp_jacobian, screw_axis = self.map_points(
+        points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
+        return_warp_jacobian=return_warp_jacobian,
+        # Override hyper points if present in metadata dict.
+        hyper_point_override=metadata.get('hyper_point'))
+
+      rgb, sigma = self.query_template(
+        level,
+        warped_points,
+        viewdirs,
+        screw_axis,
+        metadata,
+        extra_params=extra_params,
+        metadata_encoded=metadata_encoded,
+        screw_input_mode=screw_input_mode
+      )
+      return sigma
+    norm_dir = jax.jacrev(sigma_gradient)(points)
+
     # Filter densities based on rendering options.
     sigma = filter_sigma(points, sigma, render_opts)
 
