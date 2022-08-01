@@ -395,8 +395,11 @@ class NerfModel(nn.Module):
     warp_jacobian = None
     screw_axis = None
     if self.use_warp and use_warp:
-      warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None)),
-                         in_axes=(0, 0, None, None))
+      if len(points.shape) > 1:
+        warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None)),
+                           in_axes=(0, 0, None, None))
+      else:
+        warp_fn = self.warp_field
       warp_out = warp_fn(points,
                          warp_embed,
                          extra_params,
@@ -546,7 +549,7 @@ class NerfModel(nn.Module):
         screw_input_mode=screw_input_mode
     )
 
-    def sigma_gradient(points):
+    def single_pt_sigma(points, warp_embed, hyper_embed, viewdirs):
       # Map input points to warped spatial and hyper points.
       warped_points, warp_jacobian, screw_axis = self.map_points(
         points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
@@ -565,7 +568,14 @@ class NerfModel(nn.Module):
         screw_input_mode=screw_input_mode
       )
       return sigma
-    norm_dir = jax.jacrev(sigma_gradient)(points)
+
+    def sigma_gradient(points, warp_embed, hyper_embed, viewdirs):
+      gradient = jax.jacfwd(single_pt_sigma)(points, warp_embed, hyper_embed, viewdirs)
+      return gradient
+
+    sigma_gradient_fn = jax.vmap(jax.vmap(sigma_gradient, in_axes=(0, 0, 0, None)), in_axes=(0, 0, 0, 0))
+    sigma_gradient_output = sigma_gradient_fn(points, warp_embed, hyper_embed, viewdirs)
+    out['sigma_gradient'] = sigma_gradient_output
 
     # Filter densities based on rendering options.
     sigma = filter_sigma(points, sigma, render_opts)

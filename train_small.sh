@@ -4,4 +4,4 @@ export EXPERIMENT_PATH=experiments/spec_exp02_base
 CUDA_VISIBLE_DEVICES=0,1 python train.py \
     --base_folder $EXPERIMENT_PATH \
     --gin_bindings="data_dir='$DATASET_PATH'" \
-    --gin_configs configs/test_local.gin
+    --gin_configs configs/test_local_small.gin

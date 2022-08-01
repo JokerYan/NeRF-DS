@@ -127,14 +127,19 @@ class NerfMLP(nn.Module):
         nn.Dense, kernel_init=jax.nn.initializers.glorot_uniform())
 
     feature_dim = x.shape[-1]
-    num_samples = x.shape[1]
+    if len(x.shape) > 1:
+      num_samples = x.shape[1]
+    else:
+      num_samples = 1
     x = x.reshape([-1, feature_dim])
 
     def broadcast_condition(c):
       # Broadcast condition from [batch, feature] to
       # [batch, num_coarse_samples, feature] since all the samples along the
       # same ray has the same viewdir.
-      c = jnp.tile(c[:, None, :], (1, num_samples, 1))
+      if len(c.shape) > 1:
+        c = jnp.tile(c[:, None, :], (1, num_samples, 1))
+
       # Collapse the [batch, num_coarse_samples, feature] tensor to
       # [batch * num_coarse_samples, feature] to be fed into nn.Dense.
       c = c.reshape([-1, c.shape[-1]])
