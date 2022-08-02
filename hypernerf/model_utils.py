@@ -84,6 +84,7 @@ def sample_along_rays(key, origins, directions, num_coarse_samples, near, far,
 
 def volumetric_rendering(rgb,
                          sigma,
+                         sigma_gradient,
                          z_vals,
                          dirs,
                          use_white_background,
@@ -132,12 +133,16 @@ def volumetric_rendering(rgb,
   if sample_at_infinity:
     acc = weights[..., :-1].sum(axis=-1)
 
+  # accumulate sigma gradient for each ray
+  ray_sigma_gradient = (weights[..., None] * sigma_gradient).sum(axis=-2)
+
   out = {
       'rgb': rgb,
       'depth': exp_depth,
       'med_depth': med_depth,
       'acc': acc,
       'weights': weights,
+      'ray_sigma_gradient': ray_sigma_gradient,
   }
   return out
 
