@@ -57,10 +57,10 @@ class MLP(nn.Module):
     inputs = x
     for i in range(self.depth):
       layer = nn.Dense(
-          self.width,
-          use_bias=self.use_bias,
-          kernel_init=self.hidden_init,
-          name=f'hidden_{i}')
+        self.width,
+        use_bias=self.use_bias,
+        kernel_init=self.hidden_init,
+        name=f'hidden_{i}')
       if i in self.skips:
         x = jnp.concatenate([x, inputs], axis=-1)
       x = layer(x)
@@ -70,10 +70,10 @@ class MLP(nn.Module):
 
     if self.output_channels > 0:
       logit_layer = nn.Dense(
-          self.output_channels,
-          use_bias=self.use_bias,
-          kernel_init=self.output_init,
-          name='logit')
+        self.output_channels,
+        use_bias=self.use_bias,
+        kernel_init=self.output_init,
+        name='logit')
       x = logit_layer(x)
       if self.output_activation is not None:
         x = self.output_activation(x)
@@ -111,6 +111,44 @@ class NerfMLP(nn.Module):
   norm: Optional[Any] = None
   skips: Tuple[int] = (4,)
 
+  def setup(self):
+    dense = functools.partial(
+      nn.Dense, kernel_init=jax.nn.initializers.glorot_uniform())
+    self.bottleneck_layer = dense(self.trunk_width, name='bottleneck')
+
+    self.trunk_mlp = MLP(depth=self.trunk_depth,
+                         width=self.trunk_width,
+                         hidden_activation=self.activation,
+                         hidden_norm=self.norm,
+                         hidden_init=jax.nn.initializers.glorot_uniform(),
+                         skips=self.skips)
+    self.rgb_mlp = MLP(depth=self.rgb_branch_depth,
+                       width=self.rgb_branch_width,
+                       hidden_activation=self.activation,
+                       hidden_norm=self.norm,
+                       hidden_init=jax.nn.initializers.glorot_uniform(),
+                       output_init=jax.nn.initializers.glorot_uniform(),
+                       output_channels=self.rgb_channels)
+    self.alpha_mlp = MLP(depth=self.alpha_branch_depth,
+                         width=self.alpha_branch_width,
+                         hidden_activation=self.activation,
+                         hidden_norm=self.norm,
+                         hidden_init=jax.nn.initializers.glorot_uniform(),
+                         output_init=jax.nn.initializers.glorot_uniform(),
+                         output_channels=self.alpha_channels)
+
+  def broadcast_condition(self, c, num_samples):
+    # Broadcast condition from [batch, feature] to
+    # [batch, num_coarse_samples, feature] since all the samples along the
+    # same ray has the same viewdir.
+    if len(c.shape) == 3:
+      c = jnp.tile(c[:, None, :], (1, num_samples, 1))
+
+    # Collapse the [batch, num_coarse_samples, feature] tensor to
+    # [batch * num_coarse_samples, feature] to be fed into nn.Dense.
+    c = c.reshape([-1, c.shape[-1]])
+    return c
+
   @nn.compact
   def __call__(self, x, alpha_condition, rgb_condition, screw_condition=None):
     """Multi-layer perception for nerf.
@@ -124,7 +162,7 @@ class NerfMLP(nn.Module):
       raw: [batch, num_coarse_samples, rgb_channels+alpha_channels].
     """
     dense = functools.partial(
-        nn.Dense, kernel_init=jax.nn.initializers.glorot_uniform())
+      nn.Dense, kernel_init=jax.nn.initializers.glorot_uniform())
 
     feature_dim = x.shape[-1]
     if len(x.shape) > 1:
@@ -132,18 +170,6 @@ class NerfMLP(nn.Module):
     else:
       num_samples = 1
     x = x.reshape([-1, feature_dim])
-
-    def broadcast_condition(c):
-      # Broadcast condition from [batch, feature] to
-      # [batch, num_coarse_samples, feature] since all the samples along the
-      # same ray has the same viewdir.
-      if len(c.shape) > 1:
-        c = jnp.tile(c[:, None, :], (1, num_samples, 1))
-
-      # Collapse the [batch, num_coarse_samples, feature] tensor to
-      # [batch * num_coarse_samples, feature] to be fed into nn.Dense.
-      c = c.reshape([-1, c.shape[-1]])
-      return c
 
     trunk_mlp = MLP(depth=self.trunk_depth,
                     width=self.trunk_width,
@@ -173,14 +199,14 @@ class NerfMLP(nn.Module):
       bottleneck = dense(self.trunk_width, name='bottleneck')(x)
 
     if alpha_condition is not None:
-      alpha_condition = broadcast_condition(alpha_condition)
+      alpha_condition = self.broadcast_condition(alpha_condition, num_samples)
       alpha_input = jnp.concatenate([bottleneck, alpha_condition], axis=-1)
     else:
       alpha_input = x
     alpha = alpha_mlp(alpha_input)
 
     if rgb_condition is not None:
-      rgb_condition = broadcast_condition(rgb_condition)
+      rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
       rgb_input = jnp.concatenate([bottleneck, rgb_condition], axis=-1)
     else:
       rgb_input = x
@@ -194,9 +220,65 @@ class NerfMLP(nn.Module):
     rgb = rgb_mlp(rgb_input)
 
     return {
-        'rgb': rgb.reshape((-1, num_samples, self.rgb_channels)),
-        'alpha': alpha.reshape((-1, num_samples, self.alpha_channels)),
+      'rgb': rgb.reshape((-1, num_samples, self.rgb_channels)),
+      'alpha': alpha.reshape((-1, num_samples, self.alpha_channels)),
     }
+
+  def query_bottleneck(self, x, alpha_condition, rgb_condition):
+    feature_dim = x.shape[-1]
+    if len(x.shape) > 1:
+      num_samples = x.shape[1]
+    else:
+      num_samples = 1
+    x = x.reshape([-1, feature_dim])
+
+    if self.trunk_depth > 0:
+      x = self.trunk_mlp(x)
+
+    if (alpha_condition is not None) or (rgb_condition is not None):
+      bottleneck = self.bottleneck_layer(x)
+    else:
+      bottleneck = x
+    return bottleneck
+
+  def query_sigma(self, x, bottleneck, alpha_condition):
+    feature_dim = x.shape[-1]
+    if len(x.shape) > 1:
+      num_samples = x.shape[1]
+    else:
+      num_samples = 1
+    x = x.reshape([-1, feature_dim])
+
+    if alpha_condition is not None:
+      alpha_condition = self.broadcast_condition(alpha_condition, num_samples)
+      alpha_input = jnp.concatenate([bottleneck, alpha_condition], axis=-1)
+    else:
+      alpha_input = x
+    alpha = self.alpha_mlp(alpha_input)
+    return alpha
+
+  def query_rgb(self, x, bottleneck, rgb_condition, screw_condition=None):
+    feature_dim = x.shape[-1]
+    if len(x.shape) > 1:
+      num_samples = x.shape[1]
+    else:
+      num_samples = 1
+    x = x.reshape([-1, feature_dim])
+
+    if rgb_condition is not None:
+      rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
+      rgb_input = jnp.concatenate([bottleneck, rgb_condition], axis=-1)
+    else:
+      rgb_input = x
+
+    if screw_condition is not None:
+      screw_condition = jnp.reshape(screw_condition, [-1, screw_condition.shape[-1]])
+      rgb_input = jnp.concatenate([rgb_input, screw_condition], axis=-1)
+    else:
+      rgb_input = rgb_input
+
+    rgb = self.rgb_mlp(rgb_input)
+    return rgb
 
 
 @gin.configurable(denylist=['name'])
@@ -215,9 +297,9 @@ class GLOEmbed(nn.Module):
 
   def setup(self):
     self.embed = nn.Embed(
-        num_embeddings=self.num_embeddings,
-        features=self.num_dims,
-        embedding_init=self.embedding_init)
+      num_embeddings=self.num_embeddings,
+      features=self.num_dims,
+      embedding_init=self.embedding_init)
 
   def __call__(self, inputs: jnp.ndarray) -> jnp.ndarray:
     """Method to get embeddings for specified indices.
@@ -253,7 +335,7 @@ class HyperSheetMLP(nn.Module):
   @nn.compact
   def __call__(self, points, embed, alpha=None):
     points_feat = model_utils.posenc(
-        points, self.min_deg, self.max_deg, alpha=alpha)
+      points, self.min_deg, self.max_deg, alpha=alpha)
     inputs = jnp.concatenate([points_feat, embed], axis=-1)
     mlp = MLP(depth=self.depth,
               width=self.width,

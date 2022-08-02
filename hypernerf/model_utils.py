@@ -293,6 +293,14 @@ def noise_regularize(key, raw, noise_std, use_stratified_sampling):
   return raw
 
 
+def noise_regularize_sigma(key, sigma, noise_std, use_stratified_sampling):
+  if (noise_std is not None) and noise_std > 0.0 and use_stratified_sampling:
+    unused_key, key = random.split(key)
+    noise = random.normal(key, sigma.shape, dtype=sigma.dtype) * noise_std
+    sigma = sigma + noise
+  return sigma
+
+
 def broadcast_feature_to(array: jnp.ndarray, shape: jnp.shape):
   """Matches the shape dimensions (everything except the channel dims).
 

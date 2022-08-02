@@ -144,13 +144,13 @@ class NerfModel(nn.Module):
   # NeRF metadata configs.
   use_nerf_embed: bool = False
   nerf_embed_cls: Callable[..., nn.Module] = (
-      functools.partial(modules.GLOEmbed, num_dims=8))
+    functools.partial(modules.GLOEmbed, num_dims=8))
   nerf_embed_key: str = 'appearance'
   use_alpha_condition: bool = False
   use_rgb_condition: bool = False
   hyper_slice_method: str = 'none'
   hyper_embed_cls: Callable[..., nn.Module] = (
-      functools.partial(modules.GLOEmbed, num_dims=8))
+    functools.partial(modules.GLOEmbed, num_dims=8))
   hyper_embed_key: str = 'appearance'
   hyper_use_warp_embed: bool = True
   hyper_sheet_mlp_cls: Callable[..., nn.Module] = modules.HyperSheetMLP
@@ -160,7 +160,7 @@ class NerfModel(nn.Module):
   use_warp: bool = False
   warp_field_cls: Callable[..., nn.Module] = warping.SE3Field
   warp_embed_cls: Callable[..., nn.Module] = (
-      functools.partial(modules.GLOEmbed, num_dims=8))
+    functools.partial(modules.GLOEmbed, num_dims=8))
   warp_embed_key: str = 'warp'
 
   @property
@@ -248,7 +248,7 @@ class NerfModel(nn.Module):
                                   self.hyper_embed)
     else:
       raise RuntimeError(
-          f'Unknown hyper slice method {self.hyper_slice_method}.')
+        f'Unknown hyper slice method {self.hyper_slice_method}.')
 
   def encode_nerf_embed(self, metadata):
     return self._encode_embed(metadata[self.nerf_embed_key], self.nerf_embed)
@@ -258,8 +258,8 @@ class NerfModel(nn.Module):
 
   def setup(self):
     if (self.use_nerf_embed
-        and not (self.use_rgb_condition
-                 or self.use_alpha_condition)):
+            and not (self.use_rgb_condition
+                     or self.use_alpha_condition)):
       raise ValueError('Template metadata is enabled but none of the condition'
                        'branches are.')
 
@@ -270,11 +270,11 @@ class NerfModel(nn.Module):
 
     if self.hyper_slice_method == 'axis_aligned_plane':
       self.hyper_embed = self.hyper_embed_cls(
-          num_embeddings=self.num_hyper_embeds)
+        num_embeddings=self.num_hyper_embeds)
     elif self.hyper_slice_method == 'bendy_sheet':
       if not self.hyper_use_warp_embed:
         self.hyper_embed = self.hyper_embed_cls(
-            num_embeddings=self.num_hyper_embeds)
+          num_embeddings=self.num_hyper_embeds)
       self.hyper_sheet_mlp = self.hyper_sheet_mlp_cls()
 
     if self.use_warp:
@@ -282,28 +282,28 @@ class NerfModel(nn.Module):
 
     norm_layer = modules.get_norm_layer(self.norm_type)
     nerf_mlps = {
-        'coarse': modules.NerfMLP(
-            trunk_depth=self.nerf_trunk_depth,
-            trunk_width=self.nerf_trunk_width,
-            rgb_branch_depth=self.nerf_rgb_branch_depth,
-            rgb_branch_width=self.nerf_rgb_branch_width,
-            activation=self.activation,
-            norm=norm_layer,
-            skips=self.nerf_skips,
-            alpha_channels=self.alpha_channels,
-            rgb_channels=self.rgb_channels)
+      'coarse': modules.NerfMLP(
+        trunk_depth=self.nerf_trunk_depth,
+        trunk_width=self.nerf_trunk_width,
+        rgb_branch_depth=self.nerf_rgb_branch_depth,
+        rgb_branch_width=self.nerf_rgb_branch_width,
+        activation=self.activation,
+        norm=norm_layer,
+        skips=self.nerf_skips,
+        alpha_channels=self.alpha_channels,
+        rgb_channels=self.rgb_channels)
     }
     if self.num_fine_samples > 0:
       nerf_mlps['fine'] = modules.NerfMLP(
-          trunk_depth=self.nerf_trunk_depth,
-          trunk_width=self.nerf_trunk_width,
-          rgb_branch_depth=self.nerf_rgb_branch_depth,
-          rgb_branch_width=self.nerf_rgb_branch_width,
-          activation=self.activation,
-          norm=norm_layer,
-          skips=self.nerf_skips,
-          alpha_channels=self.alpha_channels,
-          rgb_channels=self.rgb_channels)
+        trunk_depth=self.nerf_trunk_depth,
+        trunk_width=self.nerf_trunk_width,
+        rgb_branch_depth=self.nerf_rgb_branch_depth,
+        rgb_branch_width=self.nerf_rgb_branch_width,
+        activation=self.activation,
+        norm=norm_layer,
+        skips=self.nerf_skips,
+        alpha_channels=self.alpha_channels,
+        rgb_channels=self.rgb_channels)
     self.nerf_mlps = nerf_mlps
 
   def get_condition_inputs(self, viewdirs, metadata, metadata_encoded=False):
@@ -314,10 +314,10 @@ class NerfModel(nn.Module):
     # Point attribute predictions
     if self.use_viewdirs:
       viewdirs_feat = model_utils.posenc(
-          viewdirs,
-          min_deg=self.viewdir_min_deg,
-          max_deg=self.viewdir_max_deg,
-          use_identity=self.use_posenc_identity)
+        viewdirs,
+        min_deg=self.viewdir_min_deg,
+        max_deg=self.viewdir_max_deg,
+        use_identity=self.use_posenc_identity)
       rgb_conditions.append(viewdirs_feat)
 
     if self.use_nerf_embed:
@@ -335,11 +335,11 @@ class NerfModel(nn.Module):
     # since we assume all samples have the same condition input. We might want
     # to change this later.
     alpha_conditions = (
-        jnp.concatenate(alpha_conditions, axis=-1)
-        if alpha_conditions else None)
+      jnp.concatenate(alpha_conditions, axis=-1)
+      if alpha_conditions else None)
     rgb_conditions = (
-        jnp.concatenate(rgb_conditions, axis=-1)
-        if rgb_conditions else None)
+      jnp.concatenate(rgb_conditions, axis=-1)
+      if rgb_conditions else None)
     return alpha_conditions, rgb_conditions
 
   def query_template(self,
@@ -350,27 +350,32 @@ class NerfModel(nn.Module):
                      metadata,
                      extra_params,
                      metadata_encoded=False,
-                     screw_input_mode=None    # None, rotation, full
+                     screw_input_mode=None  # None, rotation, full
                      ):
     """Queries the NeRF template."""
     alpha_condition, rgb_condition = (
-        self.get_condition_inputs(viewdirs, metadata, metadata_encoded))
+      self.get_condition_inputs(viewdirs, metadata, metadata_encoded))
 
     points_feat = model_utils.posenc(
-        points[..., :3],
-        min_deg=self.spatial_point_min_deg,
-        max_deg=self.spatial_point_max_deg,
-        use_identity=self.use_posenc_identity,
-        alpha=extra_params['nerf_alpha'])
+      points[..., :3],
+      min_deg=self.spatial_point_min_deg,
+      max_deg=self.spatial_point_max_deg,
+      use_identity=self.use_posenc_identity,
+      alpha=extra_params['nerf_alpha'])
     # Encode hyper-points if present.
     if points.shape[-1] > 3:
       hyper_feats = model_utils.posenc(
-          points[..., 3:],
-          min_deg=self.hyper_point_min_deg,
-          max_deg=self.hyper_point_max_deg,
-          use_identity=False,
-          alpha=extra_params['hyper_alpha'])
+        points[..., 3:],
+        min_deg=self.hyper_point_min_deg,
+        max_deg=self.hyper_point_max_deg,
+        use_identity=False,
+        alpha=extra_params['hyper_alpha'])
       points_feat = jnp.concatenate([points_feat, hyper_feats], axis=-1)
+
+    if len(points_feat.shape) > 1:
+      num_samples = points_feat.shape[1]
+    else:
+      num_samples = 1
 
     if screw_input_mode is None or screw_input_mode == "none" or screw_input_mode == "None":
       screw_condition = None
@@ -381,9 +386,102 @@ class NerfModel(nn.Module):
     else:
       raise NotImplementedError
 
-    raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_condition)
+    # raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_condition)
+    bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
+    sigma = self.nerf_mlps[level].query_sigma(points_feat, bottleneck, alpha_condition)
+    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition)
+    raw = {
+      'rgb': rgb.reshape((-1, num_samples, self.rgb_channels)),
+      'alpha': sigma.reshape((-1, num_samples, self.alpha_channels)),
+    }
+
     raw = model_utils.noise_regularize(
-        self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
+      self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
+
+    rgb = nn.sigmoid(raw['rgb'])
+    sigma = self.sigma_activation(jnp.squeeze(raw['alpha'], axis=-1))
+
+    return rgb, sigma
+
+  def pre_process_query(self,
+                        points,
+                        viewdirs,
+                        metadata,
+                        extra_params,
+                        metadata_encoded=False, ):
+    alpha_condition, rgb_condition = (
+      self.get_condition_inputs(viewdirs, metadata, metadata_encoded))
+
+    points_feat = model_utils.posenc(
+      points[..., :3],
+      min_deg=self.spatial_point_min_deg,
+      max_deg=self.spatial_point_max_deg,
+      use_identity=self.use_posenc_identity,
+      alpha=extra_params['nerf_alpha'])
+    # Encode hyper-points if present.
+    if points.shape[-1] > 3:
+      hyper_feats = model_utils.posenc(
+        points[..., 3:],
+        min_deg=self.hyper_point_min_deg,
+        max_deg=self.hyper_point_max_deg,
+        use_identity=False,
+        alpha=extra_params['hyper_alpha'])
+      points_feat = jnp.concatenate([points_feat, hyper_feats], axis=-1)
+
+    if len(points_feat.shape) > 1:
+      num_samples = points_feat.shape[1]
+    else:
+      num_samples = 1
+
+    return points_feat, alpha_condition, rgb_condition, num_samples
+
+  def query_template_bottleneck(self,
+                                level,
+                                points_feat,
+                                alpha_condition,
+                                rgb_condition
+                                ):
+    bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
+    return bottleneck
+
+  def query_template_sigma(self,
+                           level,
+                           points_feat,
+                           bottleneck,
+                           alpha_condition
+                           ):
+    sigma = self.nerf_mlps[level].query_sigma(points_feat, bottleneck, alpha_condition)
+    return sigma
+
+  def query_template_rgb(self,
+                         level,
+                         points_feat,
+                         bottleneck,
+                         rgb_condition,
+                         screw_axis,
+                         screw_input_mode=None  # None, rotation, full
+                         ):
+
+    if screw_input_mode is None or screw_input_mode == "none" or screw_input_mode == "None":
+      screw_condition = None
+    elif screw_input_mode == "rotation":
+      screw_condition = screw_axis[..., :3]
+    elif screw_input_mode == "full":
+      screw_condition = screw_axis
+    else:
+      raise NotImplementedError
+
+    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition)
+    return rgb
+
+  def post_process_query(self, level, rgb, sigma, num_samples):
+    raw = {
+      'rgb': rgb.reshape((-1, num_samples, self.rgb_channels)),
+      'alpha': sigma.reshape((-1, num_samples, self.alpha_channels)),
+    }
+
+    raw = model_utils.noise_regularize(
+      self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
 
     rgb = nn.sigmoid(raw['rgb'])
     sigma = self.sigma_activation(jnp.squeeze(raw['alpha'], axis=-1))
@@ -429,15 +527,15 @@ class NerfModel(nn.Module):
     """
     if hyper_point_override is not None:
       hyper_points = jnp.broadcast_to(
-          hyper_point_override[:, None, :],
-          (*points.shape[:-1], hyper_point_override.shape[-1]))
+        hyper_point_override[:, None, :],
+        (*points.shape[:-1], hyper_point_override.shape[-1]))
     elif self.hyper_slice_method == 'axis_aligned_plane':
       hyper_points = hyper_embed
     elif self.hyper_slice_method == 'bendy_sheet':
       hyper_points = self.hyper_sheet_mlp(
-          points,
-          hyper_embed,
-          alpha=extra_params['hyper_sheet_alpha'])
+        points,
+        hyper_embed,
+        alpha=extra_params['hyper_sheet_alpha'])
     else:
       return None
 
@@ -463,12 +561,12 @@ class NerfModel(nn.Module):
     """
     # Map input points to warped spatial and hyper points.
     spatial_points, warp_jacobian, screw_axis = self.map_spatial_points(
-        points, warp_embed, extra_params, use_warp=use_warp,
-        return_warp_jacobian=return_warp_jacobian)
+      points, warp_embed, extra_params, use_warp=use_warp,
+      return_warp_jacobian=return_warp_jacobian)
     hyper_points = self.map_hyper_points(
-        points, hyper_embed, extra_params,
-        # Override hyper points if present in metadata dict.
-        hyper_point_override=hyper_point_override)
+      points, hyper_embed, extra_params,
+      # Override hyper points if present in metadata dict.
+      hyper_point_override=hyper_point_override)
 
     if hyper_points is not None:
       warped_points = jnp.concatenate([spatial_points, hyper_points], axis=-1)
@@ -495,6 +593,7 @@ class NerfModel(nn.Module):
                      use_sample_at_infinity=False,
                      render_opts=None,
                      screw_input_mode=None,
+                     use_sigma_gradient=False
                      ):
     out = {'points': points}
 
@@ -524,30 +623,37 @@ class NerfModel(nn.Module):
     # Broadcast embeddings.
     if warp_embed is not None:
       warp_embed = jnp.broadcast_to(
-          warp_embed[:, jnp.newaxis, :],
-          shape=(*batch_shape, warp_embed.shape[-1]))
+        warp_embed[:, jnp.newaxis, :],
+        shape=(*batch_shape, warp_embed.shape[-1]))
     if hyper_embed is not None:
       hyper_embed = jnp.broadcast_to(
-          hyper_embed[:, jnp.newaxis, :],
-          shape=(*batch_shape, hyper_embed.shape[-1]))
+        hyper_embed[:, jnp.newaxis, :],
+        shape=(*batch_shape, hyper_embed.shape[-1]))
 
-    # Map input points to warped spatial and hyper points.
-    warped_points, warp_jacobian, screw_axis = self.map_points(
-        points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
-        return_warp_jacobian=return_warp_jacobian,
-        # Override hyper points if present in metadata dict.
-        hyper_point_override=metadata.get('hyper_point'))
+    # # Map input points to warped spatial and hyper points.
+    # warped_points, warp_jacobian, screw_axis = self.map_points(
+    #   points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
+    #   return_warp_jacobian=return_warp_jacobian,
+    #   # Override hyper points if present in metadata dict.
+    #   hyper_point_override=metadata.get('hyper_point'))
 
-    rgb, sigma = self.query_template(
-        level,
-        warped_points,
-        viewdirs,
-        screw_axis,
-        metadata,
-        extra_params=extra_params,
-        metadata_encoded=metadata_encoded,
-        screw_input_mode=screw_input_mode
-    )
+    # rgb, sigma = self.query_template(
+    #   level,
+    #   warped_points,
+    #   viewdirs,
+    #   screw_axis,
+    #   metadata,
+    #   extra_params=extra_params,
+    #   metadata_encoded=metadata_encoded,
+    #   screw_input_mode=screw_input_mode
+    # )
+
+    # points_feat, alpha_condition, rgb_condition, num_samples = self.pre_process_query(warped_points, viewdirs, metadata,
+    #                                                                                   extra_params, metadata_encoded)
+    # bottleneck = self.query_template_bottleneck(level, points_feat, alpha_condition, rgb_condition)
+    # sigma = self.query_template_sigma(level, points_feat, bottleneck, alpha_condition)
+    # rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode)
+    # rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
 
     def cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs):
       # Map input points to warped spatial and hyper points.
@@ -557,25 +663,31 @@ class NerfModel(nn.Module):
         # Override hyper points if present in metadata dict.
         hyper_point_override=metadata.get('hyper_point'))
 
-      rgb, sigma = self.query_template(
-        level,
-        warped_points,
-        viewdirs,
-        screw_axis,
-        metadata,
-        extra_params=extra_params,
-        metadata_encoded=metadata_encoded,
-        screw_input_mode=screw_input_mode
-      )
-      return sigma
+      points_feat, alpha_condition, rgb_condition, num_samples = self.pre_process_query(warped_points, viewdirs,
+                                                                                        metadata,
+                                                                                        extra_params, metadata_encoded)
+      bottleneck = self.query_template_bottleneck(level, points_feat, alpha_condition, rgb_condition)
+      sigma = self.query_template_sigma(level, points_feat, bottleneck, alpha_condition)
+      aux_output = {
+        'warped_points': warped_points,
+        'warp_jacobian': warp_jacobian,
+        'screw_axis': screw_axis,
+        'points_feat': points_feat,
+        'alpha_condition': alpha_condition,
+        'rgb_condition': rgb_condition,
+        'bottleneck': bottleneck,
+      }
+      sigma = jnp.squeeze(sigma)
+      return sigma, aux_output
 
     def cal_sigma_gradient(points, warp_embed, hyper_embed, viewdirs):
       # gradient = jax.jacfwd(single_pt_sigma)(points, warp_embed, hyper_embed, viewdirs)
-      gradient = jax.jacrev(cal_single_pt_sigma)(points, warp_embed, hyper_embed, viewdirs)
-      return gradient
+      # gradient = jax.jacrev(cal_single_pt_sigma)(points, warp_embed, hyper_embed, viewdirs)
+      value, gradient = jax.value_and_grad(cal_single_pt_sigma, argnums=0, has_aux=True)(points, warp_embed, hyper_embed, viewdirs)
+      return value, gradient
 
     sigma_gradient_fn = jax.vmap(jax.vmap(cal_sigma_gradient, in_axes=(0, 0, 0, None)), in_axes=(0, 0, 0, 0))
-    sigma_gradient = sigma_gradient_fn(points, warp_embed, hyper_embed, viewdirs)
+    (sigma, aux_output), sigma_gradient = sigma_gradient_fn(points, warp_embed, hyper_embed, viewdirs)
     sigma_gradient = jnp.squeeze(sigma_gradient)
     # normalize
     gradient_norm = jnp.linalg.norm(sigma_gradient, axis=2)
@@ -583,45 +695,71 @@ class NerfModel(nn.Module):
     sigma_gradient = sigma_gradient / gradient_norm
     out['sigma_gradient'] = sigma_gradient
 
+    # flatten except for feature dim, when applicable
+    num_samples = points.shape[1]
+    for key in aux_output.keys():
+      if aux_output[key] is not None and len(aux_output[key].shape) > 2:
+        aux_output[key] = jnp.reshape(aux_output[key], (-1, aux_output[key].shape[-1]))
+      # try:
+      #   print(key, aux_output[key].shape)
+      # except:
+      #   print(key, aux_output[key])
+
+    # unpack aux_output
+    warped_points = aux_output['warped_points']
+    warp_jacobian = aux_output['warp_jacobian']
+    screw_axis = aux_output['screw_axis']
+    points_feat = aux_output['points_feat']
+    alpha_condition = aux_output['alpha_condition']
+    rgb_condition = aux_output['rgb_condition']
+    bottleneck = aux_output['bottleneck']
+
+    # rgb
+    rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode)
+    rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
+
     # Filter densities based on rendering options.
     sigma = filter_sigma(points, sigma, render_opts)
 
+    warped_points = jnp.reshape(warped_points, (-1, num_samples, warped_points.shape[-1]))
     if warp_jacobian is not None:
+      warp_jacobian = jnp.reshape(warp_jacobian, (-1, num_samples, warp_jacobian.shape[-1]))
       out['warp_jacobian'] = warp_jacobian
     out['warped_points'] = warped_points
     out.update(model_utils.volumetric_rendering(
-        rgb,
-        sigma,
-        sigma_gradient,
-        z_vals,
-        directions,
-        use_white_background=self.use_white_background,
-        sample_at_infinity=use_sample_at_infinity))
+      rgb,
+      sigma,
+      sigma_gradient,
+      z_vals,
+      directions,
+      use_white_background=self.use_white_background,
+      sample_at_infinity=use_sample_at_infinity))
 
     # Add a map containing the returned points at the median depth.
     depth_indices = model_utils.compute_depth_index(out['weights'])
     med_points = jnp.take_along_axis(
-        # Unsqueeze axes: sample axis, coords.
-        warped_points, depth_indices[..., None, None], axis=-2)
+      # Unsqueeze axes: sample axis, coords.
+      warped_points, depth_indices[..., None, None], axis=-2)
     out['med_points'] = med_points
 
     return out
 
   def __call__(
-      self,
-      rays_dict: Dict[str, Any],
-      extra_params: Dict[str, Any],
-      metadata_encoded=False,
-      use_warp=True,
-      return_points=False,
-      return_weights=False,
-      return_warp_jacobian=False,
-      near=None,
-      far=None,
-      use_sample_at_infinity=None,
-      render_opts=None,
-      deterministic=False,
-      screw_input_mode=None,
+          self,
+          rays_dict: Dict[str, Any],
+          extra_params: Dict[str, Any],
+          metadata_encoded=False,
+          use_warp=True,
+          return_points=False,
+          return_weights=False,
+          return_warp_jacobian=False,
+          near=None,
+          far=None,
+          use_sample_at_infinity=None,
+          render_opts=None,
+          deterministic=False,
+          screw_input_mode=None,
+          use_sigma_gradient=False
   ):
     """Nerf Model.
 
@@ -666,11 +804,35 @@ class NerfModel(nn.Module):
 
     # Evaluate coarse samples.
     z_vals, points = model_utils.sample_along_rays(
-        self.make_rng('coarse'), origins, directions, self.num_coarse_samples,
-        near, far, self.use_stratified_sampling,
-        self.use_linear_disparity)
+      self.make_rng('coarse'), origins, directions, self.num_coarse_samples,
+      near, far, self.use_stratified_sampling,
+      self.use_linear_disparity)
     coarse_ret = self.render_samples(
-        'coarse',
+      'coarse',
+      points,
+      z_vals,
+      directions,
+      viewdirs,
+      metadata,
+      extra_params,
+      use_warp=use_warp,
+      metadata_encoded=metadata_encoded,
+      return_warp_jacobian=return_warp_jacobian,
+      use_sample_at_infinity=self.use_sample_at_infinity,
+      screw_input_mode=screw_input_mode,
+      use_sigma_gradient=use_sigma_gradient
+    )
+    out = {'coarse': coarse_ret}
+
+    # Evaluate fine samples.
+    if self.num_fine_samples > 0:
+      z_vals_mid = .5 * (z_vals[..., 1:] + z_vals[..., :-1])
+      z_vals, points = model_utils.sample_pdf(
+        self.make_rng('fine'), z_vals_mid, coarse_ret['weights'][..., 1:-1],
+        origins, directions, z_vals, self.num_fine_samples,
+        self.use_stratified_sampling)
+      out['fine'] = self.render_samples(
+        'fine',
         points,
         z_vals,
         directions,
@@ -680,32 +842,10 @@ class NerfModel(nn.Module):
         use_warp=use_warp,
         metadata_encoded=metadata_encoded,
         return_warp_jacobian=return_warp_jacobian,
-        use_sample_at_infinity=self.use_sample_at_infinity,
-        screw_input_mode=screw_input_mode
-    )
-    out = {'coarse': coarse_ret}
-
-    # Evaluate fine samples.
-    if self.num_fine_samples > 0:
-      z_vals_mid = .5 * (z_vals[..., 1:] + z_vals[..., :-1])
-      z_vals, points = model_utils.sample_pdf(
-          self.make_rng('fine'), z_vals_mid, coarse_ret['weights'][..., 1:-1],
-          origins, directions, z_vals, self.num_fine_samples,
-          self.use_stratified_sampling)
-      out['fine'] = self.render_samples(
-          'fine',
-          points,
-          z_vals,
-          directions,
-          viewdirs,
-          metadata,
-          extra_params,
-          use_warp=use_warp,
-          metadata_encoded=metadata_encoded,
-          return_warp_jacobian=return_warp_jacobian,
-          use_sample_at_infinity=use_sample_at_infinity,
-          render_opts=render_opts,
-          screw_input_mode=screw_input_mode
+        use_sample_at_infinity=use_sample_at_infinity,
+        render_opts=render_opts,
+        screw_input_mode=screw_input_mode,
+        use_sigma_gradient=use_sigma_gradient
       )
 
     if not return_weights:
@@ -722,7 +862,7 @@ class NerfModel(nn.Module):
 
 
 def construct_nerf(key, batch_size: int, embeddings_dict: Dict[str, int],
-                   near: float, far: float, screw_input_mode: str):
+                   near: float, far: float, screw_input_mode: str, use_sigma_gradient: bool):
   """Neural Randiance Field.
 
   Args:
@@ -738,25 +878,25 @@ def construct_nerf(key, batch_size: int, embeddings_dict: Dict[str, int],
     state: flax.Module.state. Nerf model state for stateful parameters.
   """
   model = NerfModel(
-      embeddings_dict=immutabledict.immutabledict(embeddings_dict),
-      near=near,
-      far=far)
+    embeddings_dict=immutabledict.immutabledict(embeddings_dict),
+    near=near,
+    far=far)
 
   init_rays_dict = {
-      'origins': jnp.ones((batch_size, 3), jnp.float32),
-      'directions': jnp.ones((batch_size, 3), jnp.float32),
-      'metadata': {
-          'warp': jnp.ones((batch_size, 1), jnp.uint32),
-          'camera': jnp.ones((batch_size, 1), jnp.uint32),
-          'appearance': jnp.ones((batch_size, 1), jnp.uint32),
-          'time': jnp.ones((batch_size, 1), jnp.float32),
-      }
+    'origins': jnp.ones((batch_size, 3), jnp.float32),
+    'directions': jnp.ones((batch_size, 3), jnp.float32),
+    'metadata': {
+      'warp': jnp.ones((batch_size, 1), jnp.uint32),
+      'camera': jnp.ones((batch_size, 1), jnp.uint32),
+      'appearance': jnp.ones((batch_size, 1), jnp.uint32),
+      'time': jnp.ones((batch_size, 1), jnp.float32),
+    }
   }
   extra_params = {
-      'nerf_alpha': 0.0,
-      'warp_alpha': 0.0,
-      'hyper_alpha': 0.0,
-      'hyper_sheet_alpha': 0.0,
+    'nerf_alpha': 0.0,
+    'warp_alpha': 0.0,
+    'hyper_alpha': 0.0,
+    'hyper_sheet_alpha': 0.0,
   }
 
   screw_input_mode = screw_input_mode
@@ -770,6 +910,8 @@ def construct_nerf(key, batch_size: int, embeddings_dict: Dict[str, int],
     },
     init_rays_dict,
     extra_params=extra_params,
-    screw_input_mode=screw_input_mode)['params']
+    screw_input_mode=screw_input_mode,
+    use_sigma_gradient=use_sigma_gradient
+  )['params']
 
   return model, params

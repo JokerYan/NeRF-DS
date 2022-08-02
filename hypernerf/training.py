@@ -172,7 +172,9 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_background_loss',
                                     'use_warp_reg_loss',
                                     'use_hyper_reg_loss',
-                                    'screw_input_mode'))
+                                    'screw_input_mode',
+                                    'use_sigma_gradient'
+                                    ))
 def train_step(model: models.NerfModel,
                rng_key: Callable[[int], jnp.ndarray],
                state: model_utils.TrainState,
@@ -188,6 +190,7 @@ def train_step(model: models.NerfModel,
                use_warp_reg_loss: bool = False,
                use_hyper_reg_loss: bool = False,
                screw_input_mode: str = None,
+               use_sigma_gradient: bool = False,
                ):
   """One optimization step.
 
@@ -311,7 +314,8 @@ def train_step(model: models.NerfModel,
                           'fine': fine_key,
                           'coarse': coarse_key
                       },
-                      screw_input_mode=screw_input_mode
+                      screw_input_mode=screw_input_mode,
+                      use_sigma_gradient=use_sigma_gradient
                       )
 
     losses = {}

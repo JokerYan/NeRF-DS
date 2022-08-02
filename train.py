@@ -207,7 +207,8 @@ def main(argv):
       embeddings_dict=datasource.embeddings_dict,
       near=datasource.near,
       far=datasource.far,
-      screw_input_mode=spec_config.screw_input_mode
+      screw_input_mode=spec_config.screw_input_mode,
+      use_sigma_gradient=spec_config.use_sigma_gradient
   )
 
   # Create Jax iterator.
@@ -287,6 +288,7 @@ def main(argv):
       use_warp_reg_loss=train_config.use_warp_reg_loss,
       use_hyper_reg_loss=train_config.use_hyper_reg_loss,
       screw_input_mode=spec_config.screw_input_mode,
+      use_sigma_gradient=spec_config.use_sigma_gradient
   )
   ptrain_step = jax.pmap(
       train_step,

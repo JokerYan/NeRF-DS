@@ -126,3 +126,4 @@ EvalConfig.num_val_eval = None
 
 # Specular configs
 SpecularConfig.screw_input_mode = None
+SpecularConfig.use_sigma_gradient = False

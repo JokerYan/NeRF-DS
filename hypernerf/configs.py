@@ -48,6 +48,9 @@ class SpecularConfig:
   # whether screw axis is used in rgb rendering ["None", "rotation", "full"]
   screw_input_mode: str = None
 
+  # whether the sigma gradient is used as surface norm
+  use_sigma_gradient: bool = False
+
 
 @gin.configurable()
 @dataclasses.dataclass
