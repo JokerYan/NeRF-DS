@@ -459,7 +459,8 @@ class NerfModel(nn.Module):
                          bottleneck,
                          rgb_condition,
                          screw_axis,
-                         screw_input_mode=None  # None, rotation, full
+                         screw_input_mode=None,  # None, rotation, full
+                         sigma_gradient=None
                          ):
 
     if screw_input_mode is None or screw_input_mode == "none" or screw_input_mode == "None":
@@ -471,7 +472,7 @@ class NerfModel(nn.Module):
     else:
       raise NotImplementedError
 
-    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition)
+    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition, sigma_gradient)
     return rgb
 
   def post_process_query(self, level, rgb, sigma, num_samples):
@@ -715,7 +716,11 @@ class NerfModel(nn.Module):
     bottleneck = aux_output['bottleneck']
 
     # rgb
-    rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode)
+    if use_sigma_gradient:
+      sigma_gradient_input = sigma_gradient
+    else:
+      sigma_gradient_input = None
+    rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode, sigma_gradient_input)
     rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
 
     # Filter densities based on rendering options.

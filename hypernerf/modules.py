@@ -257,7 +257,7 @@ class NerfMLP(nn.Module):
     alpha = self.alpha_mlp(alpha_input)
     return alpha
 
-  def query_rgb(self, x, bottleneck, rgb_condition, screw_condition=None):
+  def query_rgb(self, x, bottleneck, rgb_condition, screw_condition=None, sigma_gradient=None):
     feature_dim = x.shape[-1]
     if len(x.shape) > 1:
       num_samples = x.shape[1]
@@ -274,8 +274,10 @@ class NerfMLP(nn.Module):
     if screw_condition is not None:
       screw_condition = jnp.reshape(screw_condition, [-1, screw_condition.shape[-1]])
       rgb_input = jnp.concatenate([rgb_input, screw_condition], axis=-1)
-    else:
-      rgb_input = rgb_input
+
+    if sigma_gradient is not None:
+      sigma_gradient = jnp.reshape(sigma_gradient, [-1, sigma_gradient.shape[-1]])
+      rgb_input = jnp.concatenate([rgb_input, sigma_gradient], axis=-1)
 
     rgb = self.rgb_mlp(rgb_input)
     return rgb
