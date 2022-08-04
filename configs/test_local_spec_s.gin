@@ -2,7 +2,8 @@ include 'configs/defaults.gin'
 
 image_scale = 4
 batch_size = 512
-eval_batch_size = 8192
+# eval_batch_size = 8192
+eval_batch_size = 4096
 
 elastic_init_weight = 0.01
 max_steps = 250000
@@ -81,3 +82,5 @@ EvalConfig.num_val_eval = 5
 # Specular configs
 SpecularConfig.screw_input_mode = None
 SpecularConfig.use_sigma_gradient = True
+SpecularConfig.use_sigma_grad_diff_reg = True
+SpecularConfig.sigma_grad_diff_reg_weight = 0.001

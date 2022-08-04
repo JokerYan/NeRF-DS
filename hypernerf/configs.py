@@ -51,6 +51,10 @@ class SpecularConfig:
   # whether the sigma gradient is used as surface norm
   use_sigma_gradient: bool = False
 
+  # whether the sigma gradient diff from canonical and rotated observational is used for regularization
+  use_sigma_grad_diff_reg: bool = False
+  sigma_grad_diff_reg_weight: float = 0
+
 
 @gin.configurable()
 @dataclasses.dataclass

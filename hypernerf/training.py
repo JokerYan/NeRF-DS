@@ -173,7 +173,9 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_warp_reg_loss',
                                     'use_hyper_reg_loss',
                                     'screw_input_mode',
-                                    'use_sigma_gradient'
+                                    'use_sigma_gradient',
+                                    'use_sigma_grad_diff_reg',
+                                    'sigma_grad_diff_reg_weight',
                                     ))
 def train_step(model: models.NerfModel,
                rng_key: Callable[[int], jnp.ndarray],
@@ -191,6 +193,8 @@ def train_step(model: models.NerfModel,
                use_hyper_reg_loss: bool = False,
                screw_input_mode: str = None,
                use_sigma_gradient: bool = False,
+               use_sigma_grad_diff_reg: bool = False,
+               sigma_grad_diff_reg_weight: float = 0,
                ):
   """One optimization step.
 
@@ -289,6 +293,11 @@ def train_step(model: models.NerfModel,
       stats['residual/hyper_reg'] = jnp.mean(jnp.sqrt(hyper_reg_residual))
       loss += scalar_params.hyper_reg_loss_weight * hyper_reg_loss
 
+    if use_sigma_grad_diff_reg:
+      sigma_grad_diff = jnp.mean(model_out['sigma_grad_diff'])
+      stats['loss/sigma_grad_diff'] = sigma_grad_diff
+      loss += sigma_grad_diff_reg_weight * sigma_grad_diff
+
     if 'warp_jacobian' in model_out:
       jacobian = model_out['warp_jacobian']
       jacobian_det = jnp.linalg.det(jacobian)
@@ -299,8 +308,12 @@ def train_step(model: models.NerfModel,
       stats['metric/jacobian_curl'] = jnp.mean(
           jnp.linalg.norm(jacobian_curl, axis=-1))
 
+    if 'sigma_grad_diff' in model_out:
+      stats['stats/sigma_grad_diff'] = jnp.mean(model_out['sigma_grad_diff'])
+
     stats['loss/total'] = loss
     stats['metric/psnr'] = utils.compute_psnr(rgb_loss)
+
     return loss, stats
 
   def _loss_fn(params):

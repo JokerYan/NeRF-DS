@@ -81,3 +81,5 @@ EvalConfig.num_val_eval = 5
 # Specular configs
 SpecularConfig.screw_input_mode = "rotation"
 SpecularConfig.use_sigma_gradient = False
+SpecularConfig.use_sigma_grad_diff_reg = False
+SpecularConfig.sigma_grad_diff_reg_weight = 0

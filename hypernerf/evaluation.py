@@ -121,6 +121,7 @@ def render_image(
     else:
       ret_key = default_ret_key
     ret_map = jax_utils.unreplicate(model_out[ret_key])
+    # assert ret_map.keys() == 0, ret_map.keys()
     ret_map = jax.tree_map(lambda x: utils.unshard(x, padding), ret_map)
     ret_maps.append(ret_map)
   ret_map = jax.tree_multimap(lambda *x: jnp.concatenate(x, axis=0), *ret_maps)

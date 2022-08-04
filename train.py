@@ -288,7 +288,9 @@ def main(argv):
       use_warp_reg_loss=train_config.use_warp_reg_loss,
       use_hyper_reg_loss=train_config.use_hyper_reg_loss,
       screw_input_mode=spec_config.screw_input_mode,
-      use_sigma_gradient=spec_config.use_sigma_gradient
+      use_sigma_gradient=spec_config.use_sigma_gradient,
+      use_sigma_grad_diff_reg=spec_config.use_sigma_grad_diff_reg,
+      sigma_grad_diff_reg_weight=spec_config.sigma_grad_diff_reg_weight
   )
   ptrain_step = jax.pmap(
       train_step,

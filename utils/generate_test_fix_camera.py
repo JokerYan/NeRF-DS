@@ -2,7 +2,7 @@ import os
 import shutil
 from glob import glob
 
-camera_idx = 93
+camera_idx = 322
 
 if os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
     data_root = '/hdd/zhiwen/data/hypernerf/raw/'
