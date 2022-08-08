@@ -74,7 +74,7 @@ def exp_so3(w: jnp.ndarray, theta: float) -> jnp.ndarray:
           + jnp.sin(theta) * W + (1.0 - jnp.cos(theta)) * matmul(W, W))
 
 
-def exp_se3(S: jnp.ndarray, theta: float) -> jnp.ndarray:
+def exp_se3(S: jnp.ndarray, theta: float, rotation_only: bool = False, inverse: bool = False) -> jnp.ndarray:
   """Exponential map from Lie algebra so3 to Lie group SO3.
 
   Modern Robotics Eqn 3.88.
@@ -82,6 +82,7 @@ def exp_se3(S: jnp.ndarray, theta: float) -> jnp.ndarray:
   Args:
     S: (6,) A screw axis of motion.
     theta: Magnitude of motion.
+    inverse: Whether get inverse transformation [R^t | -R^t @ v]
 
   Returns:
     a_X_b: (4, 4) The homogeneous transformation matrix attained by integrating
@@ -92,6 +93,11 @@ def exp_se3(S: jnp.ndarray, theta: float) -> jnp.ndarray:
   R = exp_so3(w, theta)
   p = matmul((theta * jnp.eye(3) + (1.0 - jnp.cos(theta)) * W +
               (theta - jnp.sin(theta)) * matmul(W, W)), v)
+  if rotation_only:
+    p = p * 0
+  if inverse:
+    p = - R.transpose() @ p
+    R = R.transpose()
   return rp_to_se3(R, p)
 
 

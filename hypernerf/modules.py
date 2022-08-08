@@ -141,7 +141,7 @@ class NerfMLP(nn.Module):
     # Broadcast condition from [batch, feature] to
     # [batch, num_coarse_samples, feature] since all the samples along the
     # same ray has the same viewdir.
-    if len(c.shape) == 3:
+    if len(c.shape) >= 2 and num_samples > 1:
       c = jnp.tile(c[:, None, :], (1, num_samples, 1))
 
     # Collapse the [batch, num_coarse_samples, feature] tensor to
@@ -199,14 +199,16 @@ class NerfMLP(nn.Module):
       bottleneck = dense(self.trunk_width, name='bottleneck')(x)
 
     if alpha_condition is not None:
-      alpha_condition = self.broadcast_condition(alpha_condition, num_samples)
+      if alpha_condition.shape[0] != bottleneck.shape[0]:
+        alpha_condition = self.broadcast_condition(alpha_condition, num_samples)
       alpha_input = jnp.concatenate([bottleneck, alpha_condition], axis=-1)
     else:
       alpha_input = x
     alpha = alpha_mlp(alpha_input)
 
     if rgb_condition is not None:
-      rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
+      if rgb_condition.shape[0] != bottleneck.shape[0]:
+        rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
       rgb_input = jnp.concatenate([bottleneck, rgb_condition], axis=-1)
     else:
       rgb_input = x
@@ -250,7 +252,8 @@ class NerfMLP(nn.Module):
     x = x.reshape([-1, feature_dim])
 
     if alpha_condition is not None:
-      alpha_condition = self.broadcast_condition(alpha_condition, num_samples)
+      if alpha_condition.shape[0] != bottleneck.shape[0]:
+        alpha_condition = self.broadcast_condition(alpha_condition, num_samples)
       alpha_input = jnp.concatenate([bottleneck, alpha_condition], axis=-1)
     else:
       alpha_input = x
@@ -266,7 +269,8 @@ class NerfMLP(nn.Module):
     x = x.reshape([-1, feature_dim])
 
     if rgb_condition is not None:
-      rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
+      if rgb_condition.shape[0] != bottleneck.shape[0]:
+        rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
       rgb_input = jnp.concatenate([bottleneck, rgb_condition], axis=-1)
     else:
       rgb_input = x

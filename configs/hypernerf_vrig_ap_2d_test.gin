@@ -73,11 +73,10 @@ TrainConfig.elastic_loss_weight_schedule = {
   'value': %elastic_init_weight,
 }
 
-
 TrainConfig.print_every = 100
 TrainConfig.log_every = 100
 TrainConfig.histogram_every = 1000
-TrainConfig.save_every = 10000
+TrainConfig.save_every = 2000
 
 EvalConfig.num_val_eval = None
 EvalConfig.num_train_eval = None

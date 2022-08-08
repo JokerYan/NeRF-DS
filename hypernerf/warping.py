@@ -194,12 +194,14 @@ class SE3Field(nn.Module):
     # See https://github.com/google/flax/issues/524.
     self.branches = branches
 
+  # if vector is none, transform points, else transform vector
   def warp(self,
            points: jnp.ndarray,
            metadata_embed: jnp.ndarray,
            extra_params: Dict[str, Any],
            return_screw: bool = False,
-           rotation_only: bool = False
+           vector: jnp.ndarray = None,
+           inverse: bool = False
            ):
     points_embed = model_utils.posenc(points,
                                       min_deg=self.min_deg,
@@ -214,12 +216,15 @@ class SE3Field(nn.Module):
     theta = jnp.linalg.norm(w, axis=-1)
     w = w / theta[..., jnp.newaxis]
     v = v / theta[..., jnp.newaxis]
-    if rotation_only:
-      v = v * 0
     screw_axis = jnp.concatenate([w, v], axis=-1)
-    transform = rigid.exp_se3(screw_axis, theta)
 
-    warped_points = points
+    rotation_only = vector is None
+    transform = rigid.exp_se3(screw_axis, theta, rotation_only=rotation_only, inverse=inverse)
+
+    if vector is None:
+      warped_points = points
+    else:
+      warped_points = vector
     warped_points = rigid.from_homogenous(
         utils.matmul(transform, rigid.to_homogenous(warped_points)))
 
@@ -233,7 +238,8 @@ class SE3Field(nn.Module):
                metadata: jnp.ndarray,
                extra_params: Dict[str, Any],
                return_jacobian: bool = False,
-               rotation_only: bool = False
+               vector: jnp.ndarray = None,
+               inverse: bool = False,
                ):
     """Warp the given points using a warp field.
 
@@ -250,7 +256,12 @@ class SE3Field(nn.Module):
         True.
     """
 
-    warped_points, screw_axis = self.warp(points, metadata, extra_params, return_screw=True, rotation_only=rotation_only)
+    warped_points, screw_axis = self.warp(points,
+                                          metadata,
+                                          extra_params,
+                                          return_screw=True,
+                                          vector=vector,
+                                          inverse=inverse)
     out = {
         'warped_points': warped_points,
         "screw_axis": screw_axis
@@ -258,6 +269,6 @@ class SE3Field(nn.Module):
 
     if return_jacobian:
       jac_fn = jax.jacfwd(self.warp, argnums=0)
-      out['jacobian'] = jac_fn(points, metadata, extra_params)
+      out['jacobian'] = jac_fn(points, metadata, extra_params, False, vector, inverse)
 
     return out

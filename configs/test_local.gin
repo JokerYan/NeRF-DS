@@ -77,6 +77,7 @@ EvalConfig.save_output = False
 EvalConfig.num_train_eval = 5
 EvalConfig.num_val_eval = 5
 
+NerfModel.use_rgb_condition = True
 
 # Specular configs
 SpecularConfig.screw_input_mode = None
