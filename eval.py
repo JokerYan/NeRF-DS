@@ -378,7 +378,9 @@ def main(argv):
       embeddings_dict=datasource.embeddings_dict,
       near=datasource.near,
       far=datasource.far,
-      screw_input_mode=spec_config.screw_input_mode
+      screw_input_mode=spec_config.screw_input_mode,
+      use_sigma_gradient=spec_config.use_sigma_gradient,
+      use_predicted_norm=spec_config.use_predicted_norm
   )
 
   optimizer_def = optim.Adam(0.0)

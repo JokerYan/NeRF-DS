@@ -23,18 +23,12 @@ spatial_point_min_deg = 0
 spatial_point_max_deg = 8
 
 # Hyper config.
-hyper_num_dims = 4
+hyper_num_dims = 2
 hyper_point_min_deg = 0
 hyper_point_max_deg = 1
 NerfModel.hyper_point_min_deg = %hyper_point_min_deg
 NerfModel.hyper_point_max_deg = %hyper_point_max_deg
-TrainConfig.hyper_alpha_schedule = {
-  'type': 'piecewise',
-  'schedules': [
-    (1000, ('constant', 0.0)),
-    (0, ('linear', 0.0, %hyper_point_max_deg, 10000))
-  ],
-}
+TrainConfig.hyper_alpha_schedule = %DELAYED_HYPER_ALPHA_SCHED
 
 
 NerfModel.hyper_slice_method = 'bendy_sheet'
@@ -78,9 +72,10 @@ EvalConfig.save_output = False
 EvalConfig.num_train_eval = 5
 EvalConfig.num_val_eval = 5
 
+NerfModel.use_rgb_condition = True
 
 # Specular configs
 SpecularConfig.screw_input_mode = None
 SpecularConfig.use_sigma_gradient = True
-SpecularConfig.use_sigma_grad_diff_reg = True
+SpecularConfig.use_sigma_grad_diff_reg = False
 SpecularConfig.sigma_grad_diff_reg_weight = 0.0001

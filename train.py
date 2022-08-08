@@ -67,7 +67,10 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
   _log_scalar('params/learning_rate', scalar_params.learning_rate)
   _log_scalar('params/nerf_alpha', state.nerf_alpha)
   _log_scalar('params/warp_alpha', state.warp_alpha)
+  _log_scalar('params/hyper_alpha', state.hyper_alpha)
   _log_scalar('params/hyper_sheet_alpha', state.hyper_sheet_alpha)
+  _log_scalar('params/norm_loss_weight', state.norm_loss_weight)
+  _log_scalar('params/norm_input_alpha', state.norm_input_alpha)
   _log_scalar('params/elastic_loss/weight', scalar_params.elastic_loss_weight)
 
   # pmean is applied in train_step so just take the item.
@@ -201,14 +204,15 @@ def main(argv):
   logging.info('Initializing models.')
   rng, key = random.split(rng)
   params = {}
-  model, params['model'] = models.construct_nerf(   # Zhiwen: model param referenced here
+  model, params['model'] = models.construct_nerf(
       key,
       batch_size=train_config.batch_size,
       embeddings_dict=datasource.embeddings_dict,
       near=datasource.near,
       far=datasource.far,
       screw_input_mode=spec_config.screw_input_mode,
-      use_sigma_gradient=spec_config.use_sigma_gradient
+      use_sigma_gradient=spec_config.use_sigma_gradient,
+      use_predicted_norm=spec_config.use_predicted_norm
   )
 
   # Create Jax iterator.
@@ -245,6 +249,8 @@ def main(argv):
       train_config.hyper_sheet_alpha_schedule)
   elastic_loss_weight_sched = schedules.from_config(
       train_config.elastic_loss_weight_schedule)
+  norm_loss_weight_sched = schedules.from_config(spec_config.norm_loss_weight_schedule)
+  norm_input_alpha_sched = schedules.from_config(spec_config.norm_input_alpha_schedule)
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
   if train_config.use_weight_norm:
@@ -255,7 +261,10 @@ def main(argv):
       nerf_alpha=nerf_alpha_sched(0),
       warp_alpha=warp_alpha_sched(0),
       hyper_alpha=hyper_alpha_sched(0),
-      hyper_sheet_alpha=hyper_sheet_alpha_sched(0))
+      hyper_sheet_alpha=hyper_sheet_alpha_sched(0),
+      norm_loss_weight=norm_loss_weight_sched(0),
+      norm_input_alpha=norm_input_alpha_sched(0)
+  )
   scalar_params = training.ScalarParams(
       learning_rate=learning_rate_sched(0),
       elastic_loss_weight=elastic_loss_weight_sched(0),
@@ -263,7 +272,10 @@ def main(argv):
       warp_reg_loss_alpha=train_config.warp_reg_loss_alpha,
       warp_reg_loss_scale=train_config.warp_reg_loss_scale,
       background_loss_weight=train_config.background_loss_weight,
-      hyper_reg_loss_weight=train_config.hyper_reg_loss_weight)
+      hyper_reg_loss_weight=train_config.hyper_reg_loss_weight,
+      sigma_grad_diff_reg_weight=spec_config.sigma_grad_diff_reg_weight,
+      back_facing_reg_weight=spec_config.back_facing_reg_weight
+  )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
   state = jax_utils.replicate(state, devices=devices)
@@ -290,7 +302,8 @@ def main(argv):
       screw_input_mode=spec_config.screw_input_mode,
       use_sigma_gradient=spec_config.use_sigma_gradient,
       use_sigma_grad_diff_reg=spec_config.use_sigma_grad_diff_reg,
-      sigma_grad_diff_reg_weight=spec_config.sigma_grad_diff_reg_weight
+      use_predicted_norm=spec_config.use_predicted_norm,
+      use_back_facing_reg=spec_config.use_back_facing_reg
   )
   ptrain_step = jax.pmap(
       train_step,
@@ -329,10 +342,15 @@ def main(argv):
     hyper_alpha = jax_utils.replicate(hyper_alpha_sched(step), devices)
     hyper_sheet_alpha = jax_utils.replicate(
         hyper_sheet_alpha_sched(step), devices)
+    norm_loss_weight = jax_utils.replicate(norm_loss_weight_sched(step), devices)
+    norm_input_alpha = jax_utils.replicate(norm_input_alpha_sched(step), devices)
     state = state.replace(nerf_alpha=nerf_alpha,
                           warp_alpha=warp_alpha,
                           hyper_alpha=hyper_alpha,
-                          hyper_sheet_alpha=hyper_sheet_alpha)
+                          hyper_sheet_alpha=hyper_sheet_alpha,
+                          norm_loss_weight=norm_loss_weight,
+                          norm_input_alpha=norm_input_alpha
+                          )
 
     with time_tracker.record_time('train_step'):
       state, stats, keys, model_out = ptrain_step(

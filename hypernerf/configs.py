@@ -55,6 +55,21 @@ class SpecularConfig:
   use_sigma_grad_diff_reg: bool = False
   sigma_grad_diff_reg_weight: float = 0
 
+  # whether to use the predicted surface norm as rgb condition
+  use_predicted_norm: bool = False
+  norm_loss_weight_schedule: ScheduleDef = immutabledict.immutabledict({
+      'type': 'constant',
+      'value': 0.001,
+  })
+
+  norm_input_alpha_schedule: ScheduleDef = immutabledict.immutabledict({
+      'type': 'constant',
+      'value': 4
+  })
+
+  use_back_facing_reg: bool = False
+  back_facing_reg_weight: float = 0
+
 
 @gin.configurable()
 @dataclasses.dataclass

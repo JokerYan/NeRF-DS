@@ -218,7 +218,7 @@ class SE3Field(nn.Module):
     v = v / theta[..., jnp.newaxis]
     screw_axis = jnp.concatenate([w, v], axis=-1)
 
-    rotation_only = vector is None
+    rotation_only = vector is not None
     transform = rigid.exp_se3(screw_axis, theta, rotation_only=rotation_only, inverse=inverse)
 
     if vector is None:

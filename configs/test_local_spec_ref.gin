@@ -2,7 +2,8 @@ include 'configs/defaults.gin'
 
 image_scale = 4
 batch_size = 512
-eval_batch_size = 8192
+# eval_batch_size = 8192
+eval_batch_size = 4096
 
 elastic_init_weight = 0.01
 max_steps = 250000
@@ -74,7 +75,33 @@ EvalConfig.num_val_eval = 5
 NerfModel.use_rgb_condition = True
 
 # Specular configs
-SpecularConfig.screw_input_mode = "rotation"
+SpecularConfig.screw_input_mode = None
 SpecularConfig.use_sigma_gradient = False
 SpecularConfig.use_sigma_grad_diff_reg = False
 SpecularConfig.sigma_grad_diff_reg_weight = 0
+
+SpecularConfig.use_predicted_norm = True
+# SpecularConfig.norm_loss_weight_schedule = {
+#   'type': 'constant',
+#   'value': 0.001,
+# }
+SpecularConfig.norm_loss_weight_schedule = {
+  'type': 'piecewise',
+  'schedules': [
+    (10000, ('constant', 0.0)),
+    (0, ('linear', 0.0, 0.01, 2000))
+  ],
+}
+
+SpecularConfig.use_back_facing_reg = True
+SpecularConfig.back_facing_reg_weight = 0.1
+
+NerfModel.predict_norm = True
+
+SpecularConfig.norm_input_alpha_schedule = {
+  'type': 'piecewise',
+  'schedules': [
+    (10000, ('constant', 0.0)),
+    (0, ('linear', 0, 4, 2000))
+  ],
+}

@@ -31,6 +31,8 @@ class TrainState:
   warp_alpha: Optional[jnp.ndarray] = None
   hyper_alpha: Optional[jnp.ndarray] = None
   hyper_sheet_alpha: Optional[jnp.ndarray] = None
+  norm_loss_weight: Optional[jnp.ndarray] = None
+  norm_input_alpha: Optional[jnp.ndarray] = None
 
   @property
   def extra_params(self):
@@ -39,6 +41,8 @@ class TrainState:
         'warp_alpha': self.warp_alpha,
         'hyper_alpha': self.hyper_alpha,
         'hyper_sheet_alpha': self.hyper_sheet_alpha,
+        'norm_loss_weight': self.norm_loss_weight,
+        'norm_input_alpha': self.norm_input_alpha
     }
 
 
@@ -84,7 +88,6 @@ def sample_along_rays(key, origins, directions, num_coarse_samples, near, far,
 
 def volumetric_rendering(rgb,
                          sigma,
-                         sigma_gradient,
                          z_vals,
                          dirs,
                          use_white_background,
@@ -133,16 +136,12 @@ def volumetric_rendering(rgb,
   if sample_at_infinity:
     acc = weights[..., :-1].sum(axis=-1)
 
-  # accumulate sigma gradient for each ray
-  ray_sigma_gradient = (weights[..., None] * sigma_gradient).sum(axis=-2)
-
   out = {
       'rgb': rgb,
       'depth': exp_depth,
       'med_depth': med_depth,
       'acc': acc,
       'weights': weights,
-      'ray_sigma_gradient': ray_sigma_gradient,
   }
   return out
 

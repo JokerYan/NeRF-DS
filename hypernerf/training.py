@@ -43,6 +43,8 @@ class ScalarParams:
   background_loss_weight: float = 0.0
   background_noise_std: float = 0.001
   hyper_reg_loss_weight: float = 0.0
+  sigma_grad_diff_reg_weight: float = 0.0
+  back_facing_reg_weight: float = 0.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -176,6 +178,8 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_sigma_gradient',
                                     'use_sigma_grad_diff_reg',
                                     'sigma_grad_diff_reg_weight',
+                                    'use_predicted_norm',
+                                    'use_back_facing_reg'
                                     ))
 def train_step(model: models.NerfModel,
                rng_key: Callable[[int], jnp.ndarray],
@@ -194,7 +198,8 @@ def train_step(model: models.NerfModel,
                screw_input_mode: str = None,
                use_sigma_gradient: bool = False,
                use_sigma_grad_diff_reg: bool = False,
-               sigma_grad_diff_reg_weight: float = 0,
+               use_predicted_norm: bool = False,
+               use_back_facing_reg: bool = False,
                ):
   """One optimization step.
 
@@ -296,7 +301,26 @@ def train_step(model: models.NerfModel,
     if use_sigma_grad_diff_reg:
       sigma_grad_diff = jnp.mean(model_out['sigma_grad_diff'])
       stats['loss/sigma_grad_diff'] = sigma_grad_diff
-      loss += sigma_grad_diff_reg_weight * sigma_grad_diff
+      loss += scalar_params.sigma_grad_diff_reg_weight * sigma_grad_diff
+
+    if use_predicted_norm:
+      weights = lax.stop_gradient(model_out['weights'])
+      predicted_norm = model_out['predicted_norm']
+      warped_norm = lax.stop_gradient(model_out['warped_norm'])
+      # norm_diff = 1 - jnp.einsum('ijk,ijk->ij', predicted_norm, warped_norm)
+      norm_diff = jnp.linalg.norm(predicted_norm - warped_norm, axis=-1)
+      norm_diff_loss = jnp.mean(weights * norm_diff)
+      # norm_diff_loss = jnp.mean(model_out['norm_diff'])
+      stats['loss/norm_diff_loss'] = norm_diff_loss
+      loss += state.norm_loss_weight * norm_diff_loss
+
+    if use_back_facing_reg:
+      weights = lax.stop_gradient(model_out['weights'])
+      back_facing = model_out['back_facing']
+      back_facing = weights * back_facing
+      back_facing_loss = jnp.mean(back_facing)
+      stats['loss/back_facing_loss'] = back_facing_loss
+      loss += scalar_params.back_facing_reg_weight * back_facing_loss
 
     if 'warp_jacobian' in model_out:
       jacobian = model_out['warp_jacobian']
@@ -328,7 +352,8 @@ def train_step(model: models.NerfModel,
                           'coarse': coarse_key
                       },
                       screw_input_mode=screw_input_mode,
-                      use_sigma_gradient=use_sigma_gradient
+                      use_sigma_gradient=use_sigma_gradient,
+                      use_predicted_norm=use_predicted_norm
                       )
 
     losses = {}

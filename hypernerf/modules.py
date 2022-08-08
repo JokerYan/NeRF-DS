@@ -111,6 +111,8 @@ class NerfMLP(nn.Module):
   norm: Optional[Any] = None
   skips: Tuple[int] = (4,)
 
+  predict_norm: bool = False
+
   def setup(self):
     dense = functools.partial(
       nn.Dense, kernel_init=jax.nn.initializers.glorot_uniform())
@@ -135,7 +137,7 @@ class NerfMLP(nn.Module):
                          hidden_norm=self.norm,
                          hidden_init=jax.nn.initializers.glorot_uniform(),
                          output_init=jax.nn.initializers.glorot_uniform(),
-                         output_channels=self.alpha_channels)
+                         output_channels=self.alpha_channels + (3 if self.predict_norm else 0))
 
   def broadcast_condition(self, c, num_samples):
     # Broadcast condition from [batch, feature] to
@@ -258,9 +260,13 @@ class NerfMLP(nn.Module):
     else:
       alpha_input = x
     alpha = self.alpha_mlp(alpha_input)
-    return alpha
+    if self.predict_norm:
+      alpha, norm = alpha[..., :self.alpha_channels], alpha[..., self.alpha_channels:]
+    else:
+      norm = None
+    return alpha, norm
 
-  def query_rgb(self, x, bottleneck, rgb_condition, screw_condition=None, sigma_gradient=None):
+  def query_rgb(self, x, bottleneck, rgb_condition, screw_condition=None, norm=None):
     feature_dim = x.shape[-1]
     if len(x.shape) > 1:
       num_samples = x.shape[1]
@@ -279,9 +285,9 @@ class NerfMLP(nn.Module):
       screw_condition = jnp.reshape(screw_condition, [-1, screw_condition.shape[-1]])
       rgb_input = jnp.concatenate([rgb_input, screw_condition], axis=-1)
 
-    if sigma_gradient is not None:
-      sigma_gradient = jnp.reshape(sigma_gradient, [-1, sigma_gradient.shape[-1]])
-      rgb_input = jnp.concatenate([rgb_input, sigma_gradient], axis=-1)
+    if norm is not None:
+      norm = jnp.reshape(norm, [-1, norm.shape[-1]])
+      rgb_input = jnp.concatenate([rgb_input, norm], axis=-1)
 
     rgb = self.rgb_mlp(rgb_input)
     return rgb
