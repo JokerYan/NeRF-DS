@@ -243,7 +243,7 @@ class NerfMLP(nn.Module):
       bottleneck = self.bottleneck_layer(x)
     else:
       bottleneck = x
-    return bottleneck
+    return x, bottleneck
 
   def query_sigma(self, x, bottleneck, alpha_condition):
     feature_dim = x.shape[-1]

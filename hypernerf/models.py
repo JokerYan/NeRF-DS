@@ -397,7 +397,7 @@ class NerfModel(nn.Module):
       raise NotImplementedError
 
     # raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_condition)
-    bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
+    points_feat, bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
     sigma, norm = self.nerf_mlps[level].query_sigma(points_feat, bottleneck, alpha_condition)
     rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition)
     raw = {
@@ -451,8 +451,8 @@ class NerfModel(nn.Module):
                                 alpha_condition,
                                 rgb_condition
                                 ):
-    bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
-    return bottleneck
+    points_feat, bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
+    return points_feat, bottleneck
 
   def query_template_sigma(self,
                            level,
@@ -727,7 +727,7 @@ class NerfModel(nn.Module):
       points_feat, alpha_condition, rgb_condition, num_samples = self.pre_process_query(warped_points, viewdirs,
                                                                                         metadata,
                                                                                         extra_params, metadata_encoded)
-      bottleneck = self.query_template_bottleneck(level, points_feat, alpha_condition, rgb_condition)
+      points_feat, bottleneck = self.query_template_bottleneck(level, points_feat, alpha_condition, rgb_condition)
       sigma, norm = self.query_template_sigma(level, points_feat, bottleneck, alpha_condition)
       # norm = norm / jnp.linalg.norm(norm, ord=2)
       aux_output = {
