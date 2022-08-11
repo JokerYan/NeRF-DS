@@ -870,7 +870,10 @@ class NerfModel(nn.Module):
     weights = out['weights']
     # ray_sigma_gradient = (weights[..., None] * sigma_gradient_w).sum(axis=-2)
     # ray_sigma_gradient = (weights[..., None] * sigma_gradient).sum(axis=-2)
-    ray_sigma_gradient = (weights[..., None] * norm).sum(axis=-2)
+    if norm is not None:
+      ray_sigma_gradient = (weights[..., None] * norm).sum(axis=-2)
+    else:
+      ray_sigma_gradient = jnp.zeros_like((weights[..., None] * sigma_gradient).sum(axis=-2))
     out['ray_sigma_gradient'] = ray_sigma_gradient
     # ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_w).sum(axis=-2)
     ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_r).sum(axis=-2)
