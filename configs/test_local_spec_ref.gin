@@ -28,10 +28,12 @@ hyper_point_min_deg = 0
 hyper_point_max_deg = 1
 NerfModel.hyper_point_min_deg = %hyper_point_min_deg
 NerfModel.hyper_point_max_deg = %hyper_point_max_deg
-TrainConfig.hyper_alpha_schedule = %DELAYED_HYPER_ALPHA_SCHED
+# TrainConfig.hyper_alpha_schedule = %DELAYED_HYPER_ALPHA_SCHED
+TrainConfig.hyper_alpha_schedule = %CONSTANT_HYPER_ALPHA_SCHED
 
 
 NerfModel.hyper_slice_method = 'bendy_sheet'
+# NerfModel.hyper_slice_method = 'axis_aligned_plane'
 NerfModel.hyper_sheet_mlp_cls = @HyperSheetMLP
 NerfModel.hyper_use_warp_embed = True
 
@@ -72,7 +74,7 @@ EvalConfig.save_output = False
 EvalConfig.num_train_eval = 5
 EvalConfig.num_val_eval = 5
 
-NerfModel.use_rgb_condition = True
+NerfModel.use_rgb_condition = False
 
 # Specular configs
 SpecularConfig.screw_input_mode = None
@@ -81,27 +83,16 @@ SpecularConfig.use_sigma_grad_diff_reg = False
 SpecularConfig.sigma_grad_diff_reg_weight = 0
 
 SpecularConfig.use_predicted_norm = True
-# SpecularConfig.norm_loss_weight_schedule = {
-#   'type': 'constant',
-#   'value': 0.001,
-# }
-SpecularConfig.norm_loss_weight_schedule = {
-  'type': 'piecewise',
-  'schedules': [
-    (10000, ('constant', 0.0)),
-    (0, ('linear', 0.0, 0.01, 2000))
-  ],
-}
+SpecularConfig.norm_loss_weight_schedule = %CONSTANT_NORM_LOSS_WEIGHT_SCHED
+# SpecularConfig.norm_loss_weight_schedule = %DELAYED_NORM_LOSS_WEIGHT_SCHED
 
 SpecularConfig.use_back_facing_reg = True
 SpecularConfig.back_facing_reg_weight = 0.1
 
 NerfModel.predict_norm = True
+NerfModel.norm_supervision_type = 'direct'
 
-SpecularConfig.norm_input_alpha_schedule = {
-  'type': 'piecewise',
-  'schedules': [
-    (10000, ('constant', 0.0)),
-    (0, ('linear', 0, 4, 2000))
-  ],
-}
+SpecularConfig.norm_input_alpha_schedule = %CONSTANT_NORM_INPUT_ALPHA_SCHED
+# SpecularConfig.norm_input_alpha_schedule = %DELAYED_NORM_INPUT_ALPHA_SCHED
+
+# warp/GLOEmbed.num_dims = 2

@@ -306,9 +306,9 @@ def train_step(model: models.NerfModel,
     if use_predicted_norm:
       weights = lax.stop_gradient(model_out['weights'])
       predicted_norm = model_out['predicted_norm']
-      warped_norm = lax.stop_gradient(model_out['warped_norm'])
-      # norm_diff = 1 - jnp.einsum('ijk,ijk->ij', predicted_norm, warped_norm)
-      norm_diff = jnp.linalg.norm(predicted_norm - warped_norm, axis=-1)
+      target_norm = model_out['target_norm']
+      # norm_diff = 1 - jnp.einsum('ijk,ijk->ij', predicted_norm, target_norm)
+      norm_diff = jnp.linalg.norm(predicted_norm - target_norm, axis=-1, ord=2)
       norm_diff_loss = jnp.mean(weights * norm_diff)
       # norm_diff_loss = jnp.mean(model_out['norm_diff'])
       stats['loss/norm_diff_loss'] = norm_diff_loss

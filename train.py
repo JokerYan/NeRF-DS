@@ -78,6 +78,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
     if branch not in stats:
       continue
     for stat_key, stat_value in stats[branch].items():
+      assert not jnp.isnan(stat_value)
       writer.scalar(f'{stat_key}/{branch}', stat_value, step)
 
   _log_scalar('loss/background', stats.get('background_loss'))
@@ -132,6 +133,7 @@ def _log_grads(writer: tensorboard.SummaryWriter, model: models.NerfModel,
 
 
 def main(argv):
+  # jax.config.update("jax_debug_nans", True)
   jax.config.parse_flags_with_absl()
   tf.config.experimental.set_visible_devices([], 'GPU')
   del argv
@@ -314,6 +316,13 @@ def main(argv):
       # Treat use_elastic_loss as compile-time static.
       donate_argnums=(2,),  # Donate the 'batch' argument.
   )
+  # ptrain_step = jax.vmap(
+  #     train_step,
+  #     axis_name='batch',
+  #     # rng_key, state, batch, scalar_params.
+  #     in_axes=(0, 0, 0, None),
+  #     # Treat use_elastic_loss as compile-time static.
+  # )
 
   if devices:
     n_local_devices = len(devices)
@@ -371,7 +380,7 @@ def main(argv):
         logging.info('\tfine metrics: %s', fine_metrics_str)
 
     if step % train_config.save_every == 0 and jax.process_index() == 0:
-      training.save_checkpoint(checkpoint_dir, state, keep=2)
+      training.save_checkpoint(checkpoint_dir, state, keep=5)
 
     if step % train_config.log_every == 0 and jax.process_index() == 0:
       # Only log via process 0.
@@ -389,7 +398,7 @@ def main(argv):
     time_tracker.tic('data', 'total')
 
   if train_config.max_steps % train_config.save_every != 0:
-    training.save_checkpoint(checkpoint_dir, state, keep=2)
+    training.save_checkpoint(checkpoint_dir, state, keep=5)
 
 
 if __name__ == '__main__':

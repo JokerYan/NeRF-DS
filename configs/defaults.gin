@@ -65,6 +65,31 @@ FAST_HYPER_ALPHA_SCHED = {
 }
 CONSTANT_HYPER_ALPHA_SCHED = ('constant', %hyper_point_max_deg)
 
+CONSTANT_NORM_LOSS_WEIGHT_SCHED = {
+  'type': 'constant',
+  'value': 0.001,
+}
+DELAYED_NORM_LOSS_WEIGHT_SCHED = {
+  'type': 'piecewise',
+  'schedules': [
+    (10000, ('constant', 0.0)),
+    (0, ('linear', 0.0, 0.01, 2000))
+  ],
+}
+
+CONSTANT_NORM_INPUT_ALPHA_SCHED = {
+  'type': 'constant',
+  'value': 4,
+}
+DELAYED_NORM_INPUT_ALPHA_SCHED = {
+  'type': 'piecewise',
+  'schedules': [
+    (10000, ('constant', 0.0)),
+    (0, ('linear', 0.0, 4, 2000))
+  ],
+}
+
+
 
 # Experiment configs.
 ExperimentConfig.image_scale = %image_scale

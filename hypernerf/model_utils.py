@@ -390,3 +390,10 @@ def posenc_window(min_deg, max_deg, alpha):
   bands = jnp.arange(min_deg, max_deg)
   x = jnp.clip(alpha - bands, 0.0, 1.0)
   return 0.5 * (1 + jnp.cos(jnp.pi * x + jnp.pi))
+
+def normalize_vector(vector):
+  eps = jnp.finfo(jnp.float32).eps
+  # eps = 1e-5
+  # eps = jnp.ones_like(vector[..., None, 0]) * eps
+  return vector / jnp.sqrt(jnp.maximum(jnp.sum(vector**2, axis=-1, keepdims=True), eps))
+

@@ -21,6 +21,7 @@ from flax import linen as nn
 import gin
 import immutabledict
 import jax
+from jax import lax
 from jax import random
 import jax.numpy as jnp
 
@@ -166,6 +167,7 @@ class NerfModel(nn.Module):
 
   # Spec config
   predict_norm: bool = False
+  norm_supervision_type: str = 'warped'   # warped, canonical direct
   norm_input_min_deg: int = 0
   norm_input_max_deg: int = 4
 
@@ -693,28 +695,28 @@ class NerfModel(nn.Module):
     # rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
     #
 
-    # # Map input points to warped spatial and hyper points.
-    # warped_points, warp_jacobian, screw_axis = self.map_points(
-    #   points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
-    #   return_warp_jacobian=return_warp_jacobian,
-    #   # Override hyper points if present in metadata dict.
-    #   hyper_point_override=metadata.get('hyper_point'))
-    # def cal_single_pt_sigma_from_warped(warped_points, viewdirs):
-    #   points_feat, alpha_condition, rgb_condition, num_samples = self.pre_process_query(warped_points, viewdirs, metadata,
-    #                                                                                     extra_params, metadata_encoded)
-    #   bottleneck = self.query_template_bottleneck(level, points_feat, alpha_condition, rgb_condition)
-    #   sigma = self.query_template_sigma(level, points_feat, bottleneck, alpha_condition)
-    #   sigma = jnp.squeeze(sigma)
-    #   return sigma
-    #
-    # def cal_sigma_gradient_from_warped(warped_points, viewdirs):
-    #   gradient = jax.grad(cal_single_pt_sigma_from_warped, argnums=0, has_aux=False)(warped_points, viewdirs)
-    #   gradient = gradient[:3]   # ignore the hyper points gradient
-    #   return - gradient
-    #
-    # sigma_gradient_w_fn = jax.vmap(jax.vmap(cal_sigma_gradient_from_warped, in_axes=(0, None)), in_axes=(0, 0))
-    # sigma_gradient_w = sigma_gradient_w_fn(warped_points, viewdirs)
-    # sigma_gradient_w = sigma_gradient_w / jnp.expand_dims(jnp.linalg.norm(sigma_gradient_w, axis=2, ord=2), axis=2)
+    # Map input points to warped spatial and hyper points.
+    warped_points, warp_jacobian, screw_axis = self.map_points(
+      points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
+      return_warp_jacobian=return_warp_jacobian,
+      # Override hyper points if present in metadata dict.
+      hyper_point_override=metadata.get('hyper_point'))
+    def cal_single_pt_sigma_from_warped(warped_points, viewdirs):
+      points_feat, alpha_condition, rgb_condition, num_samples = self.pre_process_query(warped_points, viewdirs, metadata,
+                                                                                        extra_params, metadata_encoded)
+      points_feat, bottleneck = self.query_template_bottleneck(level, points_feat, alpha_condition, rgb_condition)
+      sigma, norm = self.query_template_sigma(level, points_feat, bottleneck, alpha_condition)
+      sigma = jnp.squeeze(sigma)
+      return sigma
+
+    def cal_sigma_gradient_from_warped(warped_points, viewdirs):
+      gradient = jax.grad(cal_single_pt_sigma_from_warped, argnums=0, has_aux=False)(warped_points, viewdirs)
+      gradient = gradient[:3]   # ignore the hyper points gradient
+      return - gradient
+
+    sigma_gradient_w_fn = jax.vmap(jax.vmap(cal_sigma_gradient_from_warped, in_axes=(0, None)), in_axes=(0, 0))
+    sigma_gradient_w = sigma_gradient_w_fn(warped_points, viewdirs)
+    sigma_gradient_w = model_utils.normalize_vector(sigma_gradient_w)
 
     def cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs):
       # Map input points to warped spatial and hyper points.
@@ -729,7 +731,6 @@ class NerfModel(nn.Module):
                                                                                         extra_params, metadata_encoded)
       points_feat, bottleneck = self.query_template_bottleneck(level, points_feat, alpha_condition, rgb_condition)
       sigma, norm = self.query_template_sigma(level, points_feat, bottleneck, alpha_condition)
-      # norm = norm / jnp.linalg.norm(norm, ord=2)
       aux_output = {
         'norm': norm,
         'warped_points': warped_points,
@@ -745,9 +746,9 @@ class NerfModel(nn.Module):
 
     def cal_sigma_gradient(points, warp_embed, hyper_embed, viewdirs):
       # gradient = jax.jacfwd(single_pt_sigma)(points, warp_embed, hyper_embed, viewdirs)
-      gradient, _ = jax.jacrev(cal_single_pt_sigma, argnums=0, has_aux=True)(points, warp_embed, hyper_embed, viewdirs)
-      value = cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs)
-      # value, gradient = jax.value_and_grad(cal_single_pt_sigma, argnums=0, has_aux=True)(points, warp_embed, hyper_embed, viewdirs)
+      # gradient, _ = jax.jacrev(cal_single_pt_sigma, argnums=0, has_aux=True)(points, warp_embed, hyper_embed, viewdirs)
+      # value = cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs)
+      value, gradient = jax.value_and_grad(cal_single_pt_sigma, argnums=0, has_aux=True)(points, warp_embed, hyper_embed, viewdirs)
       return value, - gradient
 
     sigma_gradient_fn = jax.vmap(jax.vmap(cal_sigma_gradient, in_axes=(0, 0, 0, None)), in_axes=(0, 0, 0, 0))
@@ -755,9 +756,7 @@ class NerfModel(nn.Module):
     sigma_gradient = jnp.squeeze(sigma_gradient)
 
     # normalize
-    gradient_norm = jnp.linalg.norm(sigma_gradient, axis=2, ord=2)
-    gradient_norm = jnp.expand_dims(gradient_norm, axis=2)
-    sigma_gradient = sigma_gradient / gradient_norm
+    sigma_gradient = model_utils.normalize_vector(sigma_gradient)
     # out['sigma_gradient'] = sigma_gradient
     # out['sigma_gradient'] = sigma_gradient_w
 
@@ -780,36 +779,44 @@ class NerfModel(nn.Module):
     # rgb
     if norm is not None:
       norm = jnp.reshape(norm, (-1, num_samples, norm.shape[-1]))
+
     if use_sigma_gradient:
       assert not use_predicted_norm
-      norm_input = sigma_gradient
+      norm_input = lax.stop_gradient(sigma_gradient)
     elif use_predicted_norm:
       assert not use_sigma_gradient
       # transform from canonical space to observation space
-      inverse_norm, _, _ = self.map_vectors(points, norm, warp_embed, extra_params, inverse=True)
-      inverse_norm = inverse_norm / jnp.expand_dims(jnp.linalg.norm(inverse_norm, axis=2, ord=2), axis=2)
-      norm_input = inverse_norm
+      normalized_norm = model_utils.normalize_vector(norm)
+      if self.norm_supervision_type == 'warped' or self.norm_supervision_type == 'canonical':
+        inverse_norm, _, _ = self.map_vectors(points, normalized_norm, warp_embed, extra_params, inverse=True)
+        norm_input = inverse_norm
+      elif self.norm_supervision_type == 'direct':
+        norm_input = norm
+      else:
+        raise NotImplementedError
+      norm_input = lax.stop_gradient(norm_input)
     else:
       norm_input = None
 
     if norm_input is not None:
+      norm_input = model_utils.normalize_vector(norm_input)
       norm_input = model_utils.posenc(
-      norm_input,
-      min_deg=self.norm_input_min_deg,
-      max_deg=self.norm_input_max_deg,
-      use_identity=self.use_posenc_identity,
-      alpha=extra_params['norm_input_alpha'])
+        norm_input,
+        min_deg=self.norm_input_min_deg,
+        max_deg=self.norm_input_max_deg,
+        use_identity=self.use_posenc_identity,
+        alpha=extra_params['norm_input_alpha'])
 
     rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode, norm_input)
     rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
 
     # transform norm from observation to canonical
     sigma_gradient_r, _, _ = self.map_vectors(points, sigma_gradient, warp_embed, extra_params)
-    sigma_gradient_r = sigma_gradient_r / jnp.expand_dims(jnp.linalg.norm(sigma_gradient_r, axis=2, ord=2), axis=2)
+    sigma_gradient_r = model_utils.normalize_vector(sigma_gradient_r)
 
     # # inversely transform norm from canonical(warped) to observation
     # sigma_gradient_i_r, _, _ = self.map_vectors(points, sigma_gradient_w, warp_embed, extra_params, inverse=True)
-    # sigma_gradient_i_r = sigma_gradient_i_r / jnp.expand_dims(jnp.linalg.norm(sigma_gradient_i_r, axis=2, ord=2), axis=2)
+    # sigma_gradient_i_r = model_utils.normalize_vector(sigma_gradient_i_r)
 
     # sigma_grad_diff = 1 - jnp.einsum('ijk,ijk->ij', sigma_gradient_w, sigma_gradient_r)
     # sigma_grad_diff = sigma * sigma_grad_diff   # weighted by sigma
@@ -820,10 +827,10 @@ class NerfModel(nn.Module):
 
     # visualize R
     dummy_points = jnp.ones_like(points)
-    dummy_points = dummy_points / jnp.expand_dims(jnp.linalg.norm(dummy_points, axis=2, ord=2), axis=2)
+    dummy_points = model_utils.normalize_vector(dummy_points)
     warped_dummy_points, _, _ = self.map_vectors(points, dummy_points, warp_embed, extra_params)
     warped_dummy_points = warped_dummy_points[..., :3]
-    warped_dummy_points = warped_dummy_points / jnp.expand_dims(jnp.linalg.norm(warped_dummy_points, axis=2, ord=2), axis=2)
+    warped_dummy_points = model_utils.normalize_vector(warped_dummy_points)
 
     warped_points = jnp.reshape(warped_points, (-1, num_samples, warped_points.shape[-1]))
     if warp_jacobian is not None:
@@ -841,9 +848,17 @@ class NerfModel(nn.Module):
     # calculate surface norm consistency
     if self.predict_norm:
       norm = jnp.reshape(norm, (-1, num_samples, norm.shape[-1]))
-      sigma_gradient_r = jnp.reshape(sigma_gradient_r, (-1, num_samples, norm.shape[-1]))
       out['predicted_norm'] = norm
-      out['warped_norm'] = sigma_gradient_r
+      if self.norm_supervision_type == 'warped':
+        target_norm = sigma_gradient_r
+      elif self.norm_supervision_type == 'canonical':
+        target_norm = sigma_gradient_w
+      elif self.norm_supervision_type == 'direct':
+        target_norm = sigma_gradient
+      else:
+        raise NotImplementedError
+      target_norm = jnp.reshape(target_norm, (-1, num_samples, norm.shape[-1]))
+      out['target_norm'] = target_norm
 
       # calculate back facing vectors
       pt_viewdirs = jnp.tile(jnp.expand_dims(viewdirs, 1), (1, num_samples, 1))
@@ -853,12 +868,16 @@ class NerfModel(nn.Module):
 
     # accumulate sigma gradient for each ray
     weights = out['weights']
-    ray_sigma_gradient = (weights[..., None] * sigma_gradient).sum(axis=-2)
-    # ray_sigma_gradient = (weights[..., None] * norm).sum(axis=-2)
+    # ray_sigma_gradient = (weights[..., None] * sigma_gradient_w).sum(axis=-2)
+    # ray_sigma_gradient = (weights[..., None] * sigma_gradient).sum(axis=-2)
+    ray_sigma_gradient = (weights[..., None] * norm).sum(axis=-2)
     out['ray_sigma_gradient'] = ray_sigma_gradient
+    # ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_w).sum(axis=-2)
     ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_r).sum(axis=-2)
     # ray_sigma_gradient_r = (weights[..., None] * warped_dummy_points).sum(axis=-2)
     out['ray_sigma_gradient_r'] = ray_sigma_gradient_r
+    ray_rotation_field = (weights[..., None] * warped_dummy_points).sum(axis=-2)
+    out['ray_rotation_field'] = ray_rotation_field
 
     # Add a map containing the returned points at the median depth.
     depth_indices = model_utils.compute_depth_index(out['weights'])

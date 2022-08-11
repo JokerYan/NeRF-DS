@@ -77,5 +77,5 @@ NerfModel.use_rgb_condition = True
 # Specular configs
 SpecularConfig.screw_input_mode = None
 SpecularConfig.use_sigma_gradient = True
-SpecularConfig.use_sigma_grad_diff_reg = False
-SpecularConfig.sigma_grad_diff_reg_weight = 0.0001
+SpecularConfig.use_sigma_grad_diff_reg = True
+SpecularConfig.sigma_grad_diff_reg_weight = 1e-4
