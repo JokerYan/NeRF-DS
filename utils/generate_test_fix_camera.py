@@ -2,7 +2,7 @@ import os
 import shutil
 from glob import glob
 
-camera_idx = 322
+camera_idx = 93
 
 if os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
     data_root = '/hdd/zhiwen/data/hypernerf/raw/'
@@ -10,16 +10,30 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
     data_root = '/home/zwyan/3d_cv/data/hypernerf/raw/'
 else:
     raise NotImplemented
-data_dir = os.path.join(data_root, 'americano/')
+# dataset = 'americano'
+dataset = 'vrig-chicken'
+data_dir = os.path.join(data_root, dataset)
 
 train_camera_folder = os.path.join(data_dir, "camera")
 test_camera_folder = os.path.join(data_dir, "fix_camera_{}".format(camera_idx))
 
 train_camera_name_list = []
-for file_path in glob(train_camera_folder + "/*"):
+for file_path in glob(os.path.join(train_camera_folder, "*")):
   filename = file_path.split('/')[-1]
   train_camera_name_list.append(filename)
 train_camera_name_list = sorted(train_camera_name_list)
+
+if train_camera_name_list[0].startswith('left') or train_camera_name_list[0].startswith('right'):
+  left_camera_name_list = []
+  right_camera_name_list = []
+  for filename in train_camera_name_list:
+    if filename.startswith('left'):
+      left_camera_name_list.append(filename)
+    elif filename.startswith('right'):
+      right_camera_name_list.append(filename)
+    else:
+      raise Exception
+  train_camera_name_list = left_camera_name_list
 
 reference_camera_path = os.path.join(train_camera_folder, train_camera_name_list[camera_idx])
 os.makedirs(test_camera_folder, exist_ok=True)

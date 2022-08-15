@@ -399,7 +399,11 @@ def main(argv):
                           'coarse': key_0,
                           'fine': key_1
                       },
-                      mutable=False)
+                      mutable=False,
+                      screw_input_mode=spec_config.screw_input_mode,
+                      use_sigma_gradient=spec_config.use_sigma_gradient,
+                      use_predicted_norm=spec_config.use_predicted_norm,
+                      )
     return jax.lax.all_gather(out, axis_name='batch')
 
   pmodel_fn = jax.pmap(

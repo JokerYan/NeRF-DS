@@ -882,6 +882,11 @@ class NerfModel(nn.Module):
     ray_rotation_field = (weights[..., None] * warped_dummy_points).sum(axis=-2)
     out['ray_rotation_field'] = ray_rotation_field
 
+    # accumulate hyper coordinates for each ray
+    hyper_points = warped_points[..., 3:]
+    ray_hyper_points = (weights[..., None] * hyper_points).sum(axis=-2)
+    out['ray_hyper_points'] = ray_hyper_points
+
     # Add a map containing the returned points at the median depth.
     depth_indices = model_utils.compute_depth_index(out['weights'])
     med_points = jnp.take_along_axis(

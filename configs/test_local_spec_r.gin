@@ -27,7 +27,8 @@ hyper_point_min_deg = 0
 hyper_point_max_deg = 1
 NerfModel.hyper_point_min_deg = %hyper_point_min_deg
 NerfModel.hyper_point_max_deg = %hyper_point_max_deg
-TrainConfig.hyper_alpha_schedule = %DELAYED_HYPER_ALPHA_SCHED
+# TrainConfig.hyper_alpha_schedule = %DELAYED_HYPER_ALPHA_SCHED
+TrainConfig.hyper_alpha_schedule = %CONSTANT_HYPER_ALPHA_SCHED
 
 
 NerfModel.hyper_slice_method = 'bendy_sheet'

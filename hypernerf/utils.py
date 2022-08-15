@@ -264,6 +264,16 @@ def general_loss_with_squared_residual(x_sq, alpha, scale):
                               loss_ow))))
 
 
+@jax.jit
+def gm_loss(x, scale):
+  eps = jnp.finfo(jnp.float32).eps
+  square = jnp.square(x / scale)
+  nominator = 2 * square
+  denominator = jnp.maximum(square + 4, eps)
+  loss = nominator / denominator
+  return loss
+
+
 def points_bound(points):
   """Computes the min and max dims of the points."""
   min_dim = np.min(points, axis=0)

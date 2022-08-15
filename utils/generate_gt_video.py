@@ -10,11 +10,19 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
     data_root = '/home/zwyan/3d_cv/data/hypernerf/raw/'
 else:
     raise NotImplemented
-data_dir = os.path.join(data_root, 'vrig-chicken')
+
+# dataset = 'vrig-chicken'
+dataset = 'aleks-teapot'
+data_dir = os.path.join(data_root, dataset)
 
 rgb_folder = os.path.join(data_dir, "rgb/1x")
+if not os.path.isdir(rgb_folder):
+  rgb_folder = os.path.join(data_dir, "rgb/2x")
 
-filename_regex = "left*"
+if dataset.startswith('vrig'):
+  filename_regex = "left*"
+else:
+  filename_regex = "*"
 
 image_paths = []
 for file_path in glob(os.path.join(rgb_folder, filename_regex)):

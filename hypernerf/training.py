@@ -45,6 +45,8 @@ class ScalarParams:
   hyper_reg_loss_weight: float = 0.0
   sigma_grad_diff_reg_weight: float = 0.0
   back_facing_reg_weight: float = 0.0
+  hyper_concentration_reg_weight: float = 0.0
+  hyper_concentration_reg_scale: float = 0.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -179,7 +181,8 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_sigma_grad_diff_reg',
                                     'sigma_grad_diff_reg_weight',
                                     'use_predicted_norm',
-                                    'use_back_facing_reg'
+                                    'use_back_facing_reg',
+                                    'use_hyper_concentration_reg'
                                     ))
 def train_step(model: models.NerfModel,
                rng_key: Callable[[int], jnp.ndarray],
@@ -200,6 +203,7 @@ def train_step(model: models.NerfModel,
                use_sigma_grad_diff_reg: bool = False,
                use_predicted_norm: bool = False,
                use_back_facing_reg: bool = False,
+               use_hyper_concentration_reg: bool = False
                ):
   """One optimization step.
 
@@ -321,6 +325,28 @@ def train_step(model: models.NerfModel,
       back_facing_loss = jnp.mean(back_facing)
       stats['loss/back_facing_loss'] = back_facing_loss
       loss += scalar_params.back_facing_reg_weight * back_facing_loss
+
+    if use_hyper_concentration_reg:
+      weights = lax.stop_gradient(model_out['weights'])
+      hyper_points = model_out['warped_points'][..., 3:]
+      # hyper_concentration_reg_loss = utils.general_loss_with_squared_residual(
+      #   hyper_points, alpha=-2, scale=scalar_params.hyper_concentration_reg_scale
+      # )
+      hyper_concentration_reg_loss = utils.gm_loss(
+        hyper_points, scale=scalar_params.hyper_concentration_reg_scale
+      )
+      # assert weights.shape == 0, (weights.shape, hyper_concentration_reg_loss.shape)
+      hyper_concentration_reg_loss = hyper_concentration_reg_loss.sum(axis=-1)                    # sum over the w coordinates
+      hyper_concentration_reg_loss = (weights * hyper_concentration_reg_loss).sum(axis=1).mean()  # sum over the same ray, mean over different rays
+      stats['loss/hyper_concentration_reg_loss'] = hyper_concentration_reg_loss
+      loss += scalar_params.hyper_concentration_reg_weight * hyper_concentration_reg_loss
+
+      hyper_coord_scale = jnp.abs(hyper_points)
+      hyper_coord_scale = jnp.mean(hyper_coord_scale)
+      stats['stats/hyper_coord_scale'] = hyper_coord_scale
+
+      hyper_coord_top = jnp.percentile(jnp.abs(hyper_points).reshape(-1), 90)
+      stats['stats/hyper_coord_top'] = hyper_coord_top
 
     if 'warp_jacobian' in model_out:
       jacobian = model_out['warp_jacobian']
