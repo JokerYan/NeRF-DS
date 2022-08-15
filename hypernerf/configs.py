@@ -70,12 +70,15 @@ class SpecularConfig:
   use_back_facing_reg: bool = False
   back_facing_reg_weight: float = 0
 
-  # w distribution loss
+  # w concentration loss
   use_hyper_concentration_reg_loss: bool = False
   hyper_concentration_reg_weight: float = 0
   hyper_concentration_reg_scale: float = 0  # scale c in Geman-McClure loss
 
-
+  # hyper jacobian loss
+  use_hyper_jacobian_reg_loss: bool = False
+  hyper_jacobian_reg_weight: float = 0
+  hyper_jacobian_reg_scale: float = 0  # scale c in Geman-McClure loss
 
 @gin.configurable()
 @dataclasses.dataclass

@@ -62,5 +62,20 @@ for frame_list in exp_frame_list:
     gt_image = cv2.resize(gt_image, (width, height))
     concat_image = np.concatenate([gt_image, render_image], axis=1)
     concat_image_list.append(concat_image)
+  exp_concat_image_list.append(concat_image_list)
+
 
 # concat image between experiments and show
+for i in range(len(exp_concat_image_list[0])):
+  full_image = None
+  for exp_id in range(len(exp_concat_image_list)):
+    exp_image = exp_concat_image_list[exp_id][i]
+    if full_image is None:
+      full_image = exp_image
+    else:
+      full_image = np.concatenate([full_image, exp_image], axis=0)
+  cv2.imshow('full', full_image)
+  if cv2.waitKey(0) & 0xFF == ord('q'):
+    break
+
+cv2.destroyAllWindows()

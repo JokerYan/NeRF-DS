@@ -580,7 +580,7 @@ class NerfModel(nn.Module):
     return hyper_points
 
   def map_points(self, points, warp_embed, hyper_embed, extra_params,
-                 use_warp=True, return_warp_jacobian=False,
+                 use_warp=True, return_warp_jacobian=False, return_hyper_jacobian=False,
                  hyper_point_override=None):
     """Map input points to warped spatial and hyper points.
 
@@ -601,17 +601,29 @@ class NerfModel(nn.Module):
     spatial_points, warp_jacobian, screw_axis = self.map_spatial_points(
       points, warp_embed, extra_params, use_warp=use_warp,
       return_warp_jacobian=return_warp_jacobian)
-    hyper_points = self.map_hyper_points(
-      points, hyper_embed, extra_params,
-      # Override hyper points if present in metadata dict.
-      hyper_point_override=hyper_point_override)
+    if return_hyper_jacobian:
+      hyper_points = self.map_hyper_points(
+        points, hyper_embed, extra_params,
+        # Override hyper points if present in metadata dict.
+        hyper_point_override=hyper_point_override)
+      # jacobian wrt the hyper embedding
+      hyper_jacobian = jax.jacrev(self.map_hyper_points, argnums=1)(
+        points, hyper_embed, extra_params, hyper_point_override
+      )
+      # hyper_jacobian = None
+    else:
+      hyper_points = self.map_hyper_points(
+        points, hyper_embed, extra_params,
+        # Override hyper points if present in metadata dict.
+        hyper_point_override=hyper_point_override)
+      hyper_jacobian = None
 
     if hyper_points is not None:
       warped_points = jnp.concatenate([spatial_points, hyper_points], axis=-1)
     else:
       warped_points = spatial_points
 
-    return warped_points, warp_jacobian, screw_axis
+    return warped_points, warp_jacobian, hyper_jacobian, screw_axis
 
   def apply_warp(self, points, warp_embed, extra_params):
     warp_embed = self.warp_embed(warp_embed)
@@ -628,6 +640,7 @@ class NerfModel(nn.Module):
                      use_warp=True,
                      metadata_encoded=False,
                      return_warp_jacobian=False,
+                     return_hyper_jacobian=False,
                      use_sample_at_infinity=False,
                      render_opts=None,
                      screw_input_mode=None,
@@ -696,9 +709,9 @@ class NerfModel(nn.Module):
     #
 
     # Map input points to warped spatial and hyper points.
-    warped_points, warp_jacobian, screw_axis = self.map_points(
+    warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
       points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
-      return_warp_jacobian=return_warp_jacobian,
+      return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=False,
       # Override hyper points if present in metadata dict.
       hyper_point_override=metadata.get('hyper_point'))
     def cal_single_pt_sigma_from_warped(warped_points, viewdirs):
@@ -720,9 +733,9 @@ class NerfModel(nn.Module):
 
     def cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs):
       # Map input points to warped spatial and hyper points.
-      warped_points, warp_jacobian, screw_axis = self.map_points(
+      warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
         points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
-        return_warp_jacobian=return_warp_jacobian,
+        return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
         # Override hyper points if present in metadata dict.
         hyper_point_override=metadata.get('hyper_point'))
 
@@ -735,6 +748,7 @@ class NerfModel(nn.Module):
         'norm': norm,
         'warped_points': warped_points,
         'warp_jacobian': warp_jacobian,
+        'hyper_jacobian': hyper_jacobian,
         'screw_axis': screw_axis,
         'points_feat': points_feat,
         'alpha_condition': alpha_condition,
@@ -764,12 +778,15 @@ class NerfModel(nn.Module):
     num_samples = points.shape[1]
     for key in aux_output.keys():
       if aux_output[key] is not None and len(aux_output[key].shape) > 2:
+        if key == 'hyper_jacobian':
+          continue
         aux_output[key] = jnp.reshape(aux_output[key], (-1, aux_output[key].shape[-1]))
 
     # unpack aux_output
     norm = aux_output['norm']
     warped_points = aux_output['warped_points']
     warp_jacobian = aux_output['warp_jacobian']
+    hyper_jacobian = aux_output['hyper_jacobian']
     screw_axis = aux_output['screw_axis']
     points_feat = aux_output['points_feat']
     alpha_condition = aux_output['alpha_condition']
@@ -887,6 +904,10 @@ class NerfModel(nn.Module):
     ray_hyper_points = (weights[..., None] * hyper_points).sum(axis=-2)
     out['ray_hyper_points'] = ray_hyper_points
 
+    # hyper jacobian for regularization
+    if hyper_jacobian is not None:
+      out['hyper_jacobian'] = hyper_jacobian
+
     # Add a map containing the returned points at the median depth.
     depth_indices = model_utils.compute_depth_index(out['weights'])
     med_points = jnp.take_along_axis(
@@ -905,6 +926,7 @@ class NerfModel(nn.Module):
           return_points=False,
           return_weights=False,
           return_warp_jacobian=False,
+          return_hyper_jacobian=False,
           near=None,
           far=None,
           use_sample_at_infinity=None,
@@ -971,6 +993,7 @@ class NerfModel(nn.Module):
       use_warp=use_warp,
       metadata_encoded=metadata_encoded,
       return_warp_jacobian=return_warp_jacobian,
+      return_hyper_jacobian=return_hyper_jacobian,
       use_sample_at_infinity=self.use_sample_at_infinity,
       screw_input_mode=screw_input_mode,
       use_sigma_gradient=use_sigma_gradient,
@@ -996,6 +1019,7 @@ class NerfModel(nn.Module):
         use_warp=use_warp,
         metadata_encoded=metadata_encoded,
         return_warp_jacobian=return_warp_jacobian,
+        return_hyper_jacobian=return_hyper_jacobian,
         use_sample_at_infinity=use_sample_at_infinity,
         render_opts=render_opts,
         screw_input_mode=screw_input_mode,
