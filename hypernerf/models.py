@@ -170,6 +170,11 @@ class NerfModel(nn.Module):
   norm_supervision_type: str = 'warped'   # warped, canonical direct
   norm_input_min_deg: int = 0
   norm_input_max_deg: int = 4
+  use_viewdirs_in_hyper: bool = False
+  use_x_in_rgb_condition: bool = False
+
+  use_hyper_c: bool = False
+  hyper_c_mlp_cls: Callable[..., nn.Module] = modules.HyperSheetMLP
 
   @property
   def num_nerf_embeds(self):
@@ -284,6 +289,9 @@ class NerfModel(nn.Module):
         self.hyper_embed = self.hyper_embed_cls(
           num_embeddings=self.num_hyper_embeds)
       self.hyper_sheet_mlp = self.hyper_sheet_mlp_cls()
+
+    if self.use_hyper_c:
+      self.hyper_c_mlp = self.hyper_c_mlp_cls()
 
     if self.use_warp:
       self.warp_field = self.warp_field_cls()
@@ -401,7 +409,8 @@ class NerfModel(nn.Module):
     # raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_condition)
     points_feat, bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
     sigma, norm = self.nerf_mlps[level].query_sigma(points_feat, bottleneck, alpha_condition)
-    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition)
+    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition,
+                                          self.use_x_in_rgb_condition)
     raw = {
       'rgb': rgb.reshape((-1, num_samples, self.rgb_channels)),
       'alpha': sigma.reshape((-1, num_samples, self.alpha_channels)),
@@ -472,7 +481,8 @@ class NerfModel(nn.Module):
                          rgb_condition,
                          screw_axis,
                          screw_input_mode=None,  # None, rotation, full
-                         norm=None
+                         norm=None,
+                         extra_rgb_condition=None
                          ):
 
     if screw_input_mode is None or screw_input_mode == "none" or screw_input_mode == "None":
@@ -484,7 +494,8 @@ class NerfModel(nn.Module):
     else:
       raise NotImplementedError
 
-    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition, norm)
+    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition, norm,
+                                          extra_rgb_condition)
     return rgb
 
   def post_process_query(self, level, rgb, sigma, num_samples):
@@ -579,7 +590,7 @@ class NerfModel(nn.Module):
 
     return hyper_points
 
-  def map_points(self, points, warp_embed, hyper_embed, extra_params,
+  def map_points(self, points, warp_embed, hyper_embed, viewdirs, extra_params,
                  use_warp=True, return_warp_jacobian=False, return_hyper_jacobian=False,
                  hyper_point_override=None):
     """Map input points to warped spatial and hyper points.
@@ -601,6 +612,11 @@ class NerfModel(nn.Module):
     spatial_points, warp_jacobian, screw_axis = self.map_spatial_points(
       points, warp_embed, extra_params, use_warp=use_warp,
       return_warp_jacobian=return_warp_jacobian)
+    if self.use_viewdirs_in_hyper:
+      if len(hyper_embed.shape) == 3:
+        num_samples = hyper_embed.shape[1]
+        viewdirs = jnp.tile(jnp.expand_dims(viewdirs, 1), [1, num_samples, 1])
+      hyper_embed = jnp.concatenate([hyper_embed, viewdirs], axis=-1)
     if return_hyper_jacobian:
       hyper_points = self.map_hyper_points(
         points, hyper_embed, extra_params,
@@ -710,7 +726,7 @@ class NerfModel(nn.Module):
 
     # Map input points to warped spatial and hyper points.
     warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
-      points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
+      points, warp_embed, hyper_embed, viewdirs, extra_params, use_warp=use_warp,
       return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=False,
       # Override hyper points if present in metadata dict.
       hyper_point_override=metadata.get('hyper_point'))
@@ -734,7 +750,7 @@ class NerfModel(nn.Module):
     def cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs):
       # Map input points to warped spatial and hyper points.
       warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
-        points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
+        points, warp_embed, hyper_embed, viewdirs, extra_params, use_warp=use_warp,
         return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
         # Override hyper points if present in metadata dict.
         hyper_point_override=metadata.get('hyper_point'))
@@ -824,7 +840,29 @@ class NerfModel(nn.Module):
         use_identity=self.use_posenc_identity,
         alpha=extra_params['norm_input_alpha'])
 
-    rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode, norm_input)
+    if self.use_hyper_c:
+      viewdirs_expanded = jnp.tile(jnp.expand_dims(viewdirs, axis=1), [1, num_samples, 1])
+      hyper_c_input = jnp.concatenate([points, viewdirs_expanded], axis=-1)
+      if norm_input is not None:
+        hyper_c_input = jnp.concatenate([hyper_c_input, norm_input], axis=-1)
+      hyper_c = self.hyper_c_mlp(
+        hyper_c_input, hyper_embed, alpha=None
+      )
+      hyper_c = jnp.reshape(hyper_c, [-1, hyper_c.shape[-1]])
+      extra_rgb_condition = hyper_c
+
+      # remove all other rgb conditions except for hyper_c
+      rgb_condition = None
+      screw_input_mode = None
+      norm_input = None
+    elif self.use_x_in_rgb_condition:
+      extra_rgb_condition = jnp.concatenate([points, hyper_embed], axis=-1)
+      extra_rgb_condition = jnp.reshape(extra_rgb_condition, [-1, extra_rgb_condition.shape[-1]])
+    else:
+      extra_rgb_condition = None
+
+    rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode,
+                                  norm_input, extra_rgb_condition)
     rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
 
     # transform norm from observation to canonical

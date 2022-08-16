@@ -12,10 +12,12 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 # dataset = 'americano'
-dataset = 'vrig-chicken'
+# dataset = 'vrig-chicken'
+dataset = 'single-vrig-chicken'
 data_dir = os.path.join(data_root, dataset)
 
 experiment_name_list = ['chicken_spec_exp01_base', 'chicken_spec_exp03']
+# experiment_name_list = ['s_chicken_spec_exp01_base']
 video_path_list = []
 for experiment_name in experiment_name_list:
   experiment_dir = os.path.join(experiment_root, experiment_name)

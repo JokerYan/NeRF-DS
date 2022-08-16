@@ -266,7 +266,7 @@ class NerfMLP(nn.Module):
       norm = None
     return alpha, norm
 
-  def query_rgb(self, x, bottleneck, rgb_condition, screw_condition=None, norm=None):
+  def query_rgb(self, x, bottleneck, rgb_condition, screw_condition=None, norm=None, extra_rgb_condition=None):
     feature_dim = x.shape[-1]
     if len(x.shape) > 1:
       num_samples = x.shape[1]
@@ -277,7 +277,10 @@ class NerfMLP(nn.Module):
     if rgb_condition is not None:
       if rgb_condition.shape[0] != bottleneck.shape[0]:
         rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
-      rgb_input = jnp.concatenate([bottleneck, rgb_condition], axis=-1)
+      if extra_rgb_condition is not None:
+        rgb_input = jnp.concatenate([bottleneck, rgb_condition, extra_rgb_condition], axis=-1)
+      else:
+        rgb_input = jnp.concatenate([bottleneck, rgb_condition], axis=-1)
     else:
       rgb_input = x
 
