@@ -274,15 +274,15 @@ class NerfMLP(nn.Module):
       num_samples = 1
     x = x.reshape([-1, feature_dim])
 
+    rgb_input = x
+    if rgb_condition is not None or extra_rgb_condition is not None:
+      rgb_condition = bottleneck
     if rgb_condition is not None:
       if rgb_condition.shape[0] != bottleneck.shape[0]:
         rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
-      if extra_rgb_condition is not None:
-        rgb_input = jnp.concatenate([bottleneck, rgb_condition, extra_rgb_condition], axis=-1)
-      else:
-        rgb_input = jnp.concatenate([bottleneck, rgb_condition], axis=-1)
-    else:
-      rgb_input = x
+        rgb_input = jnp.concatenate([rgb_condition, rgb_condition], axis=-1)
+    if extra_rgb_condition is not None:
+      rgb_input = jnp.concatenate([rgb_condition, extra_rgb_condition], axis=-1)
 
     if screw_condition is not None:
       screw_condition = jnp.reshape(screw_condition, [-1, screw_condition.shape[-1]])

@@ -97,7 +97,7 @@ SpecularConfig.norm_input_alpha_schedule = %CONSTANT_NORM_INPUT_ALPHA_SCHED
 
 # warp/GLOEmbed.num_dims = 2
 
-SpecularConfig.use_hyper_concentration_reg_loss = True
+SpecularConfig.use_hyper_concentration_reg_loss = False
 SpecularConfig.hyper_concentration_reg_weight = 0.0001
 SpecularConfig.hyper_concentration_reg_scale = 0.1
 
