@@ -629,10 +629,13 @@ class NerfModel(nn.Module):
         # Override hyper points if present in metadata dict.
         hyper_point_override=hyper_point_override)
       # jacobian wrt the hyper embedding
-      hyper_jacobian_x, hyper_jacobian_t = jax.jacrev(self.map_hyper_points, argnums=(0, 1))(
+      hyper_jacobian = jax.jacrev(self.map_hyper_points, argnums=1)(
         points, hyper_embed, extra_params, hyper_point_override
       )
-      hyper_jacobian = jnp.concatenate([hyper_jacobian_x, hyper_jacobian_t], axis=-1)
+      # hyper_jacobian_x, hyper_jacobian_t = jax.jacrev(self.map_hyper_points, argnums=(0, 1))(
+      #   points, hyper_embed, extra_params, hyper_point_override
+      # )
+      # hyper_jacobian = jnp.concatenate([hyper_jacobian_x, hyper_jacobian_t], axis=-1)
     else:
       hyper_points = self.map_hyper_points(
         points, hyper_embed, extra_params,
