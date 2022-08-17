@@ -73,3 +73,6 @@ target/
 # Data
 zip/
 dataset/
+
+# slurm
+log_slurm/
