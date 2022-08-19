@@ -596,6 +596,39 @@ class NerfModel(nn.Module):
 
     return hyper_points
 
+  def map_hyper_c(self, points, hyper_c_embed, viewdirs, norm_input, return_hyper_c_jacobian):
+    """
+      please note that points, viewdirs, norm_input will be going through positional
+      encoding later in the mlp. So no need to posenc them first.
+      hyper_c_embed, however, will not be pos-encoded.
+    """
+    num_samples = points.shape[1]
+    viewdirs_expanded = jnp.tile(jnp.expand_dims(viewdirs, axis=1), [1, num_samples, 1])
+
+    hyper_c_input = jnp.concatenate([points, viewdirs_expanded], axis=-1)
+    if norm_input is not None:
+      hyper_c_input = jnp.concatenate([hyper_c_input, norm_input], axis=-1)
+
+    def query_hyper_c_mlp(hyper_c_input, hyper_c_embed):
+      hyper_c = self.hyper_c_mlp(
+        hyper_c_input, hyper_c_embed, alpha=None
+      )
+      return hyper_c
+
+    def query_hyper_c_and_jacobian(hyper_c_input, hyper_c_embed):
+      hyper_c = query_hyper_c_mlp(hyper_c_input, hyper_c_embed)
+      if return_hyper_c_jacobian:
+        hyper_c_jacobian = jax.jacrev(query_hyper_c_mlp, argnums=1)(hyper_c_input, hyper_c_embed)
+      else:
+        hyper_c_jacobian = None
+      return hyper_c, hyper_c_jacobian
+
+    hyper_c_fn = jax.vmap(jax.vmap(query_hyper_c_and_jacobian, in_axes=(0, 0)), in_axes=(0, 0))
+    # hyper_c_embed = hyper_c_embed * 0
+    hyper_c, hyper_c_jacobian = hyper_c_fn(hyper_c_input, hyper_c_embed)
+
+    return hyper_c, hyper_c_jacobian
+
   def map_points(self, points, warp_embed, hyper_embed, viewdirs, extra_params,
                  use_warp=True, return_warp_jacobian=False, return_hyper_jacobian=False,
                  hyper_point_override=None):
@@ -666,6 +699,7 @@ class NerfModel(nn.Module):
                      metadata_encoded=False,
                      return_warp_jacobian=False,
                      return_hyper_jacobian=False,
+                     return_hyper_c_jacobian=False,
                      use_sample_at_infinity=False,
                      render_opts=None,
                      screw_input_mode=None,
@@ -863,14 +897,8 @@ class NerfModel(nn.Module):
       norm_input_feat = None
 
     if self.use_hyper_c:
-      viewdirs_expanded = jnp.tile(jnp.expand_dims(viewdirs, axis=1), [1, num_samples, 1])
-
-      hyper_c_input = jnp.concatenate([points, viewdirs_expanded], axis=-1)
-      if norm_input is not None:
-        hyper_c_input = jnp.concatenate([hyper_c_input, norm_input], axis=-1)
-      hyper_c = self.hyper_c_mlp(
-        hyper_c_input, hyper_c_embed, alpha=None
-      )
+      hyper_c, hyper_c_jacobian = self.map_hyper_c(points, hyper_c_embed, viewdirs,
+                                                   norm_input, return_hyper_c_jacobian)
 
       hyper_c = jnp.reshape(hyper_c, [-1, hyper_c.shape[-1]])
       hyper_c_feat = model_utils.posenc(
@@ -976,7 +1004,10 @@ class NerfModel(nn.Module):
     if self.use_hyper_c:
       hyper_c = jnp.reshape(hyper_c, hyper_points.shape)
       ray_hyper_c = (weights[..., None] * hyper_c).sum(axis=-2)
+      out['hyper_c'] = hyper_c
       out['ray_hyper_c'] = ray_hyper_c
+      if hyper_c_jacobian is not None:
+        out['hyper_c_jacobian'] = hyper_c_jacobian
     else:
       out['ray_hyper_c'] = jnp.zeros_like(ray_hyper_points)
 
@@ -1003,6 +1034,7 @@ class NerfModel(nn.Module):
           return_weights=False,
           return_warp_jacobian=False,
           return_hyper_jacobian=False,
+          return_hyper_c_jacobian=False,
           near=None,
           far=None,
           use_sample_at_infinity=None,
@@ -1070,6 +1102,7 @@ class NerfModel(nn.Module):
       metadata_encoded=metadata_encoded,
       return_warp_jacobian=return_warp_jacobian,
       return_hyper_jacobian=return_hyper_jacobian,
+      return_hyper_c_jacobian=return_hyper_c_jacobian,
       use_sample_at_infinity=self.use_sample_at_infinity,
       screw_input_mode=screw_input_mode,
       use_sigma_gradient=use_sigma_gradient,
@@ -1096,6 +1129,7 @@ class NerfModel(nn.Module):
         metadata_encoded=metadata_encoded,
         return_warp_jacobian=return_warp_jacobian,
         return_hyper_jacobian=return_hyper_jacobian,
+        return_hyper_c_jacobian=return_hyper_c_jacobian,
         use_sample_at_infinity=use_sample_at_infinity,
         render_opts=render_opts,
         screw_input_mode=screw_input_mode,

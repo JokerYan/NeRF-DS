@@ -80,6 +80,10 @@ class SpecularConfig:
   hyper_jacobian_reg_weight: float = 0
   hyper_jacobian_reg_scale: float = 0  # scale c in Geman-McClure loss
 
+  use_hyper_c_jacobian_reg_loss: bool = False
+  hyper_c_jacobian_reg_weight: float = 0
+  hyper_c_jacobian_reg_scale: float = 0  # scale c in Geman-McClure loss
+
 @gin.configurable()
 @dataclasses.dataclass
 class ExperimentConfig:

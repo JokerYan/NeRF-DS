@@ -49,6 +49,8 @@ class ScalarParams:
   hyper_concentration_reg_scale: float = 0.0
   hyper_jacobian_reg_weight: float = 0.0
   hyper_jacobian_reg_scale: float = 0.0
+  hyper_c_jacobian_reg_weight: float = 0.0,
+  hyper_c_jacobian_reg_scale: float = 0.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -185,7 +187,8 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_predicted_norm',
                                     'use_back_facing_reg',
                                     'use_hyper_concentration_reg',
-                                    'use_hyper_jacobian_reg'
+                                    'use_hyper_jacobian_reg',
+                                    'use_hyper_c_jacobian_reg'
                                     ))
 def train_step(model: models.NerfModel,
                rng_key: Callable[[int], jnp.ndarray],
@@ -207,7 +210,8 @@ def train_step(model: models.NerfModel,
                use_predicted_norm: bool = False,
                use_back_facing_reg: bool = False,
                use_hyper_concentration_reg: bool = False,
-               use_hyper_jacobian_reg: bool = False
+               use_hyper_jacobian_reg: bool = False,
+               use_hyper_c_jacobian_reg: bool = False,
                ):
   """One optimization step.
 
@@ -364,6 +368,19 @@ def train_step(model: models.NerfModel,
       hyper_jacobian_scale = jnp.mean(jnp.abs(hyper_jacobian))
       stats['stats/hyper_jacobian_scale'] = hyper_jacobian_scale
 
+    if use_hyper_c_jacobian_reg:
+      weights = lax.stop_gradient(model_out['weights'])
+      hyper_c_jacobian = model_out['hyper_c_jacobian']
+      hyper_c_jacobian = hyper_c_jacobian.reshape(hyper_c_jacobian.shape[0], hyper_c_jacobian.shape[1], -1)
+      hyper_c_jacobian_reg_loss = utils.gm_loss(hyper_c_jacobian, scale=scalar_params.hyper_c_jacobian_reg_scale)
+      hyper_c_jacobian_reg_loss = hyper_c_jacobian_reg_loss.sum(axis=-1)
+      hyper_c_jacobian_reg_loss = (weights * hyper_c_jacobian_reg_loss).sum(axis=1).mean()
+      stats['loss/hyper_c_jacobian_reg_loss'] = hyper_c_jacobian_reg_loss
+      loss += scalar_params.hyper_c_jacobian_reg_weight * hyper_c_jacobian_reg_loss
+
+      hyper_c_jacobian_scale = jnp.mean(jnp.abs(hyper_c_jacobian))
+      stats['stats/hyper_c_jacobian_scale'] = hyper_c_jacobian_scale
+
     if 'warp_jacobian' in model_out:
       jacobian = model_out['warp_jacobian']
       jacobian_det = jnp.linalg.det(jacobian)
@@ -390,6 +407,7 @@ def train_step(model: models.NerfModel,
                       return_weights=(use_warp_reg_loss or use_elastic_loss),
                       return_warp_jacobian=use_elastic_loss,
                       return_hyper_jacobian=use_hyper_jacobian_reg,
+                      return_hyper_c_jacobian=use_hyper_c_jacobian_reg,
                       rngs={
                           'fine': fine_key,
                           'coarse': coarse_key

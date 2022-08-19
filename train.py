@@ -259,28 +259,30 @@ def main(argv):
     optimizer_def = optim.WeightNorm(optimizer_def)
   optimizer = optimizer_def.create(params)
   state = model_utils.TrainState(
-      optimizer=optimizer,
-      nerf_alpha=nerf_alpha_sched(0),
-      warp_alpha=warp_alpha_sched(0),
-      hyper_alpha=hyper_alpha_sched(0),
-      hyper_sheet_alpha=hyper_sheet_alpha_sched(0),
-      norm_loss_weight=norm_loss_weight_sched(0),
-      norm_input_alpha=norm_input_alpha_sched(0)
+    optimizer=optimizer,
+    nerf_alpha=nerf_alpha_sched(0),
+    warp_alpha=warp_alpha_sched(0),
+    hyper_alpha=hyper_alpha_sched(0),
+    hyper_sheet_alpha=hyper_sheet_alpha_sched(0),
+    norm_loss_weight=norm_loss_weight_sched(0),
+    norm_input_alpha=norm_input_alpha_sched(0)
   )
   scalar_params = training.ScalarParams(
-      learning_rate=learning_rate_sched(0),
-      elastic_loss_weight=elastic_loss_weight_sched(0),
-      warp_reg_loss_weight=train_config.warp_reg_loss_weight,
-      warp_reg_loss_alpha=train_config.warp_reg_loss_alpha,
-      warp_reg_loss_scale=train_config.warp_reg_loss_scale,
-      background_loss_weight=train_config.background_loss_weight,
-      hyper_reg_loss_weight=train_config.hyper_reg_loss_weight,
-      sigma_grad_diff_reg_weight=spec_config.sigma_grad_diff_reg_weight,
-      back_facing_reg_weight=spec_config.back_facing_reg_weight,
-      hyper_concentration_reg_weight=spec_config.hyper_concentration_reg_weight,
-      hyper_concentration_reg_scale=spec_config.hyper_concentration_reg_scale,
-      hyper_jacobian_reg_weight=spec_config.hyper_jacobian_reg_weight,
-      hyper_jacobian_reg_scale=spec_config.hyper_jacobian_reg_scale
+    learning_rate=learning_rate_sched(0),
+    elastic_loss_weight=elastic_loss_weight_sched(0),
+    warp_reg_loss_weight=train_config.warp_reg_loss_weight,
+    warp_reg_loss_alpha=train_config.warp_reg_loss_alpha,
+    warp_reg_loss_scale=train_config.warp_reg_loss_scale,
+    background_loss_weight=train_config.background_loss_weight,
+    hyper_reg_loss_weight=train_config.hyper_reg_loss_weight,
+    sigma_grad_diff_reg_weight=spec_config.sigma_grad_diff_reg_weight,
+    back_facing_reg_weight=spec_config.back_facing_reg_weight,
+    hyper_concentration_reg_weight=spec_config.hyper_concentration_reg_weight,
+    hyper_concentration_reg_scale=spec_config.hyper_concentration_reg_scale,
+    hyper_jacobian_reg_weight=spec_config.hyper_jacobian_reg_weight,
+    hyper_jacobian_reg_scale=spec_config.hyper_jacobian_reg_scale,
+    hyper_c_jacobian_reg_weight=spec_config.hyper_c_jacobian_reg_weight,
+    hyper_c_jacobian_reg_scale=spec_config.hyper_c_jacobian_reg_scale
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
@@ -311,7 +313,8 @@ def main(argv):
       use_predicted_norm=spec_config.use_predicted_norm,
       use_back_facing_reg=spec_config.use_back_facing_reg,
       use_hyper_concentration_reg=spec_config.use_hyper_concentration_reg_loss,
-      use_hyper_jacobian_reg=spec_config.use_hyper_jacobian_reg_loss
+      use_hyper_jacobian_reg=spec_config.use_hyper_jacobian_reg_loss,
+      use_hyper_c_jacobian_reg=spec_config.use_hyper_c_jacobian_reg_loss,
   )
   ptrain_step = jax.pmap(
       train_step,
