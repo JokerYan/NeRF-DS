@@ -108,7 +108,11 @@ SpecularConfig.hyper_jacobian_reg_scale = 0.1
 NerfModel.use_viewdirs_in_hyper = False
 NerfModel.use_x_in_rgb_condition = False
 NerfModel.use_hyper_c = True
+NerfModel.hyper_c_hyper_input = True
+NerfModel.use_hyper_c_embed = False
 
 SpecularConfig.use_hyper_c_jacobian_reg_loss = False
 SpecularConfig.hyper_c_jacobian_reg_weight = 3e-5
 SpecularConfig.hyper_c_jacobian_reg_scale = 0.1
+
+

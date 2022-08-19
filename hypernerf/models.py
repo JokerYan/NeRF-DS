@@ -174,6 +174,8 @@ class NerfModel(nn.Module):
   use_x_in_rgb_condition: bool = False
 
   use_hyper_c: bool = False
+  hyper_c_hyper_input: bool = False
+  use_hyper_c_embed: bool = True
   hyper_c_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8)
   )
@@ -611,7 +613,7 @@ class NerfModel(nn.Module):
 
     def query_hyper_c_mlp(hyper_c_input, hyper_c_embed):
       hyper_c = self.hyper_c_mlp(
-        hyper_c_input, hyper_c_embed, alpha=None
+        hyper_c_input, hyper_c_embed, alpha=None, use_embed=self.use_hyper_c_embed
       )
       return hyper_c
 
@@ -897,7 +899,12 @@ class NerfModel(nn.Module):
       norm_input_feat = None
 
     if self.use_hyper_c:
-      hyper_c, hyper_c_jacobian = self.map_hyper_c(points, hyper_c_embed, viewdirs,
+      if self.hyper_c_hyper_input:
+        points_input = lax.stop_gradient(warped_points)
+        points_input = jnp.reshape(points_input, [-1, num_samples, points_input.shape[-1]])
+      else:
+        points_input = points
+      hyper_c, hyper_c_jacobian = self.map_hyper_c(points_input, hyper_c_embed, viewdirs,
                                                    norm_input, return_hyper_c_jacobian)
 
       hyper_c = jnp.reshape(hyper_c, [-1, hyper_c.shape[-1]])

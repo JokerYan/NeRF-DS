@@ -348,10 +348,13 @@ class HyperSheetMLP(nn.Module):
   use_residual: bool = False
 
   @nn.compact
-  def __call__(self, points, embed, alpha=None):
+  def __call__(self, points, embed, alpha=None, use_embed=True):
     points_feat = model_utils.posenc(
       points, self.min_deg, self.max_deg, alpha=alpha)
-    inputs = jnp.concatenate([points_feat, embed], axis=-1)
+    if use_embed:
+      inputs = jnp.concatenate([points_feat, embed], axis=-1)
+    else:
+      inputs = points_feat
     mlp = MLP(depth=self.depth,
               width=self.width,
               skips=self.skips,
