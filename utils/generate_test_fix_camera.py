@@ -11,7 +11,8 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 # dataset = 'americano'
-dataset = 'vrig-chicken'
+dataset = 'white-board-5'
+# dataset = 'vrig-chicken'
 data_dir = os.path.join(data_root, dataset)
 
 train_camera_folder = os.path.join(data_dir, "camera")

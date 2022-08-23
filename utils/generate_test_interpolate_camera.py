@@ -5,7 +5,15 @@ import shutil
 import numpy as np
 from glob import glob
 
-data_dir = "/hdd/zhiwen/data/hypernerf/raw/americano"
+if os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
+    data_root = '/hdd/zhiwen/data/hypernerf/raw/'
+elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
+    data_root = '/home/zwyan/3d_cv/data/hypernerf/raw/'
+else:
+    raise NotImplemented
+
+# data_dir = "/hdd/zhiwen/data/hypernerf/raw/americano"
+data_dir = os.path.join(data_root, 'collect-americano')
 train_camera_folder = os.path.join(data_dir, "camera")
 test_camera_folder = os.path.join(data_dir, "interpolate_camera")
 
