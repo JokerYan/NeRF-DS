@@ -201,7 +201,8 @@ class SE3Field(nn.Module):
            extra_params: Dict[str, Any],
            return_screw: bool = False,
            vector: jnp.ndarray = None,
-           inverse: bool = False
+           inverse: bool = False,
+           with_translation: bool = False
            ):
     points_embed = model_utils.posenc(points,
                                       min_deg=self.min_deg,
@@ -218,7 +219,7 @@ class SE3Field(nn.Module):
     v = v / theta[..., jnp.newaxis]
     screw_axis = jnp.concatenate([w, v], axis=-1)
 
-    rotation_only = vector is not None
+    rotation_only = vector is not None and not with_translation
     transform = rigid.exp_se3(screw_axis, theta, rotation_only=rotation_only, inverse=inverse)
 
     if vector is None:
@@ -240,6 +241,7 @@ class SE3Field(nn.Module):
                return_jacobian: bool = False,
                vector: jnp.ndarray = None,
                inverse: bool = False,
+               with_translation: bool = False
                ):
     """Warp the given points using a warp field.
 
@@ -261,7 +263,9 @@ class SE3Field(nn.Module):
                                           extra_params,
                                           return_screw=True,
                                           vector=vector,
-                                          inverse=inverse)
+                                          inverse=inverse,
+                                          with_translation=with_translation
+                                          )
     out = {
         'warped_points': warped_points,
         "screw_axis": screw_axis

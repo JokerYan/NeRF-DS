@@ -520,13 +520,13 @@ class NerfModel(nn.Module):
 
     return rgb, sigma
 
-  def map_vectors(self, points, vectors, warp_embed, extra_params, return_warp_jacobian=False, inverse=False):
+  def map_vectors(self, points, vectors, warp_embed, extra_params, return_warp_jacobian=False, inverse=False, with_translation=False):
     warp_jacobian = None
     screw_axis = None
     if self.use_warp:
       if len(vectors.shape) > 1:
-        warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None, 0, None)),
-                           in_axes=(0, 0, None, None, 0, None))
+        warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None, 0, None, None)),
+                           in_axes=(0, 0, None, None, 0, None, None))
       else:
         warp_fn = self.warp_field
       warp_out = warp_fn(points,
@@ -534,7 +534,8 @@ class NerfModel(nn.Module):
                          extra_params,
                          return_warp_jacobian,
                          vectors,   # rotation only,
-                         inverse
+                         inverse,
+                         with_translation
                          )
       if return_warp_jacobian:
         warp_jacobian = warp_out['jacobian']
@@ -946,11 +947,16 @@ class NerfModel(nn.Module):
     sigma = filter_sigma(points, sigma, render_opts)
 
     # visualize R
-    dummy_points = jnp.ones_like(points)
-    dummy_points = model_utils.normalize_vector(dummy_points)
-    warped_dummy_points, _, _ = self.map_vectors(points, dummy_points, warp_embed, extra_params)
-    warped_dummy_points = warped_dummy_points[..., :3]
-    warped_dummy_points = model_utils.normalize_vector(warped_dummy_points)
+    rotation_reference = jnp.ones_like(points)
+    rotation_reference = model_utils.normalize_vector(rotation_reference)
+    rotation_field, _, _ = self.map_vectors(points, rotation_reference, warp_embed, extra_params)
+    rotation_field = rotation_field[..., :3]
+    rotation_field = model_utils.normalize_vector(rotation_field)
+
+    # visualize t
+    translation_reference = jnp.zeros_like(points)
+    translation_field, _, _ = self.map_vectors(points, translation_reference, warp_embed, extra_params, with_translation=True)
+    translation_field = translation_field[..., :3]
 
     warped_points = jnp.reshape(warped_points, (-1, num_samples, warped_points.shape[-1]))
     if warp_jacobian is not None:
@@ -999,8 +1005,10 @@ class NerfModel(nn.Module):
     ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_r).sum(axis=-2)
     # ray_sigma_gradient_r = (weights[..., None] * warped_dummy_points).sum(axis=-2)
     out['ray_sigma_gradient_r'] = ray_sigma_gradient_r
-    ray_rotation_field = (weights[..., None] * warped_dummy_points).sum(axis=-2)
+    ray_rotation_field = (weights[..., None] * rotation_field).sum(axis=-2)
     out['ray_rotation_field'] = ray_rotation_field
+    ray_translation_field = (weights[..., None] * translation_field).sum(axis=-2)
+    out['ray_translation_field'] =ray_translation_field
 
     # accumulate hyper coordinates for each ray
     hyper_points = warped_points[..., 3:]

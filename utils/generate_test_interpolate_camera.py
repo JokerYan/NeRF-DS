@@ -13,7 +13,7 @@ else:
     raise NotImplemented
 
 # data_dir = "/hdd/zhiwen/data/hypernerf/raw/americano"
-data_dir = os.path.join(data_root, 'collect-americano')
+data_dir = os.path.join(data_root, 'aluminium-sheet-2')
 train_camera_folder = os.path.join(data_dir, "camera")
 test_camera_folder = os.path.join(data_dir, "interpolate_camera")
 
