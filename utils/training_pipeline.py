@@ -34,11 +34,11 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key
 training_schedule = [
-  # ("aluminium-sheet-6", "as6_exp03", "ref"),
+  ("white-board-5", "wb5_exp03", "ref"),
   # ("aluminium-sheet-6", "as6_exp03_base", "base"),
-  ("vrig-white-board-1_qualitative", "vwb1_q_hc_exp01", "hc"),
-  ("vrig-white-board-1_novel_view", "vwb1_nv_hc_exp02", "vhc"),
-  ("vrig-white-board-1_novel_view", "vwb1_nv_ref_exp01", "vref")
+  # ("vrig-white-board-1_qualitative", "vwb1_q_hc_exp01", "hc"),
+  # ("vrig-white-board-1_novel_view", "vwb1_nv_hc_exp02", "vhc"),
+  # ("vrig-white-board-1_novel_view", "vwb1_nv_ref_exp01", "vref")
 ]
 
 # training_schedule = [
