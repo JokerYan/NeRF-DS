@@ -12,7 +12,7 @@ else:
     raise NotImplemented
 # dataset = 'americano'
 # dataset = 'white-board-6'
-dataset = 'aluminium-sheet-5'
+dataset = 'aluminium-sheet-6'
 # dataset = 'vrig-chicken'
 data_dir = os.path.join(data_root, dataset)
 

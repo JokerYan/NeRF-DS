@@ -153,7 +153,17 @@ class NerfModel(nn.Module):
   hyper_slice_method: str = 'none'
   hyper_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8))
-  hyper_embed_key: str = 'appearance'
+
+  # hyper_embed_key: str = 'appearance'
+  hyper_embed_key: str = 'warp'
+  # TODO: change this key from 'appearance' to 'warp'
+  """
+  All current experiments have hyper_use_warp_embed turned on. This means that the hyper_embed_key is not used.
+  In our future double camera datasets, there will only be two appearance code, one for each camera.
+  In that case, the hyper embedding cannot use 'appearance' as the embedding key in all circumstances.
+  The best solution is the change this to a separate 'hyper' key, but it might cause errors on old dataset if 
+    hyper_use_warp_embed switched off.
+  """
   hyper_use_warp_embed: bool = True
   hyper_sheet_mlp_cls: Callable[..., nn.Module] = modules.HyperSheetMLP
   hyper_sheet_use_input_points: bool = True
@@ -340,7 +350,8 @@ class NerfModel(nn.Module):
     rgb_conditions = []
 
     # Point attribute predictions
-    if self.use_viewdirs:
+    # if use hyper_c, the view direction is not put into the rgb_condition
+    if self.use_viewdirs and not self.use_hyper_c:
       viewdirs_feat = model_utils.posenc(
         viewdirs,
         min_deg=self.viewdir_min_deg,
@@ -349,6 +360,7 @@ class NerfModel(nn.Module):
       rgb_conditions.append(viewdirs_feat)
 
     if self.use_nerf_embed:
+      print("using nerf embed")
       if metadata_encoded:
         nerf_embed = metadata['encoded_nerf']
       else:
@@ -735,7 +747,7 @@ class NerfModel(nn.Module):
       hyper_embed = None
 
     if self.use_hyper_c:
-      hyper_c_embed = metadata[self.hyper_embed_key]  # use appearance id
+      hyper_c_embed = metadata[self.hyper_embed_key]  # use hyper embed id
       hyper_c_embed = self.hyper_c_embed(hyper_c_embed)
     else:
       hyper_c_embed = None
@@ -918,7 +930,7 @@ class NerfModel(nn.Module):
       extra_rgb_condition = hyper_c_feat
 
       # remove all other rgb conditions except for hyper_c
-      rgb_condition = None
+      # rgb_condition = None
       screw_input_mode = None
       norm_input_feat = None
     elif self.use_x_in_rgb_condition:
