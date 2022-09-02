@@ -19,7 +19,8 @@ config_dict = {
   "ref": "test_local_spec_ref.gin",
   "vref": "test_local_spec_ref_vrig.gin",
   "hc": "test_local_spec_hc.gin",
-  "vhc": "test_local_spec_hc_vrig.gin"
+  "vhc": "test_local_spec_hc_vrig.gin",
+  "hcxt": "test_local_spec_hcxt.gin"
 }
 
 data_root = ""
@@ -34,11 +35,17 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key
 training_schedule = [
-  ("white-board-5", "wb5_exp03", "ref"),
+  # ("aluminium-sheet-7_qualitative", "as7_q_hc_exp01", "hc"),
+  # ("white-board-5", "wb5_exp03", "ref"),
+  ("aluminium-sheet-6", "as6_hcxt_exp01", "hcxt"),
+  ("aluminium-sheet-7_qualitative", "as7_q_ref_exp01", "ref"),
+
   # ("aluminium-sheet-6", "as6_exp03_base", "base"),
   # ("vrig-white-board-1_qualitative", "vwb1_q_hc_exp01", "hc"),
   # ("vrig-white-board-1_novel_view", "vwb1_nv_hc_exp02", "vhc"),
-  # ("vrig-white-board-1_novel_view", "vwb1_nv_ref_exp01", "vref")
+  # ("vrig-white-board-1_novel_view", "vwb1_nv_ref_exp01", "vref"),
+  # ("mirror-2_qualitative", "m2_q_ref_exp01", "ref"),
+  # ("mirror-2_qualitative", "m2_q_hc_exp01", "hc"),
 ]
 
 # training_schedule = [

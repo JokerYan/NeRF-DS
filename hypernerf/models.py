@@ -616,6 +616,9 @@ class NerfModel(nn.Module):
       please note that points, viewdirs, norm_input will be going through positional
       encoding later in the mlp. So no need to posenc them first.
       hyper_c_embed, however, will not be pos-encoded.
+
+      Please note that when use_hyper_c_embed is turned off, the hyper_c_embed is not passed into the mlp,
+      hence 'block t'.
     """
     num_samples = points.shape[1]
     viewdirs_expanded = jnp.tile(jnp.expand_dims(viewdirs, axis=1), [1, num_samples, 1])
@@ -916,7 +919,8 @@ class NerfModel(nn.Module):
         points_input = lax.stop_gradient(warped_points)
         points_input = jnp.reshape(points_input, [-1, num_samples, points_input.shape[-1]])
       else:
-        points_input = points
+        points_input = lax.stop_gradient(points)
+      # hyper_c_embed may not be used, depending on the use_hyper_c_embed settings
       hyper_c, hyper_c_jacobian = self.map_hyper_c(points_input, hyper_c_embed, viewdirs,
                                                    norm_input, return_hyper_c_jacobian)
 
