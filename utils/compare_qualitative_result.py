@@ -13,14 +13,14 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 
-dataset = 'aluminium-sheet-7_qualitative'
+dataset = 'plate-1_qualitative'
 data_dir = os.path.join(data_root, dataset)
 
 camera_idx = 93
 video_render_step = 10
 target_height = 360
 
-experiment_name_list = ['as7_q_hc_exp01', 'as7_q_ref_exp01']
+experiment_name_list = ['p1_q_hc_exp01', 'p1_q_ref_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:
@@ -33,8 +33,13 @@ dataset_info_dir = os.path.join(data_dir, 'dataset.json')
 rgb_dir = os.path.join(data_dir, 'rgb', '1x')
 
 # load gt
-gt_images = []
+gt_image_path_list = []
 for gt_image_path in glob(os.path.join(rgb_dir, "*.png")):
+  gt_image_path_list.append(gt_image_path)
+gt_image_path_list = sorted(gt_image_path_list)
+
+gt_images = []
+for gt_image_path in gt_image_path_list:
   gt_image = cv2.imread(gt_image_path)
   gt_images.append(gt_image)
 
@@ -79,7 +84,8 @@ while True:
       full_image = exp_image
     else:
       full_image = np.concatenate([full_image, exp_image], axis=0)
-  full_image = cv2.putText(full_image, "{}/{}".format(frame_idx, len(exp_concat_image_list[0])),
+  actual_idx, total_idx = frame_idx * video_render_step + 1, len(exp_concat_image_list[0]) * video_render_step + 1
+  full_image = cv2.putText(full_image, "{}/{}".format(actual_idx, total_idx),
                            (10, target_height - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
   cv2.imshow('full', full_image)
   key = cv2.waitKey()

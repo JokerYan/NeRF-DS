@@ -642,7 +642,6 @@ class NerfModel(nn.Module):
       return hyper_c, hyper_c_jacobian
 
     hyper_c_fn = jax.vmap(jax.vmap(query_hyper_c_and_jacobian, in_axes=(0, 0)), in_axes=(0, 0))
-    # hyper_c_embed = hyper_c_embed * 0
     hyper_c, hyper_c_jacobian = hyper_c_fn(hyper_c_input, hyper_c_embed)
 
     return hyper_c, hyper_c_jacobian

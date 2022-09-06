@@ -35,22 +35,23 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key
 training_schedule = [
-  # ("aluminium-sheet-7_qualitative", "as7_q_hc_exp01", "hc"),
-  # ("white-board-5", "wb5_exp03", "ref"),
-  ("aluminium-sheet-6", "as6_hcxt_exp01", "hcxt"),
-  ("aluminium-sheet-7_qualitative", "as7_q_ref_exp01", "ref"),
-
-  # ("aluminium-sheet-6", "as6_exp03_base", "base"),
+  # ("white-board-5", "wb5_hcxt_exp01", "hcxt"),
+  # ("vrig-white-board-3_novel_view", "vwb3_nv_hc_exp01", "vhc"),
   # ("vrig-white-board-1_qualitative", "vwb1_q_hc_exp01", "hc"),
-  # ("vrig-white-board-1_novel_view", "vwb1_nv_hc_exp02", "vhc"),
-  # ("vrig-white-board-1_novel_view", "vwb1_nv_ref_exp01", "vref"),
-  # ("mirror-2_qualitative", "m2_q_ref_exp01", "ref"),
-  # ("mirror-2_qualitative", "m2_q_hc_exp01", "hc"),
-]
+  # ("vrig-white-board-2_novel_view", "vwb2_nv_hc_exp01", "vhc"),
+  # ("aluminium-sheet-7_qualitative", "as7_q_ref_exp01", "ref"),
+  # ("white-board-5", "wb5_exp03_base", "base"),
+  # ("aluminium-sheet-7_qualitative", "as7_q_hc_exp01", "hc"),
+  # ("aluminium-sheet-7_qualitative", "as7_q_base_exp01", "base"),
+  # ("cup-1_qualitative", 'c1_q_hc_exp01', "hc"),
+  # ("plate-1_qualitative", 'p1_q_base_exp01', "base"),
+  # ("plate-1_qualitative", 'p1_q_base_temp_exp01', "base_temp"),
 
-# training_schedule = [
-#   ("vrig-white-board-1_novel_view", "vwb1_nv_hc_exp01", "vhc")
-# ]
+  # ("plate-1_qualitative", 'p1_q_hc_exp01', "hc"),
+  # ("plate-1_qualitative", 'p1_q_ref_exp01', "ref"),
+  ("cup-2_qualitative", "c2_q_hc_exp01", "hc"),
+  ("cup-2_qualitative", "c2_q_ref_exp01", "ref"),
+]
 
 def train_single(dataset_name, exp_name, config_key):
   print("Start training for: {:20} {:15} {:10}".format(
@@ -87,4 +88,7 @@ def train_single(dataset_name, exp_name, config_key):
 
 if __name__ == "__main__":
   for dataset_name, exp_name, config_key in training_schedule:
-    train_single(dataset_name, exp_name, config_key)
+    try:
+      train_single(dataset_name, exp_name, config_key)
+    except:
+      print("Error encountered when running {}".format(exp_name))

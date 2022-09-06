@@ -14,7 +14,7 @@ else:
 # dataset = 'white-board-6'
 # dataset = 'aluminium-sheet-6'
 # dataset = 'vrig-chicken'
-dataset = 'aluminium-sheet-7_qualitative'
+dataset = 'cup-2_qualitative'
 data_dir = os.path.join(data_root, dataset)
 
 train_camera_folder = os.path.join(data_dir, "camera")
@@ -26,13 +26,13 @@ for file_path in glob(os.path.join(train_camera_folder, "*")):
   train_camera_name_list.append(filename)
 train_camera_name_list = sorted(train_camera_name_list)
 
-if train_camera_name_list[0].startswith('left') or train_camera_name_list[0].startswith('right'):
+if 'left' in train_camera_name_list[0] or 'right' in train_camera_name_list[0]:
   left_camera_name_list = []
   right_camera_name_list = []
   for filename in train_camera_name_list:
-    if filename.startswith('left'):
+    if 'left' in filename:
       left_camera_name_list.append(filename)
-    elif filename.startswith('right'):
+    elif 'right' in filename:
       right_camera_name_list.append(filename)
     else:
       raise Exception
