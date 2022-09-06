@@ -190,6 +190,7 @@ class NerfModel(nn.Module):
     functools.partial(modules.GLOEmbed, num_dims=8)
   )
   hyper_c_mlp_cls: Callable[..., nn.Module] = modules.HyperSheetMLP
+  hyper_c_num_dims: int = 2
 
   @property
   def num_nerf_embeds(self):
@@ -629,7 +630,7 @@ class NerfModel(nn.Module):
 
     def query_hyper_c_mlp(hyper_c_input, hyper_c_embed):
       hyper_c = self.hyper_c_mlp(
-        hyper_c_input, hyper_c_embed, alpha=None, use_embed=self.use_hyper_c_embed
+        hyper_c_input, hyper_c_embed, alpha=None, use_embed=self.use_hyper_c_embed, output_channel=self.hyper_c_num_dims
       )
       return hyper_c
 
@@ -644,6 +645,7 @@ class NerfModel(nn.Module):
     hyper_c_fn = jax.vmap(jax.vmap(query_hyper_c_and_jacobian, in_axes=(0, 0)), in_axes=(0, 0))
     hyper_c, hyper_c_jacobian = hyper_c_fn(hyper_c_input, hyper_c_embed)
 
+    assert hyper_c.shape[-1] == self.hyper_c_num_dims, (hyper_c.shape, self.hyper_c_num_dims)
     return hyper_c, hyper_c_jacobian
 
   def map_points(self, points, warp_embed, hyper_embed, viewdirs, extra_params,
@@ -1032,7 +1034,9 @@ class NerfModel(nn.Module):
 
     # accumulate hyper c coordinates for each ray
     if self.use_hyper_c:
-      hyper_c = jnp.reshape(hyper_c, hyper_points.shape)
+      hyper_c_shape = list(hyper_points.shape)
+      hyper_c_shape[-1] = self.hyper_c_num_dims
+      hyper_c = jnp.reshape(hyper_c, hyper_c_shape)
       ray_hyper_c = (weights[..., None] * hyper_c).sum(axis=-2)
       out['hyper_c'] = hyper_c
       out['ray_hyper_c'] = ray_hyper_c

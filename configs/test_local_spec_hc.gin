@@ -111,6 +111,7 @@ NerfModel.use_x_in_rgb_condition = False
 NerfModel.use_hyper_c = True
 NerfModel.hyper_c_hyper_input = True
 NerfModel.use_hyper_c_embed = False
+NerfModel.hyper_c_num_dims = 2
 
 SpecularConfig.use_hyper_c_jacobian_reg_loss = False
 SpecularConfig.hyper_c_jacobian_reg_weight = 3e-5

@@ -274,6 +274,17 @@ class NerfMLP(nn.Module):
       num_samples = 1
     x = x.reshape([-1, feature_dim])
 
+    # rgb_input = x
+    # if rgb_condition is not None or extra_rgb_condition is not None:
+    #   rgb_input = bottleneck
+    #
+    # if rgb_condition is not None:
+    #   if rgb_condition.shape[0] != bottleneck.shape[0]:
+    #     rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
+    #   rgb_input = jnp.concatenate([rgb_input, rgb_condition], axis=-1)
+    # if extra_rgb_condition is not None:
+    #   rgb_input = jnp.concatenate([rgb_input, extra_rgb_condition], axis=-1)
+
     rgb_input = x
     if rgb_condition is not None:
       if rgb_condition.shape[0] != bottleneck.shape[0]:
@@ -346,18 +357,26 @@ class HyperSheetMLP(nn.Module):
   use_residual: bool = False
 
   @nn.compact
-  def __call__(self, points, embed, alpha=None, use_embed=True):
+  def __call__(self, points, embed, alpha=None, use_embed=True, output_channel=None):
+    """
+    output_channel: override the attribute settings.
+                    Only temporary implementation, until old experiments are no longer needed
+    """
     points_feat = model_utils.posenc(
       points, self.min_deg, self.max_deg, alpha=alpha)
     if use_embed:
       inputs = jnp.concatenate([points_feat, embed], axis=-1)
     else:
       inputs = points_feat
+    if output_channel is not None:
+      output_channel_used = output_channel
+    else:
+      output_channel_used = self.output_channels
     mlp = MLP(depth=self.depth,
               width=self.width,
               skips=self.skips,
               hidden_init=self.hidden_init,
-              output_channels=self.output_channels,
+              output_channels=output_channel_used,
               output_init=self.output_init)
     if self.use_residual:
       return mlp(inputs) + embed

@@ -3,6 +3,7 @@ import re
 import subprocess
 from tqdm import tqdm
 
+# os.environ["XLA_FLAGS"] = '--xla_force_host_platform_device_count=64'
 """
 export DATASET_PATH=/home/zwyan/3d_cv/data/hypernerf/raw/white-board-6/
 export EXPERIMENT_PATH=experiments/wb6_exp01
@@ -35,22 +36,15 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key
 training_schedule = [
-  # ("white-board-5", "wb5_hcxt_exp01", "hcxt"),
-  # ("vrig-white-board-3_novel_view", "vwb3_nv_hc_exp01", "vhc"),
-  # ("vrig-white-board-1_qualitative", "vwb1_q_hc_exp01", "hc"),
-  # ("vrig-white-board-2_novel_view", "vwb2_nv_hc_exp01", "vhc"),
-  # ("aluminium-sheet-7_qualitative", "as7_q_ref_exp01", "ref"),
-  # ("white-board-5", "wb5_exp03_base", "base"),
-  # ("aluminium-sheet-7_qualitative", "as7_q_hc_exp01", "hc"),
-  # ("aluminium-sheet-7_qualitative", "as7_q_base_exp01", "base"),
-  # ("cup-1_qualitative", 'c1_q_hc_exp01', "hc"),
-  # ("plate-1_qualitative", 'p1_q_base_exp01', "base"),
-  # ("plate-1_qualitative", 'p1_q_base_temp_exp01', "base_temp"),
-
-  # ("plate-1_qualitative", 'p1_q_hc_exp01', "hc"),
+  # ("plate-1_qualitative", 'p1_q_hc_exp02', "hc"),
   # ("plate-1_qualitative", 'p1_q_ref_exp01', "ref"),
-  ("cup-2_qualitative", "c2_q_hc_exp01", "hc"),
-  ("cup-2_qualitative", "c2_q_ref_exp01", "ref"),
+  # ("cup-2_qualitative", "c2_q_hc_exp01", "hc"),
+  # ("cup-2_qualitative", "c2_q_ref_exp01", "ref"),
+
+  ("vrig-cup-2_qualitative", "vc2_q_hc_exp01", "hc"),
+  ("vrig-cup-2_qualitative", "vc2_q_ref_exp01", "ref"),
+  ("vrig-cup-2_novel_view", "vc2_bv_hc_exp01", "vhc"),
+  ("vrig-cup-2_novel_view", "vc2_bv_ref_exp01", "vref"),
 ]
 
 def train_single(dataset_name, exp_name, config_key):
