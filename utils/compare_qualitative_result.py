@@ -13,16 +13,16 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 
-# dataset = 'cup-2_qualitative'
-dataset = 'plate-1_qualitative'
+# dataset = 'vrig-cup-2_qualitative'
+dataset = 'bell-1_qualitative'
 data_dir = os.path.join(data_root, dataset)
 
 camera_idx = 93
 video_render_step = 10
-target_height = 360
+target_height = 500
 
-# experiment_name_list = ['c2_q_hc_exp01', 'c2_q_ref_exp01']
-experiment_name_list = ['p1_q_hc_exp01', 'p1_q_ref_exp01']
+experiment_name_list = ['b1_q_hc_exp01', 'b1_q_hc_exp02']
+# experiment_name_list = ['vc2_q_hc_exp01', 'vc2_q_ref_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:

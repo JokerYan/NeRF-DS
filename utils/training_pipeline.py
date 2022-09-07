@@ -21,7 +21,8 @@ config_dict = {
   "vref": "test_local_spec_ref_vrig.gin",
   "hc": "test_local_spec_hc.gin",
   "vhc": "test_local_spec_hc_vrig.gin",
-  "hcxt": "test_local_spec_hcxt.gin"
+  "hcxt": "test_local_spec_hcxt.gin",
+  "vhcxt": "test_local_spec_vhcxt.gin",
 }
 
 data_root = ""
@@ -34,20 +35,19 @@ elif os.path.isdir("/home/zwyan/3d_cv/data/hypernerf/raw/"):
 
 exp_root = "./experiments/"
 
-# training schedule in the tuple of dataset_name, exp_name, config_key
+# training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
   # ("plate-1_qualitative", 'p1_q_hc_exp02', "hc"),
   # ("plate-1_qualitative", 'p1_q_ref_exp01', "ref"),
   # ("cup-2_qualitative", "c2_q_hc_exp01", "hc"),
   # ("cup-2_qualitative", "c2_q_ref_exp01", "ref"),
 
-  ("vrig-cup-2_qualitative", "vc2_q_hc_exp01", "hc"),
-  ("vrig-cup-2_qualitative", "vc2_q_ref_exp01", "ref"),
-  ("vrig-cup-2_novel_view", "vc2_bv_hc_exp01", "vhc"),
-  ("vrig-cup-2_novel_view", "vc2_bv_ref_exp01", "vref"),
+  ("bell-1_qualitative", "b1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
+  ("spoon-1_qualitative", "s1_q_hc_exp02", "hc", []),  # delay w
+  ("spoon-1_qualitative", "s1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
 ]
 
-def train_single(dataset_name, exp_name, config_key):
+def train_single(dataset_name, exp_name, config_key, gin_params):
   print("Start training for: {:20} {:15} {:10}".format(
     dataset_name, exp_name, config_key))
 
@@ -61,6 +61,8 @@ def train_single(dataset_name, exp_name, config_key):
     "--gin_bindings=data_dir=\'{}\'".format(dataset_path),
     "--gin_configs", config_path
   ]
+  for gin_param in gin_params:
+    process_str += ["--gin_bindings", gin_param]
 
   pbar = tqdm(total=250000)
   with subprocess.Popen(process_str,
@@ -81,8 +83,8 @@ def train_single(dataset_name, exp_name, config_key):
 
 
 if __name__ == "__main__":
-  for dataset_name, exp_name, config_key in training_schedule:
+  for dataset_name, exp_name, config_key, gin_params in training_schedule:
     try:
-      train_single(dataset_name, exp_name, config_key)
+      train_single(dataset_name, exp_name, config_key, gin_params)
     except:
       print("Error encountered when running {}".format(exp_name))

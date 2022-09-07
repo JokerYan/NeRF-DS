@@ -178,6 +178,7 @@ class NerfModel(nn.Module):
   # Spec config
   predict_norm: bool = False
   norm_supervision_type: str = 'warped'   # warped, canonical direct
+  stop_norm_gradient: bool = True
   norm_input_min_deg: int = 0
   norm_input_max_deg: int = 4
   use_viewdirs_in_hyper: bool = False
@@ -888,7 +889,10 @@ class NerfModel(nn.Module):
 
     if use_sigma_gradient:
       assert not use_predicted_norm
-      norm_input = lax.stop_gradient(sigma_gradient)
+      if self.stop_norm_gradient:
+        norm_input = lax.stop_gradient(sigma_gradient)
+      else:
+        norm_input = sigma_gradient
     elif use_predicted_norm:
       assert not use_sigma_gradient
       # transform from canonical space to observation space
@@ -900,7 +904,8 @@ class NerfModel(nn.Module):
         norm_input = norm
       else:
         raise NotImplementedError
-      norm_input = lax.stop_gradient(norm_input)
+      if self.stop_norm_gradient:
+        norm_input = lax.stop_gradient(norm_input)
     else:
       norm_input = None
 
