@@ -21,6 +21,7 @@ config_dict = {
   "vref": "test_local_spec_ref_vrig.gin",
   "hc": "test_local_spec_hc.gin",
   "vhc": "test_local_spec_hc_vrig.gin",
+  "hcx": "test_local_spec_hcx.gin",
   "hcxt": "test_local_spec_hcxt.gin",
   "vhcxt": "test_local_spec_vhcxt.gin",
 }
@@ -42,9 +43,12 @@ training_schedule = [
   # ("cup-2_qualitative", "c2_q_hc_exp01", "hc"),
   # ("cup-2_qualitative", "c2_q_ref_exp01", "ref"),
 
-  ("bell-1_qualitative", "b1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
-  ("spoon-1_qualitative", "s1_q_hc_exp02", "hc", []),  # delay w
-  ("spoon-1_qualitative", "s1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
+  ("bell-3_qualitative", "b3_q_hcx_exp01", "hcx", []),
+  # ("bell-2_qualitative", "b2_q_ref_exp01", "ref", []),
+
+  # ("bell-1_qualitative", "b1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
+  # ("spoon-1_qualitative", "s1_q_hc_exp02", "hc", []),  # delay w
+  # ("spoon-1_qualitative", "s1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params):

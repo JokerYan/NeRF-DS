@@ -4,6 +4,8 @@ import json
 import numpy as np
 from glob import glob
 
+from tkinter import filedialog, Tk
+
 if os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
     data_root = '/hdd/zhiwen/data/hypernerf/raw/'
     experiment_root = '/hdd/zhiwen/hypernerf_barf/experiments/'
@@ -14,14 +16,15 @@ else:
     raise NotImplemented
 
 # dataset = 'vrig-cup-2_qualitative'
-dataset = 'bell-1_qualitative'
+dataset = 'spoon-1_qualitative'
 data_dir = os.path.join(data_root, dataset)
+save = True
 
 camera_idx = 93
 video_render_step = 10
 target_height = 500
 
-experiment_name_list = ['b1_q_hc_exp01', 'b1_q_hc_exp02']
+experiment_name_list = ['s1_q_hc_exp01', 's1_q_ref_exp01']
 # experiment_name_list = ['vc2_q_hc_exp01', 'vc2_q_ref_exp01']
 
 video_path_list = []
@@ -78,6 +81,8 @@ for frame_list in exp_frame_list:
 
 # concat image between experiments and show
 frame_idx = 0
+selected_idx_list = []
+full_image_list = []
 while True:
   full_image = None
   for exp_id in range(len(exp_concat_image_list)):
@@ -89,10 +94,13 @@ while True:
   actual_idx, total_idx = frame_idx * video_render_step + 1, len(exp_concat_image_list[0]) * video_render_step + 1
   full_image = cv2.putText(full_image, "{}/{}".format(actual_idx, total_idx),
                            (10, target_height - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+  full_image_list.append(full_image)
   cv2.imshow('full', full_image)
   key = cv2.waitKey()
   if key == ord('q'):
     break
+  elif key == ord('s'):
+    selected_idx_list.append(frame_idx)
   elif key == ord('1'):
     frame_idx = max(0, frame_idx - 1)
   elif key == ord('3'):
@@ -104,3 +112,25 @@ while True:
 
 
 cv2.destroyAllWindows()
+
+# save pictures if needed
+if save:
+  root = Tk()
+  root.withdraw()
+  folder_selected = filedialog.askdirectory()
+  all_image_folder = os.path.join(folder_selected, 'all')
+  selected_image_folder = os.path.join(folder_selected, 'selected')
+  os.makedirs(all_image_folder, exist_ok=True)
+  os.makedirs(selected_image_folder, exist_ok=True)
+
+  for i in range(len(full_image_list)):
+    filename = os.path.join(all_image_folder, '{}.png'.format(i))
+    cv2.imwrite(filename, full_image_list[i])
+
+    if i in selected_idx_list:
+      filename = os.path.join(selected_image_folder, '{}.png'.format(i))
+      cv2.imwrite(filename, full_image_list[i])
+
+  print("Images saved to: {}".format(folder_selected))
+
+
