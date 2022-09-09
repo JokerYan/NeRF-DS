@@ -25,6 +25,7 @@ video_render_step = 10
 target_height = 500
 
 experiment_name_list = ['s1_q_hc_exp01', 's1_q_ref_exp01']
+# experiment_name_list = ['p1_q_hc_exp01', 'p1_q_ref_exp01', 'p1_q_base_exp01']
 # experiment_name_list = ['vc2_q_hc_exp01', 'vc2_q_ref_exp01']
 
 video_path_list = []
@@ -83,7 +84,9 @@ for frame_list in exp_frame_list:
 frame_idx = 0
 selected_idx_list = []
 full_image_list = []
-while True:
+
+
+def get_full_image(frame_idx):
   full_image = None
   for exp_id in range(len(exp_concat_image_list)):
     exp_image = exp_concat_image_list[exp_id][frame_idx]
@@ -94,7 +97,15 @@ while True:
   actual_idx, total_idx = frame_idx * video_render_step + 1, len(exp_concat_image_list[0]) * video_render_step + 1
   full_image = cv2.putText(full_image, "{}/{}".format(actual_idx, total_idx),
                            (10, target_height - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-  full_image_list.append(full_image)
+  return full_image
+
+
+for i in range(len(exp_concat_image_list[0])):
+  full_image_list.append(get_full_image(i))
+
+
+while True:
+  full_image = full_image_list[frame_idx]
   cv2.imshow('full', full_image)
   key = cv2.waitKey()
   if key == ord('q'):

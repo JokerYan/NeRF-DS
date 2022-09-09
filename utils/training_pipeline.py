@@ -43,7 +43,13 @@ training_schedule = [
   # ("cup-2_qualitative", "c2_q_hc_exp01", "hc"),
   # ("cup-2_qualitative", "c2_q_ref_exp01", "ref"),
 
-  ("bell-3_qualitative", "b3_q_hcx_exp01", "hcx", []),
+  # ("bell-3_qualitative", "b3_q_hcx_exp02", "hcx", ["SpecularConfig.use_hyper_c_jacobian_reg_loss=True"]),
+  # ("bell-3_qualitative", "b3_q_hcx_exp01", "hcx", []),
+
+  ("bell-2_qualitative", "b2_q_hcx_exp01", "hcx", []),
+  # ("bell-3_qualitative", "b3_q_base_exp01", "base", []),
+
+  # ("bell-2_qualitative", "b2_q_hc_exp01", "hc", []),
   # ("bell-2_qualitative", "b2_q_ref_exp01", "ref", []),
 
   # ("bell-1_qualitative", "b1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
