@@ -77,9 +77,10 @@ def render_image(
   batch_shape = rays_dict['origins'].shape[:-1]
   num_rays = np.prod(batch_shape)
   rays_dict = tree_util.tree_map(lambda x: x.reshape((num_rays, -1)), rays_dict)
-  _, key_0, key_1 = jax.random.split(rng, 3)
+  _, key_0, key_1, key_2 = jax.random.split(rng, 4)
   key_0 = jax.random.split(key_0, device_count)
   key_1 = jax.random.split(key_1, device_count)
+  key_2 = jax.random.split(key_2, device_count)
   proc_id = jax.process_index()
   ret_maps = []
   start_time = time.time()
@@ -114,7 +115,7 @@ def render_image(
         lambda x: x[(proc_id * per_proc_rays):((proc_id + 1) * per_proc_rays)],
         chunk_rays_dict)
     chunk_rays_dict = utils.shard(chunk_rays_dict, device_count)
-    model_out = model_fn(key_0, key_1, state.optimizer.target['model'],
+    model_out = model_fn(key_0, key_1, key_2, state.optimizer.target['model'],
                          chunk_rays_dict, state.extra_params)
     if not default_ret_key:
       ret_key = 'fine' if 'fine' in model_out else 'coarse'

@@ -16,6 +16,7 @@
 import functools
 from typing import Any, Optional, Tuple
 
+import jax.lax as lax
 from flax import linen as nn
 import gin
 import jax
@@ -23,6 +24,7 @@ import jax.numpy as jnp
 
 from hypernerf import model_utils
 from hypernerf import types
+from hypernerf.model_utils import get_trilinear_coefficient
 
 
 def get_norm_layer(norm_type):
@@ -112,6 +114,7 @@ class NerfMLP(nn.Module):
   skips: Tuple[int] = (4,)
 
   predict_norm: bool = False
+
 
   def setup(self):
     dense = functools.partial(
@@ -382,3 +385,168 @@ class HyperSheetMLP(nn.Module):
       return mlp(inputs) + embed
     else:
       return mlp(inputs)
+
+
+@gin.configurable(denylist=['name'])
+class NormVoxels(nn.Module):
+  voxel_shape: jnp.ndarray = gin.REQUIRED   # shape: (t, x, y, z, 3)
+  range_x_min: jnp.float32 = -1.5
+  range_x_max: jnp.float32 = 1.5
+  range_y_min: jnp.float32 = -1.5
+  range_y_max: jnp.float32 = 1.5
+  range_z_min: jnp.float32 = -1.5
+  range_z_max: jnp.float32 = 1.5
+
+  def setup(self):
+    # rng = self.make_rng('voxel')
+    # self.voxel_array = self.param('norm_voxel_array', lambda rng, shape: jax.random.normal(rng, shape), self.voxel_shape)
+    self.voxel_array = self.param('norm_voxel_array', lambda rng, shape: jnp.ones(shape) * jnp.sqrt(1/3.0), self.voxel_shape)
+    # self.voxel_range = self.param('norm_voxel_range', lambda rng, shape: jnp.zeros(shape), (3, 2))
+
+    # self.voxel_array = self.variable('params', 'norm_voxel_array', jax.random.normal, rng, self.voxel_shape)
+
+    self.voxel_step_x = (self.range_x_max - self.range_x_min) / self.voxel_shape[1]
+    self.voxel_step_y = (self.range_y_max - self.range_y_min) / self.voxel_shape[2]
+    self.voxel_step_z = (self.range_z_max - self.range_z_min) / self.voxel_shape[3]
+
+  def get_voxel_vertex_index(self, t, pos):
+    """
+    Input:
+      t: shape N for N points
+      pos: shape N x 3 for N points
+    Output:
+      index: shape N x 8 x 3, where each item is the (x,y,z) index for the vertex.
+             vertex order is [C_000, C_100, C_010, C_110, C_001, C101, C011, C111]
+    """
+    # offset by the lower bound of voxels
+    pos = pos - jnp.array([self.range_x_min, self.range_y_min, self.range_z_min])
+
+    # get individual index, each of shape (N, )
+    x_min_index = (pos[:, 0] // self.voxel_step_x).astype(jnp.int32)
+    y_min_index = (pos[:, 1] // self.voxel_step_y).astype(jnp.int32)
+    z_min_index = (pos[:, 2] // self.voxel_step_z).astype(jnp.int32)
+    x_max_index = x_min_index + 1
+    y_max_index = y_min_index + 1
+    z_max_index = z_min_index + 1
+
+    # cap at the boundary
+    x_min_index = jnp.minimum(jnp.maximum(x_min_index, 0), self.voxel_shape[1] - 1)
+    x_max_index = jnp.minimum(jnp.maximum(x_max_index, 0), self.voxel_shape[1] - 1)
+    y_min_index = jnp.minimum(jnp.maximum(y_min_index, 0), self.voxel_shape[2] - 1)
+    y_max_index = jnp.minimum(jnp.maximum(y_max_index, 0), self.voxel_shape[2] - 1)
+    z_min_index = jnp.minimum(jnp.maximum(z_min_index, 0), self.voxel_shape[3] - 1)
+    z_max_index = jnp.minimum(jnp.maximum(z_max_index, 0), self.voxel_shape[3] - 1)
+
+    # assemble index for each vertex
+    # each of shape (N, 3)
+    c_000 = jnp.vstack([x_min_index, y_min_index, z_min_index]).transpose()
+    c_100 = jnp.vstack([x_max_index, y_min_index, z_min_index]).transpose()
+    c_010 = jnp.vstack([x_min_index, y_max_index, z_min_index]).transpose()
+    c_110 = jnp.vstack([x_max_index, y_max_index, z_min_index]).transpose()
+    c_001 = jnp.vstack([x_min_index, y_min_index, z_max_index]).transpose()
+    c_101 = jnp.vstack([x_max_index, y_min_index, z_max_index]).transpose()
+    c_011 = jnp.vstack([x_min_index, y_max_index, z_max_index]).transpose()
+    c_111 = jnp.vstack([x_max_index, y_max_index, z_max_index]).transpose()
+
+    # get all vertex spatial index
+    # shape (N, 8, 3)
+    vertex_index = jnp.concatenate([
+      c_000[:, jnp.newaxis, :], c_100[:, jnp.newaxis, :], c_010[:, jnp.newaxis, :], c_110[:, jnp.newaxis, :],
+      c_001[:, jnp.newaxis, :], c_101[:, jnp.newaxis, :], c_011[:, jnp.newaxis, :], c_111[:, jnp.newaxis, :]
+    ], axis=1)
+
+    # add t to vertex index
+    t = jnp.tile(t[:, jnp.newaxis, jnp.newaxis], [1, 8, 1])
+    vertex_index = jnp.concatenate([t, vertex_index], axis=-1)
+
+    return vertex_index
+
+  def get_vertex_values(self, vertex_index):
+    """
+    Input:
+      vertex_index: N x 8 x 4     (N points, 8 vertex, (t, x, y, z))
+    Output:
+      vertex_value: N x 8 x 3
+    """
+    vertex_index = lax.stop_gradient(vertex_index.reshape([-1, 4]))    # 8N x 4
+    t_index = vertex_index[:, 0]
+    x_index = vertex_index[:, 1]
+    y_index = vertex_index[:, 2]
+    z_index = vertex_index[:, 3]
+
+    values = self.voxel_array[tuple([t_index, x_index, y_index, z_index])]    # 8N x 3
+    values = values.reshape([-1, 8, 3])
+    return values
+
+  # Jax array value update seems to take place out-place, resulting in the copying of the array
+  def add_vertex_values(self, vertex_index, vertex_value):
+    vertex_index = vertex_index.reshape([-1, 4])    # 8N x 4
+    t_index = vertex_index[:, 0]
+    x_index = vertex_index[:, 1]
+    y_index = vertex_index[:, 2]
+    z_index = vertex_index[:, 3]
+
+    vertex_value = vertex_value.reshape([-1, 3])
+    self.voxel_array.at[tuple([t_index, x_index, y_index, z_index])].add(vertex_value)
+
+  def get_interpolation_coef(self, pos):
+    """
+    coef: value = sum(coef * [C_000, C_100, C_010, C_110, C_001, C101, C011, C111]^T)
+          shape: N x 8
+    """
+    # offset by the lower bound of voxels
+    pos = pos - jnp.array([self.range_x_min, self.range_y_min, self.range_z_min])
+
+    # get normalized position
+    step_array = jnp.array([self.voxel_step_x, self.voxel_step_y, self.voxel_step_z])
+    pos_relative = jnp.mod(pos, step_array)
+    pos_normalized = pos_relative / step_array
+
+    interpolation_coef = get_trilinear_coefficient(pos_normalized)
+
+    return interpolation_coef
+
+  def get_interpolation_value(self, t, pos):
+    coef = self.get_interpolation_coef(pos)
+    vertex_index = self.get_voxel_vertex_index(t, pos)
+    vertex_values = self.get_vertex_values(vertex_index)
+
+    value = coef[:, :, jnp.newaxis] * vertex_values
+    value = jnp.sum(value, axis=1)
+    # value = jnp.mean(vertex_values, axis=1)
+    return value, vertex_values, coef
+
+  def get_and_update_value(self, t, pos, lr, sigma, target_norm):
+    """
+    get the interpolated value from the voxel array and then update the voxel array with the target norm
+    Input:
+      t: time, shape N
+      pos: spatial position, shape N x 3
+      lr: learning rate, shape 1
+      sigma: occupancy, shape N
+      target_norm: norm output from the mlp, shape N x 3
+    Output:
+      value: interpolated norm value, shape N x 3
+    """
+    coef = self.get_interpolation_coef(pos)
+    vertex_index = self.get_voxel_vertex_index(t, pos)
+    vertex_values = self.get_vertex_values(vertex_index)
+
+    value = coef[:, :, jnp.newaxis] * vertex_values
+    value = jnp.sum(value, axis=1)
+
+    # update
+    target_norm_expand = jnp.tile(jnp.expand_dims(target_norm, axis=1), [1, 8, 1])
+    sigma_weight = (1 - jnp.exp(- sigma))[:, jnp.newaxis]
+    distance_weight = coef
+    update_lambda = jax.nn.sigmoid(lr * sigma_weight * distance_weight)[..., jnp.newaxis]
+
+    new_vertex_values = update_lambda * target_norm_expand + (1 - update_lambda) * vertex_values
+    diff_vertex_values = new_vertex_values - vertex_values
+    self.add_vertex_values(vertex_index, diff_vertex_values)
+    # add_vertex_values(self.voxel_array, vertex_index, diff_vertex_values)
+
+    return value
+
+
+

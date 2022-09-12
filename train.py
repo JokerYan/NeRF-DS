@@ -71,6 +71,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
   _log_scalar('params/hyper_sheet_alpha', state.hyper_sheet_alpha)
   _log_scalar('params/norm_loss_weight', state.norm_loss_weight)
   _log_scalar('params/norm_input_alpha', state.norm_input_alpha)
+  _log_scalar('params/norm_voxel_lr', state.norm_voxel_lr)
   _log_scalar('params/elastic_loss/weight', scalar_params.elastic_loss_weight)
 
   # pmean is applied in train_step so just take the item.
@@ -80,6 +81,9 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
     for stat_key, stat_value in stats[branch].items():
       assert not jnp.isnan(stat_value)
       writer.scalar(f'{stat_key}/{branch}', stat_value, step)
+  for stat_key, stat_value in stats.items():
+    if stat_key not in {'coarse', 'fine'}:
+      writer.scalar(f'stats/{stat_key}', stat_value, step)
 
   _log_scalar('loss/background', stats.get('background_loss'))
 
@@ -253,6 +257,7 @@ def main(argv):
       train_config.elastic_loss_weight_schedule)
   norm_loss_weight_sched = schedules.from_config(spec_config.norm_loss_weight_schedule)
   norm_input_alpha_sched = schedules.from_config(spec_config.norm_input_alpha_schedule)
+  norm_voxel_lr_sched = schedules.from_config(spec_config.norm_voxel_lr_schedule)
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
   if train_config.use_weight_norm:
@@ -265,7 +270,8 @@ def main(argv):
     hyper_alpha=hyper_alpha_sched(0),
     hyper_sheet_alpha=hyper_sheet_alpha_sched(0),
     norm_loss_weight=norm_loss_weight_sched(0),
-    norm_input_alpha=norm_input_alpha_sched(0)
+    norm_input_alpha=norm_input_alpha_sched(0),
+    norm_voxel_lr=norm_voxel_lr_sched(0)
   )
   scalar_params = training.ScalarParams(
     learning_rate=learning_rate_sched(0),
@@ -282,7 +288,8 @@ def main(argv):
     hyper_jacobian_reg_weight=spec_config.hyper_jacobian_reg_weight,
     hyper_jacobian_reg_scale=spec_config.hyper_jacobian_reg_scale,
     hyper_c_jacobian_reg_weight=spec_config.hyper_c_jacobian_reg_weight,
-    hyper_c_jacobian_reg_scale=spec_config.hyper_c_jacobian_reg_scale
+    hyper_c_jacobian_reg_scale=spec_config.hyper_c_jacobian_reg_scale,
+    norm_voxel_loss_weight=spec_config.norm_voxel_loss_weight,
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
@@ -362,12 +369,14 @@ def main(argv):
         hyper_sheet_alpha_sched(step), devices)
     norm_loss_weight = jax_utils.replicate(norm_loss_weight_sched(step), devices)
     norm_input_alpha = jax_utils.replicate(norm_input_alpha_sched(step), devices)
+    norm_voxel_lr = jax_utils.replicate(norm_voxel_lr_sched(step), devices)
     state = state.replace(nerf_alpha=nerf_alpha,
                           warp_alpha=warp_alpha,
                           hyper_alpha=hyper_alpha,
                           hyper_sheet_alpha=hyper_sheet_alpha,
                           norm_loss_weight=norm_loss_weight,
-                          norm_input_alpha=norm_input_alpha
+                          norm_input_alpha=norm_input_alpha,
+                          norm_voxel_lr=norm_voxel_lr
                           )
 
     with time_tracker.record_time('train_step'):

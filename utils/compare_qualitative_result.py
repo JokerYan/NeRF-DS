@@ -16,15 +16,16 @@ else:
     raise NotImplemented
 
 # dataset = 'vrig-cup-2_qualitative'
-dataset = 'spoon-1_qualitative'
+dataset = 'bell-3_qualitative'
 data_dir = os.path.join(data_root, dataset)
-save = True
+save = False
 
 camera_idx = 93
 video_render_step = 10
 target_height = 500
 
-experiment_name_list = ['s1_q_hc_exp01', 's1_q_ref_exp01']
+# experiment_name_list = ['b2_q_hcx_nv_exp02', 'b2_q_hc_exp01']
+experiment_name_list = ['b3_q_hcx_exp01', 'b3_q_hc_exp01']
 # experiment_name_list = ['p1_q_hc_exp01', 'p1_q_ref_exp01', 'p1_q_base_exp01']
 # experiment_name_list = ['vc2_q_hc_exp01', 'vc2_q_ref_exp01']
 

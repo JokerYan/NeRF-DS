@@ -67,7 +67,7 @@ TrainConfig.hyper_reg_loss_weight = 0.001
 TrainConfig.print_every = 100
 TrainConfig.log_every = 100
 TrainConfig.histogram_every = 100
-TrainConfig.save_every = 1000
+TrainConfig.save_every = 3000
 
 EvalConfig.eval_once = False
 EvalConfig.save_output = False
@@ -117,4 +117,12 @@ SpecularConfig.use_hyper_c_jacobian_reg_loss = False
 SpecularConfig.hyper_c_jacobian_reg_weight = 3e-5
 SpecularConfig.hyper_c_jacobian_reg_scale = 0.1
 
-
+NerfModel.use_norm_voxel = True
+NormVoxels.voxel_shape = (1000, 50, 50, 50, 3)
+SpecularConfig.norm_voxel_lr_schedule = {
+  'type': 'exponential',
+  'initial_value': 0.1,
+  'final_value': 1e-3,
+  'num_steps': 250000,
+}
+SpecularConfig.norm_voxel_loss_weight = 1000

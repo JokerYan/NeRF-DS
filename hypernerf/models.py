@@ -14,6 +14,7 @@
 
 """Different model implementation plus a general port for all the models."""
 import functools
+import logging
 from typing import Any, Callable, Dict, Optional, Tuple, Sequence, Mapping
 
 from flax import jax_utils
@@ -193,6 +194,9 @@ class NerfModel(nn.Module):
   hyper_c_mlp_cls: Callable[..., nn.Module] = modules.HyperSheetMLP
   hyper_c_num_dims: int = 2
 
+  # norm voxel
+  use_norm_voxel: bool = False
+
   @property
   def num_nerf_embeds(self):
     return max(self.embeddings_dict[self.nerf_embed_key]) + 1
@@ -345,6 +349,11 @@ class NerfModel(nn.Module):
         predict_norm=self.predict_norm
       )
     self.nerf_mlps = nerf_mlps
+
+    # # surface normal voxels
+    # self.surface_norm_voxels = jnp.zeros((500, 100, 100, 100), dtype=jnp.float16)
+    if self.use_norm_voxel:
+      self.norm_voxel = modules.NormVoxels()
 
   def get_condition_inputs(self, viewdirs, metadata, metadata_encoded=False):
     """Create the condition inputs for the NeRF template."""
@@ -720,11 +729,13 @@ class NerfModel(nn.Module):
                      return_warp_jacobian=False,
                      return_hyper_jacobian=False,
                      return_hyper_c_jacobian=False,
+                     return_nv_details=True,
                      use_sample_at_infinity=False,
                      render_opts=None,
                      screw_input_mode=None,
                      use_sigma_gradient=False,
-                     use_predicted_norm=False
+                     use_predicted_norm=False,
+                     norm_voxel_lr=0,
                      ):
     out = {'points': points}
 
@@ -887,7 +898,40 @@ class NerfModel(nn.Module):
     if norm is not None:
       norm = jnp.reshape(norm, (-1, num_samples, norm.shape[-1]))
 
-    if use_sigma_gradient:
+    if self.use_norm_voxel:
+      # propogate time to all points on the same ray, (Ray, 1) -> (N, )
+      time_array = jnp.array(metadata[self.warp_embed_key])
+      points_per_ray = points.shape[1]
+      time_array = jnp.tile(time_array, [1, points_per_ray])
+      flat_time = time_array.reshape([-1])
+
+      # flatten all points, (Ray, Sample, 3) -> (N, 3)
+      flat_points = points.reshape([-1, 3])
+
+      # interpolation_value = self.norm_voxel.get_interpolation_value(flat_time, flat_points)
+      # assert interpolation_value.shape == (len(flat_time), 3), interpolation_value.shape
+
+      # flat_sigma = sigma.reshape([-1])
+      # normalized_norm = model_utils.normalize_vector(norm)
+      # flat_norm = normalized_norm.reshape([-1, 3])
+      # inter_norm = self.norm_voxel.get_and_update_value(flat_time, flat_points, lr=norm_voxel_lr,
+      #                                                   sigma=flat_sigma, target_norm=flat_norm)
+
+      inter_norm, nv_vertex_values, nv_vertex_coef = self.norm_voxel.get_interpolation_value(flat_time, flat_points)
+
+      ray_count, sample_count, _ = points.shape
+      inter_norm = inter_norm.reshape([ray_count, sample_count, 3])
+      inter_norm = model_utils.normalize_vector(inter_norm)
+
+      nv_vertex_values = nv_vertex_values.reshape([ray_count, sample_count, 8, 3])
+      nv_vertex_coef = nv_vertex_coef.reshape([ray_count, sample_count, 8])
+
+    if self.use_norm_voxel:
+      if self.stop_norm_gradient:
+        norm_input = lax.stop_gradient(inter_norm)
+      else:
+        norm_input = inter_norm
+    elif use_sigma_gradient:
       assert not use_predicted_norm
       if self.stop_norm_gradient:
         norm_input = lax.stop_gradient(sigma_gradient)
@@ -1050,6 +1094,15 @@ class NerfModel(nn.Module):
     else:
       out['ray_hyper_c'] = jnp.zeros_like(ray_hyper_points)
 
+    # accumulate inter norm for each ray
+    if self.use_norm_voxel:
+      if return_nv_details:
+        out['inter_norm'] = inter_norm
+        out['nv_vertex_values'] = nv_vertex_values
+        out['nv_vertex_coef'] = nv_vertex_coef
+      ray_inter_norm = (weights[..., None] * inter_norm).sum(axis=-2)
+      out['ray_inter_norm'] = ray_inter_norm
+
     # hyper jacobian for regularization
     if hyper_jacobian is not None:
       out['hyper_jacobian'] = hyper_jacobian
@@ -1074,6 +1127,7 @@ class NerfModel(nn.Module):
           return_warp_jacobian=False,
           return_hyper_jacobian=False,
           return_hyper_c_jacobian=False,
+          return_nv_details=True,
           near=None,
           far=None,
           use_sample_at_infinity=None,
@@ -1081,7 +1135,8 @@ class NerfModel(nn.Module):
           deterministic=False,
           screw_input_mode=None,
           use_sigma_gradient=False,
-          use_predicted_norm=False
+          use_predicted_norm=False,
+          norm_voxel_lr=0,
   ):
     """Nerf Model.
 
@@ -1129,6 +1184,7 @@ class NerfModel(nn.Module):
       self.make_rng('coarse'), origins, directions, self.num_coarse_samples,
       near, far, self.use_stratified_sampling,
       self.use_linear_disparity)
+
     coarse_ret = self.render_samples(
       'coarse',
       points,
@@ -1142,10 +1198,12 @@ class NerfModel(nn.Module):
       return_warp_jacobian=return_warp_jacobian,
       return_hyper_jacobian=return_hyper_jacobian,
       return_hyper_c_jacobian=return_hyper_c_jacobian,
+      return_nv_details=return_nv_details,
       use_sample_at_infinity=self.use_sample_at_infinity,
       screw_input_mode=screw_input_mode,
       use_sigma_gradient=use_sigma_gradient,
-      use_predicted_norm=use_predicted_norm
+      use_predicted_norm=use_predicted_norm,
+      norm_voxel_lr=norm_voxel_lr,
     )
     out = {'coarse': coarse_ret}
 
@@ -1169,11 +1227,13 @@ class NerfModel(nn.Module):
         return_warp_jacobian=return_warp_jacobian,
         return_hyper_jacobian=return_hyper_jacobian,
         return_hyper_c_jacobian=return_hyper_c_jacobian,
+        return_nv_details=return_nv_details,
         use_sample_at_infinity=use_sample_at_infinity,
         render_opts=render_opts,
         screw_input_mode=screw_input_mode,
         use_sigma_gradient=use_sigma_gradient,
-        use_predicted_norm=use_predicted_norm
+        use_predicted_norm=use_predicted_norm,
+        norm_voxel_lr=norm_voxel_lr,
       )
 
     if not return_weights:
@@ -1232,12 +1292,13 @@ def construct_nerf(key, batch_size: int, embeddings_dict: Dict[str, int],
 
   screw_input_mode = screw_input_mode
 
-  key, key1, key2 = random.split(key, 3)
+  key, key1, key2, key3 = random.split(key, 4)
   params = model.init(
     {
       'params': key,
       'coarse': key1,
-      'fine': key2
+      'fine': key2,
+      'voxel': key3
     },
     init_rays_dict,
     extra_params=extra_params,

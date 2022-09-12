@@ -84,6 +84,15 @@ class SpecularConfig:
   hyper_c_jacobian_reg_weight: float = 0
   hyper_c_jacobian_reg_scale: float = 0  # scale c in Geman-McClure loss
 
+  # norm voxel related
+  norm_voxel_lr_schedule: ScheduleDef = immutabledict.immutabledict({
+    'type': 'exponential',
+    'initial_value': 0.1,
+    'final_value': 1e-3,
+    'num_steps': 250000,
+  })
+  norm_voxel_loss_weight: float = 0
+
 @gin.configurable()
 @dataclasses.dataclass
 class ExperimentConfig:

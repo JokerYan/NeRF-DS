@@ -22,6 +22,7 @@ config_dict = {
   "hc": "test_local_spec_hc.gin",
   "vhc": "test_local_spec_hc_vrig.gin",
   "hcx": "test_local_spec_hcx.gin",
+  "hcx_nv": "test_local_spec_hcx_nv.gin",
   "hcxt": "test_local_spec_hcxt.gin",
   "vhcxt": "test_local_spec_vhcxt.gin",
 }
@@ -46,7 +47,7 @@ training_schedule = [
   # ("bell-3_qualitative", "b3_q_hcx_exp02", "hcx", ["SpecularConfig.use_hyper_c_jacobian_reg_loss=True"]),
   # ("bell-3_qualitative", "b3_q_hcx_exp01", "hcx", []),
 
-  ("bell-2_qualitative", "b2_q_hcx_exp01", "hcx", []),
+  # ("bell-2_qualitative", "b2_q_hcx_exp01", "hcx", []),
   # ("bell-3_qualitative", "b3_q_base_exp01", "base", []),
 
   # ("bell-2_qualitative", "b2_q_hc_exp01", "hc", []),
@@ -55,6 +56,10 @@ training_schedule = [
   # ("bell-1_qualitative", "b1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
   # ("spoon-1_qualitative", "s1_q_hc_exp02", "hc", []),  # delay w
   # ("spoon-1_qualitative", "s1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
+
+  # ("bell-2_qualitative", "b2_q_hcx_nv_exp02", "hcx_nv", []),
+  ("bell-2_qualitative", "b2_q_hcx_nv_exp03", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4"]),
+  # ("spoon-1_qualitative", "s1_q_hcx_vn_exp01", "hcx_nv", []),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params):
@@ -84,7 +89,7 @@ def train_single(dataset_name, exp_name, config_key, gin_params):
       if not line:
         break
       line = line.decode('ascii').strip()
-      # print(line)
+      print(line)
       match = re.match(r".*Saving checkpoint at step: ([\d]*)$", line)
       if match:
         checkpoint = int(match.group(1))

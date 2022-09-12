@@ -50,7 +50,8 @@ class ScalarParams:
   hyper_jacobian_reg_weight: float = 0.0
   hyper_jacobian_reg_scale: float = 0.0
   hyper_c_jacobian_reg_weight: float = 0.0,
-  hyper_c_jacobian_reg_scale: float = 0.0
+  hyper_c_jacobian_reg_scale: float = 0.0,
+  norm_voxel_loss_weight: float = 0.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -183,7 +184,6 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'screw_input_mode',
                                     'use_sigma_gradient',
                                     'use_sigma_grad_diff_reg',
-                                    'sigma_grad_diff_reg_weight',
                                     'use_predicted_norm',
                                     'use_back_facing_reg',
                                     'use_hyper_concentration_reg',
@@ -239,7 +239,7 @@ def train_step(model: models.NerfModel,
     new_state: model_utils.TrainState, new training state.
     stats: list. [(loss, psnr), (loss_coarse, psnr_coarse)].
   """
-  rng_key, fine_key, coarse_key, reg_key = random.split(rng_key, 4)
+  rng_key, fine_key, coarse_key, reg_key, voxel_key = random.split(rng_key, 5)
 
   # pylint: disable=unused-argument
   def _compute_loss_and_stats(
@@ -394,8 +394,32 @@ def train_step(model: models.NerfModel,
     if 'sigma_grad_diff' in model_out:
       stats['stats/sigma_grad_diff'] = jnp.mean(model_out['sigma_grad_diff'])
 
+    if 'inter_norm' in model_out:
+      weights = lax.stop_gradient(model_out['weights'])
+      predicted_norm = lax.stop_gradient(model_out['predicted_norm'])   # R x S x 3
+      inter_norm = model_out['inter_norm']
+      nv_vertex_values = model_out['nv_vertex_values']    # R x S x 8 x 3
+      nv_vertex_coef = model_out['nv_vertex_coef']        # R x S x 8
+
+      # inter_norm_loss = jnp.mean(jnp.square(predicted_norm - inter_norm), axis=-1)
+
+      predicted_norm_expanded = jnp.tile(jnp.expand_dims(predicted_norm, axis=2), [1, 1, 8, 1])   # R x S x 8 x 3
+      inter_norm_loss = jnp.mean(jnp.square(predicted_norm_expanded - nv_vertex_values), axis=-1) # R x S x 8
+      inter_norm_loss = jnp.sum(inter_norm_loss * nv_vertex_coef, axis=-1)  # scale by inter coef, R x S
+
+      inter_norm_loss = jnp.mean(weights * inter_norm_loss)
+
+      stats['loss/inter_norm_loss'] = inter_norm_loss
+      loss += scalar_params.norm_voxel_loss_weight * inter_norm_loss
+
     stats['loss/total'] = loss
     stats['metric/psnr'] = utils.compute_psnr(rgb_loss)
+
+    # test points range
+    points = model_out['points']
+    min_x, max_x = jnp.min(points), jnp.max(points)
+    stats['stats/min_x'] = min_x
+    stats['stats/max_x'] = max_x
 
     return loss, stats
 
@@ -409,12 +433,14 @@ def train_step(model: models.NerfModel,
                       return_hyper_jacobian=use_hyper_jacobian_reg,
                       return_hyper_c_jacobian=use_hyper_c_jacobian_reg,
                       rngs={
+                          'voxel': voxel_key,
                           'fine': fine_key,
                           'coarse': coarse_key
                       },
                       screw_input_mode=screw_input_mode,
                       use_sigma_gradient=use_sigma_gradient,
-                      use_predicted_norm=use_predicted_norm
+                      use_predicted_norm=use_predicted_norm,
+                      norm_voxel_lr=state.norm_voxel_lr,
                       )
 
     losses = {}
@@ -439,7 +465,7 @@ def train_step(model: models.NerfModel,
       background_loss = background_loss.mean()
       losses['background'] = (
           scalar_params.background_loss_weight * background_loss)
-      stats['background_loss'] = background_loss
+      stats['loss/background_loss'] = background_loss
 
     return sum(losses.values()), (stats, ret)
 
@@ -455,6 +481,12 @@ def train_step(model: models.NerfModel,
     grad = utils.clip_gradients(grad, grad_max_val, grad_max_norm)
   stats = jax.lax.pmean(stats, axis_name='batch')
   model_out = jax.lax.pmean(model_out, axis_name='batch')
+
+  # # DEBUG grad for norm voxel
+  # norm_voxel_grad = lax.stop_gradient(grad['model']['norm_voxel']['norm_voxel_array'])
+  # norm_voxel_grad = jnp.max(jnp.abs(norm_voxel_grad))
+  # stats['norm_voxel_grad'] = norm_voxel_grad
+
   new_optimizer = optimizer.apply_gradient(
       grad, learning_rate=scalar_params.learning_rate)
   new_state = state.replace(optimizer=new_optimizer)

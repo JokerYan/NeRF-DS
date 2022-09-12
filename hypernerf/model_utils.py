@@ -33,6 +33,7 @@ class TrainState:
   hyper_sheet_alpha: Optional[jnp.ndarray] = None
   norm_loss_weight: Optional[jnp.ndarray] = None
   norm_input_alpha: Optional[jnp.ndarray] = None
+  norm_voxel_lr: Optional[jnp.ndarray] = None,
 
   @property
   def extra_params(self):
@@ -42,7 +43,8 @@ class TrainState:
         'hyper_alpha': self.hyper_alpha,
         'hyper_sheet_alpha': self.hyper_sheet_alpha,
         'norm_loss_weight': self.norm_loss_weight,
-        'norm_input_alpha': self.norm_input_alpha
+        'norm_input_alpha': self.norm_input_alpha,
+        'norm_voxel_lr': self.norm_voxel_lr,
     }
 
 
@@ -397,3 +399,31 @@ def normalize_vector(vector):
   # eps = jnp.ones_like(vector[..., None, 0]) * eps
   return vector / jnp.sqrt(jnp.maximum(jnp.sum(vector**2, axis=-1, keepdims=True), eps))
 
+
+def get_trilinear_coefficient(pos):
+  """
+  Input:
+    pos: position of the target point, in [0, 1] normalized space. shape: N x 3 for N points
+  Output
+    coef: value = sum(coef * [C_000, C_100, C_010, C_110, C_001, C101, C011, C111]^T)
+          shape: N x 8
+  """
+  point_count = pos.shape[0]
+  neg_pos = 1 - pos
+  coef = jnp.ones([point_count, 8])
+
+  # coefficient for x
+  coef = jnp.multiply(coef, jnp.array([
+    neg_pos[:, 0], pos[:, 0], neg_pos[:, 0], pos[:, 0], neg_pos[:, 0], pos[:, 0], neg_pos[:, 0], pos[:, 0]
+  ]).transpose())
+
+  # coefficient for y
+  coef = jnp.multiply(coef, jnp.array([
+    neg_pos[:, 1], neg_pos[:, 1], pos[:, 1], pos[:, 1], neg_pos[:, 1], neg_pos[:, 1], pos[:, 1], pos[:, 1]
+  ]).transpose())
+
+  # coefficient for z
+  coef = jnp.multiply(coef, jnp.array([
+    neg_pos[:, 2], neg_pos[:, 2], neg_pos[:, 2], neg_pos[:, 2], pos[:, 2], pos[:, 2], pos[:, 2], pos[:, 2]
+  ]).transpose())
+  return coef
