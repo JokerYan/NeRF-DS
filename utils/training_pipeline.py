@@ -36,6 +36,8 @@ elif os.path.isdir("/home/zwyan/3d_cv/data/hypernerf/raw/"):
   data_root = "/home/zwyan/3d_cv/data/hypernerf/raw/"
 
 exp_root = "./experiments/"
+if os.path.isdir('/ssd/zhiwen/exp/hypernerf'):
+  exp_root = '/ssd/zhiwen/exp/hypernerf'
 
 # training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
