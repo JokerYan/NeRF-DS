@@ -31,6 +31,7 @@ from hypernerf import modules
 from hypernerf import types
 # pylint: disable=unused-import
 from hypernerf import warping
+from hypernerf.model_utils import cal_ref_radiance
 
 
 def filter_sigma(points, sigma, render_opts):
@@ -185,6 +186,7 @@ class NerfModel(nn.Module):
   use_viewdirs_in_hyper: bool = False
   use_x_in_rgb_condition: bool = False
 
+  # Hyper c config
   use_hyper_c: bool = False
   hyper_c_hyper_input: bool = False
   use_hyper_c_embed: bool = True
@@ -196,6 +198,10 @@ class NerfModel(nn.Module):
 
   # norm voxel
   use_norm_voxel: bool = False
+
+  # reflected radiance
+  use_ref_radiance: bool = False
+
 
   @property
   def num_nerf_embeds(self):
@@ -622,9 +628,9 @@ class NerfModel(nn.Module):
 
     return hyper_points
 
-  def map_hyper_c(self, points, hyper_c_embed, viewdirs, norm_input, return_hyper_c_jacobian):
+  def map_hyper_c(self, points, hyper_c_embed, viewdirs, norm_input, ref_radiance, return_hyper_c_jacobian):
     """
-      please note that points, viewdirs, norm_input will be going through positional
+      please note that points, viewdirs, norm_input, ref_radiance will be going through positional
       encoding later in the mlp. So no need to posenc them first.
       hyper_c_embed, however, will not be pos-encoded.
 
@@ -637,6 +643,8 @@ class NerfModel(nn.Module):
     hyper_c_input = jnp.concatenate([points, viewdirs_expanded], axis=-1)
     if norm_input is not None:
       hyper_c_input = jnp.concatenate([hyper_c_input, norm_input], axis=-1)
+    if ref_radiance is not None:
+      hyper_c_input = jnp.concatenate([hyper_c_input, ref_radiance], axis=-1)
 
     def query_hyper_c_mlp(hyper_c_input, hyper_c_embed):
       hyper_c = self.hyper_c_mlp(
@@ -964,6 +972,19 @@ class NerfModel(nn.Module):
     else:
       norm_input_feat = None
 
+    ref_radiance = None
+    ref_radiance_feat = None
+    if self.use_ref_radiance:
+      assert norm_input is not None
+      viewdirs_expanded = jnp.tile(jnp.expand_dims(viewdirs, axis=1), [1, num_samples, 1])
+      ref_radiance = cal_ref_radiance(viewdirs_expanded, norm_input)
+      ref_radiance_feat = model_utils.posenc(
+        ref_radiance,
+        min_deg=self.norm_input_min_deg,
+        max_deg=self.norm_input_max_deg,
+        use_identity=self.use_posenc_identity,
+        alpha=extra_params['norm_input_alpha'])
+
     if self.use_hyper_c:
       if self.hyper_c_hyper_input:
         points_input = lax.stop_gradient(warped_points)
@@ -972,7 +993,7 @@ class NerfModel(nn.Module):
         points_input = lax.stop_gradient(points)
       # hyper_c_embed may not be used, depending on the use_hyper_c_embed settings
       hyper_c, hyper_c_jacobian = self.map_hyper_c(points_input, hyper_c_embed, viewdirs,
-                                                   norm_input, return_hyper_c_jacobian)
+                                                   norm_input, ref_radiance, return_hyper_c_jacobian)
 
       hyper_c = jnp.reshape(hyper_c, [-1, hyper_c.shape[-1]])
       hyper_c_feat = model_utils.posenc(
@@ -989,7 +1010,11 @@ class NerfModel(nn.Module):
       norm_input_feat = None
     elif self.use_x_in_rgb_condition:
       extra_rgb_condition = jnp.concatenate([points, hyper_embed], axis=-1)
+      if ref_radiance_feat is not None:
+        extra_rgb_condition = jnp.concatenate([extra_rgb_condition, ref_radiance_feat], axis=-1)
       extra_rgb_condition = jnp.reshape(extra_rgb_condition, [-1, extra_rgb_condition.shape[-1]])
+    elif ref_radiance_feat is not None:
+      extra_rgb_condition = ref_radiance_feat
     else:
       extra_rgb_condition = None
 

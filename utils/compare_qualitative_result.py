@@ -25,7 +25,7 @@ video_render_step = 10
 target_height = 500
 
 # experiment_name_list = ['b2_q_hcx_nv_exp02', 'b2_q_hc_exp01']
-experiment_name_list = ['b3_q_hcx_exp01', 'b3_q_hc_exp01']
+experiment_name_list = ['b3_q_hcx_nv_exp04', 'b3_q_hcx_exp01']
 # experiment_name_list = ['p1_q_hc_exp01', 'p1_q_ref_exp01', 'p1_q_base_exp01']
 # experiment_name_list = ['vc2_q_hc_exp01', 'vc2_q_ref_exp01']
 

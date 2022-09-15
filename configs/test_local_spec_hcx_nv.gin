@@ -67,7 +67,7 @@ TrainConfig.hyper_reg_loss_weight = 0.001
 TrainConfig.print_every = 100
 TrainConfig.log_every = 100
 TrainConfig.histogram_every = 100
-TrainConfig.save_every = 3000
+TrainConfig.save_every = 1000
 
 EvalConfig.eval_once = False
 EvalConfig.save_output = False

@@ -427,3 +427,16 @@ def get_trilinear_coefficient(pos):
     neg_pos[:, 2], neg_pos[:, 2], neg_pos[:, 2], neg_pos[:, 2], pos[:, 2], pos[:, 2], pos[:, 2], pos[:, 2]
   ]).transpose())
   return coef
+
+def cal_ref_radiance(d, n):
+  """
+  Input:
+    viewing direction d: shape N x 3 or R x S x 3
+    surface normal n: shape N x 3 or R x S x 3
+  Output:
+    reflected radiance w_r: shape N x 3 or R x S x 3
+  """
+  d = normalize_vector(d)
+  n = normalize_vector(n)
+  out = 2 * jnp.sum(d * n, axis=-1, keepdims=False)[..., jnp.newaxis] * n - d
+  return out

@@ -36,8 +36,8 @@ elif os.path.isdir("/home/zwyan/3d_cv/data/hypernerf/raw/"):
   data_root = "/home/zwyan/3d_cv/data/hypernerf/raw/"
 
 exp_root = "./experiments/"
-if os.path.isdir('/ssd/zhiwen/exp/hypernerf'):
-  exp_root = '/ssd/zhiwen/exp/hypernerf'
+# if os.path.isdir('/ssd/zhiwen/exp/hypernerf'):
+#   exp_root = '/ssd/zhiwen/exp/hypernerf'
 
 # training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
@@ -60,7 +60,16 @@ training_schedule = [
   # ("spoon-1_qualitative", "s1_q_hc_exp03", "hc", ["NerfModel.stop_norm_gradient=False"]),  # delay w, no stop N
 
   # ("bell-2_qualitative", "b2_q_hcx_nv_exp02", "hcx_nv", []),
-  ("bell-2_qualitative", "b2_q_hcx_nv_exp03", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4"]),
+  # ("bell-2_qualitative", "b2_q_hcx_nv_exp03", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4"]),
+
+  # ("bell-3_qualitative", "b3_q_hcx_nv_exp04", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4",
+  #                                                        "NerfModel.use_ref_radiance = True"]),
+  ("bell-3_qualitative", "b3_q_hcx_nv_exp05", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
+  ("aluminium-sheet-6", "as6_q_hcx_nv_exp04", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4",
+                                                         "NerfModel.use_ref_radiance = True"]),
+  ("bell-2_qualitative", "b2_q_hcx_nv_exp04", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4",
+                                                         "NerfModel.use_ref_radiance = True"]),
+
   # ("spoon-1_qualitative", "s1_q_hcx_vn_exp01", "hcx_nv", []),
 ]
 
