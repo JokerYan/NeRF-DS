@@ -67,7 +67,7 @@ TrainConfig.hyper_reg_loss_weight = 0.001
 TrainConfig.print_every = 100
 TrainConfig.log_every = 100
 TrainConfig.histogram_every = 100
-TrainConfig.save_every = 1000
+TrainConfig.save_every = 3000
 
 EvalConfig.eval_once = False
 EvalConfig.save_output = False
@@ -126,3 +126,11 @@ SpecularConfig.norm_voxel_lr_schedule = {
   'num_steps': 250000,
 }
 SpecularConfig.norm_voxel_loss_weight = 1000
+SpecularConfig.norm_voxel_ratio_schedule = {
+  'type': 'piecewise',
+  'schedules': [
+    (0, ('constant', 0.0)),
+    (10000, ('linear', 0.0, 1.0, 10000)),
+    (10000, ('constant', 1.0)),
+  ],
+}

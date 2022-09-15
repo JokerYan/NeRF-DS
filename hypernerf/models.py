@@ -744,6 +744,7 @@ class NerfModel(nn.Module):
                      use_sigma_gradient=False,
                      use_predicted_norm=False,
                      norm_voxel_lr=0,
+                     norm_voxel_ratio=1,
                      ):
     out = {'points': points}
 
@@ -935,10 +936,13 @@ class NerfModel(nn.Module):
       nv_vertex_coef = nv_vertex_coef.reshape([ray_count, sample_count, 8])
 
     if self.use_norm_voxel:
+      # weight inter_norm with pred_norm according to the norm_voxel_ratio
+      weighted_norm = norm_voxel_ratio * inter_norm + (1 - norm_voxel_ratio) * norm
+
       if self.stop_norm_gradient:
-        norm_input = lax.stop_gradient(inter_norm)
+        norm_input = lax.stop_gradient(weighted_norm)
       else:
-        norm_input = inter_norm
+        norm_input = weighted_norm
     elif use_sigma_gradient:
       assert not use_predicted_norm
       if self.stop_norm_gradient:
@@ -1162,6 +1166,7 @@ class NerfModel(nn.Module):
           use_sigma_gradient=False,
           use_predicted_norm=False,
           norm_voxel_lr=0,
+          norm_voxel_ratio=1,
   ):
     """Nerf Model.
 
@@ -1229,6 +1234,7 @@ class NerfModel(nn.Module):
       use_sigma_gradient=use_sigma_gradient,
       use_predicted_norm=use_predicted_norm,
       norm_voxel_lr=norm_voxel_lr,
+      norm_voxel_ratio=norm_voxel_ratio,
     )
     out = {'coarse': coarse_ret}
 
@@ -1259,6 +1265,7 @@ class NerfModel(nn.Module):
         use_sigma_gradient=use_sigma_gradient,
         use_predicted_norm=use_predicted_norm,
         norm_voxel_lr=norm_voxel_lr,
+        norm_voxel_ratio=norm_voxel_ratio,
       )
 
     if not return_weights:

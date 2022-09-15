@@ -93,6 +93,13 @@ class SpecularConfig:
   })
   norm_voxel_loss_weight: float = 0
 
+  # the ratio between voxel norm and predicted norm
+  # default use the norm voxel only
+  norm_voxel_ratio_schedule: ScheduleDef = immutabledict.immutabledict({
+    'type': 'constant',
+    'value': 1
+  })
+
 @gin.configurable()
 @dataclasses.dataclass
 class ExperimentConfig:

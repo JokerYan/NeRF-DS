@@ -34,17 +34,19 @@ class TrainState:
   norm_loss_weight: Optional[jnp.ndarray] = None
   norm_input_alpha: Optional[jnp.ndarray] = None
   norm_voxel_lr: Optional[jnp.ndarray] = None,
+  norm_voxel_ratio: Optional[jnp.ndarray] = None,
 
   @property
   def extra_params(self):
     return {
-        'nerf_alpha': self.nerf_alpha,
-        'warp_alpha': self.warp_alpha,
-        'hyper_alpha': self.hyper_alpha,
-        'hyper_sheet_alpha': self.hyper_sheet_alpha,
-        'norm_loss_weight': self.norm_loss_weight,
-        'norm_input_alpha': self.norm_input_alpha,
-        'norm_voxel_lr': self.norm_voxel_lr,
+      'nerf_alpha': self.nerf_alpha,
+      'warp_alpha': self.warp_alpha,
+      'hyper_alpha': self.hyper_alpha,
+      'hyper_sheet_alpha': self.hyper_sheet_alpha,
+      'norm_loss_weight': self.norm_loss_weight,
+      'norm_input_alpha': self.norm_input_alpha,
+      'norm_voxel_lr': self.norm_voxel_lr,
+      'norm_voxel_ratio': self.norm_voxel_ratio
     }
 
 

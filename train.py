@@ -258,6 +258,7 @@ def main(argv):
   norm_loss_weight_sched = schedules.from_config(spec_config.norm_loss_weight_schedule)
   norm_input_alpha_sched = schedules.from_config(spec_config.norm_input_alpha_schedule)
   norm_voxel_lr_sched = schedules.from_config(spec_config.norm_voxel_lr_schedule)
+  norm_voxel_ratio_sched = schedules.from_config(spec_config.norm_voxel_ratio_schedule)
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
   if train_config.use_weight_norm:
@@ -271,7 +272,8 @@ def main(argv):
     hyper_sheet_alpha=hyper_sheet_alpha_sched(0),
     norm_loss_weight=norm_loss_weight_sched(0),
     norm_input_alpha=norm_input_alpha_sched(0),
-    norm_voxel_lr=norm_voxel_lr_sched(0)
+    norm_voxel_lr=norm_voxel_lr_sched(0),
+    norm_voxel_ratio=norm_voxel_ratio_sched(0),
   )
   scalar_params = training.ScalarParams(
     learning_rate=learning_rate_sched(0),
@@ -373,13 +375,15 @@ def main(argv):
     norm_loss_weight = jax_utils.replicate(norm_loss_weight_sched(step), devices)
     norm_input_alpha = jax_utils.replicate(norm_input_alpha_sched(step), devices)
     norm_voxel_lr = jax_utils.replicate(norm_voxel_lr_sched(step), devices)
+    norm_voxel_ratio = jax_utils.replicate(norm_voxel_ratio_sched(step), devices)
     state = state.replace(nerf_alpha=nerf_alpha,
                           warp_alpha=warp_alpha,
                           hyper_alpha=hyper_alpha,
                           hyper_sheet_alpha=hyper_sheet_alpha,
                           norm_loss_weight=norm_loss_weight,
                           norm_input_alpha=norm_input_alpha,
-                          norm_voxel_lr=norm_voxel_lr
+                          norm_voxel_lr=norm_voxel_lr,
+                          norm_voxel_ratio=norm_voxel_ratio,
                           )
 
     with time_tracker.record_time('train_step'):

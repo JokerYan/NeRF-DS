@@ -441,6 +441,7 @@ def train_step(model: models.NerfModel,
                       use_sigma_gradient=use_sigma_gradient,
                       use_predicted_norm=use_predicted_norm,
                       norm_voxel_lr=state.norm_voxel_lr,
+                      norm_voxel_ratio=state.norm_voxel_ratio
                       )
 
     losses = {}

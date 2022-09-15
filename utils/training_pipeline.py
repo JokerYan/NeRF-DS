@@ -63,14 +63,11 @@ training_schedule = [
 
   # ("bell-2_qualitative", "b2_q_hcx_nv_exp02", "hcx_nv", []),
   # ("bell-2_qualitative", "b2_q_hcx_nv_exp03", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4"]),
-
   # ("bell-3_qualitative", "b3_q_hcx_nv_exp04", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4",
   #                                                        "NerfModel.use_ref_radiance = True"]),
-  ("bell-3_qualitative", "b3_q_hcx_nv_exp05", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
-  ("aluminium-sheet-6", "as6_q_hcx_nv_exp04", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4",
-                                                         "NerfModel.use_ref_radiance = True"]),
-  ("bell-2_qualitative", "b2_q_hcx_nv_exp04", "hcx_nv", ["NerfModel.hyper_c_num_dims = 4",
-                                                         "NerfModel.use_ref_radiance = True"]),
+
+  # ("bell-3_qualitative", "b3_q_hcx_nv_exp05", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
+  ("bell-3_qualitative", "b3_q_hcx_nv_exp06", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
 
   # ("spoon-1_qualitative", "s1_q_hcx_vn_exp01", "hcx_nv", []),
 ]
