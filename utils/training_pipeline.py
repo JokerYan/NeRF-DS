@@ -68,6 +68,7 @@ training_schedule = [
 
   # ("bell-3_qualitative", "b3_q_hcx_nv_exp05", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
   ("bell-3_qualitative", "b3_q_hcx_nv_exp06", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
+  ("bell-2_qualitative", "b2_q_hcx_nv_exp06", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
 
   # ("spoon-1_qualitative", "s1_q_hcx_vn_exp01", "hcx_nv", []),
 ]

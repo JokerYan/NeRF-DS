@@ -1025,6 +1025,7 @@ class NerfModel(nn.Module):
     rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode,
                                   norm_input_feat, extra_rgb_condition)
     rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
+    out['sigma'] = sigma
 
     # transform norm from observation to canonical
     sigma_gradient_r, _, _ = self.map_vectors(points, sigma_gradient, warp_embed, extra_params)

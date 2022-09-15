@@ -395,7 +395,10 @@ def train_step(model: models.NerfModel,
       stats['stats/sigma_grad_diff'] = jnp.mean(model_out['sigma_grad_diff'])
 
     if 'inter_norm' in model_out:
-      weights = lax.stop_gradient(model_out['weights'])
+      weights = lax.stop_gradient(model_out['weights'])   # R x S
+      sigma = lax.stop_gradient(model_out['sigma'])   # R x S
+      inv_sigma = 1 - jnp.exp(-sigma)   # R x S
+
       predicted_norm = lax.stop_gradient(model_out['predicted_norm'])   # R x S x 3
       inter_norm = model_out['inter_norm']
       nv_vertex_values = model_out['nv_vertex_values']    # R x S x 8 x 3
@@ -407,7 +410,8 @@ def train_step(model: models.NerfModel,
       inter_norm_loss = jnp.mean(jnp.square(predicted_norm_expanded - nv_vertex_values), axis=-1) # R x S x 8
       inter_norm_loss = jnp.sum(inter_norm_loss * nv_vertex_coef, axis=-1)  # scale by inter coef, R x S
 
-      inter_norm_loss = jnp.mean(weights * inter_norm_loss)
+      # inter_norm_loss = jnp.mean(weights * inter_norm_loss)
+      inter_norm_loss = jnp.mean(inv_sigma * inter_norm_loss)
 
       stats['loss/inter_norm_loss'] = inter_norm_loss
       loss += scalar_params.norm_voxel_loss_weight * inter_norm_loss
