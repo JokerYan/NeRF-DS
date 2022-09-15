@@ -345,6 +345,9 @@ def main(argv):
   else:
     n_local_devices = jax.local_device_count()
 
+  # profiler
+  jax.profiler.start_server(7777)
+
   logging.info('Starting training')
   # Make random seed separate across processes.
   rng = rng + jax.process_index()

@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import argparse
 from tqdm import tqdm
 
 # os.environ["XLA_FLAGS"] = '--xla_force_host_platform_device_count=64'
@@ -23,6 +24,7 @@ config_dict = {
   "vhc": "test_local_spec_hc_vrig.gin",
   "hcx": "test_local_spec_hcx.gin",
   "hcx_nv": "test_local_spec_hcx_nv.gin",
+  "vhcx_nv": "test_local_spec_hcx_nv_vrig.gin",
   "hcxt": "test_local_spec_hcxt.gin",
   "vhcxt": "test_local_spec_vhcxt.gin",
 }
@@ -109,7 +111,15 @@ def train_single(dataset_name, exp_name, config_key, gin_params):
 
 
 if __name__ == "__main__":
-  for dataset_name, exp_name, config_key, gin_params in training_schedule:
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--exp_idx", nargs='+', type=int)
+  args = parser.parse_args()
+
+  training_schedule_selected = []
+  for i, exp in enumerate(training_schedule):
+    if not args.exp_idx or i in args.exp_idx:
+      training_schedule_selected.append(exp)
+  for dataset_name, exp_name, config_key, gin_params in training_schedule_selected:
     try:
       train_single(dataset_name, exp_name, config_key, gin_params)
     except:

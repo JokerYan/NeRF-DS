@@ -16,7 +16,7 @@ else:
     raise NotImplemented
 
 # dataset = 'vrig-cup-2_qualitative'
-dataset = 'bell-3_qualitative'
+dataset = 'aluminium-sheet-6'
 data_dir = os.path.join(data_root, dataset)
 save = False
 
@@ -25,9 +25,10 @@ video_render_step = 10
 target_height = 500
 
 # experiment_name_list = ['b2_q_hcx_nv_exp02', 'b2_q_hc_exp01']
-experiment_name_list = ['b3_q_hcx_nv_exp04', 'b3_q_hcx_exp01']
+# experiment_name_list = ['b3_q_hcx_nv_exp04', 'b3_q_hcx_nv_exp05']
+# experiment_name_list = ['b3_q_hcx_nv_exp05', 'b3_q_ref_exp01']
 # experiment_name_list = ['p1_q_hc_exp01', 'p1_q_ref_exp01', 'p1_q_base_exp01']
-# experiment_name_list = ['vc2_q_hc_exp01', 'vc2_q_ref_exp01']
+experiment_name_list = ['as6_q_hcx_nv_exp05', 'as6_exp02', 'as6_exp03']
 
 video_path_list = []
 for experiment_name in experiment_name_list:
