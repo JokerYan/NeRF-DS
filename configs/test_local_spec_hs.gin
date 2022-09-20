@@ -134,7 +134,7 @@ SpecularConfig.norm_voxel_ratio_schedule = {
     (10000, ('constant', 1.0)),
   ],
 }
-HyperSpecModel.use_ref_radiance = True
+HyperSpecModel.use_ref_radiance = False
 
 SpecularConfig.use_hyper_spec_model = True
 HyperSpecModel.hyper_c_use_warp_c_embed = True

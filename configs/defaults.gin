@@ -104,23 +104,32 @@ NerfModel.use_stratified_sampling = True
 NerfModel.use_posenc_identity = False
 NerfModel.spatial_point_min_deg = %spatial_point_min_deg
 NerfModel.spatial_point_max_deg = %spatial_point_max_deg
+HyperSpecModel.use_viewdirs = True
+HyperSpecModel.use_stratified_sampling = True
+HyperSpecModel.use_posenc_identity = False
+HyperSpecModel.spatial_point_min_deg = %spatial_point_min_deg
+HyperSpecModel.spatial_point_max_deg = %spatial_point_max_deg
 TrainConfig.nerf_alpha_schedule = ('constant', %spatial_point_max_deg)
 
 # NeRF Metadata
 NerfModel.nerf_embed_cls = @nerf/GLOEmbed
+HyperSpecModel.nerf_embed_cls = @nerf/GLOEmbed
 nerf/GLOEmbed.num_dims = 8
 
 # Warp field configs.
 NerfModel.warp_embed_cls = @warp/GLOEmbed
+HyperSpecModel.warp_embed_cls = @warp/GLOEmbed
 warp/GLOEmbed.num_dims = 8
 
 SE3Field.min_deg = %warp_min_deg
 SE3Field.max_deg = %warp_max_deg
 SE3Field.use_posenc_identity = False
 NerfModel.warp_field_cls = @SE3Field
+HyperSpecModel.warp_field_cls = @SE3Field
 
 # Hyper point configs.
 NerfModel.hyper_embed_cls = @hyper/GLOEmbed
+HyperSpecModel.hyper_embed_cls = @hyper/GLOEmbed
 hyper/GLOEmbed.num_dims = %hyper_num_dims
 
 # Use macros to make sure these are set somewhere.
