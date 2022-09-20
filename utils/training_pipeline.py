@@ -27,6 +27,8 @@ config_dict = {
   "vhcx_nv": "test_local_spec_hcx_nv_vrig.gin",
   "hcxt": "test_local_spec_hcxt.gin",
   "vhcxt": "test_local_spec_vhcxt.gin",
+
+  "hs": "test_local_spec_hs.gin",
 }
 
 data_root = ""
@@ -67,10 +69,15 @@ training_schedule = [
   #                                                        "NerfModel.use_ref_radiance = True"]),
 
   # ("bell-3_qualitative", "b3_q_hcx_nv_exp05", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
-  ("bell-3_qualitative", "b3_q_hcx_nv_exp06", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
-  ("bell-2_qualitative", "b2_q_hcx_nv_exp06", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
+  # ("bell-3_qualitative", "b3_q_hcx_nv_exp06", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
+  # ("bell-2_qualitative", "b2_q_hcx_nv_exp06", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
 
   # ("spoon-1_qualitative", "s1_q_hcx_vn_exp01", "hcx_nv", []),
+
+  # ("bell-2_qualitative", "b2_q_hs_exp02", "hs", []),
+  ("bell-2_qualitative", "b2_q_hcx_nv_exp07", "hcx_nv", ["NerfModel.use_ref_radiance = True"]),
+
+  # ("bell-2_qualitative", "b2_q_hs_exp03", "hs", ["HyperSpecModel.use_hyper_c = False"])
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params):

@@ -232,7 +232,7 @@ class SE3Field(nn.Module):
     if return_screw:
       return warped_points, screw_axis
     else:
-      return warped_points
+      return warped_points, None
 
   def __call__(self,
                points: jnp.ndarray,

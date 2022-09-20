@@ -100,6 +100,9 @@ class SpecularConfig:
     'value': 1
   })
 
+  # hyper specular model
+  use_hyper_spec_model: bool = False
+
 @gin.configurable()
 @dataclasses.dataclass
 class ExperimentConfig:

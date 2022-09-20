@@ -155,7 +155,10 @@ def main(argv):
   exp_config = configs.ExperimentConfig()
   train_config = configs.TrainConfig()
   spec_config = configs.SpecularConfig()
-  dummy_model = models.NerfModel({}, 0, 0)
+  if spec_config.use_hyper_spec_model:
+    dummy_model = models.HyperSpecModel({}, 0, 0)
+  else:
+    dummy_model = models.NerfModel({}, 0, 0)
 
   # Get directory information.
   exp_dir = gpath.GPath(FLAGS.base_folder)
@@ -212,6 +215,7 @@ def main(argv):
   params = {}
   model, params['model'] = models.construct_nerf(
       key,
+      use_hyper_spec_model=spec_config.use_hyper_spec_model,
       batch_size=train_config.batch_size,
       embeddings_dict=datasource.embeddings_dict,
       near=datasource.near,

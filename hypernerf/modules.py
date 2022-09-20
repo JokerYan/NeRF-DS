@@ -114,7 +114,10 @@ class NerfMLP(nn.Module):
   skips: Tuple[int] = (4,)
 
   predict_norm: bool = False
-
+  predict_d_color: bool = False
+  norm_dim: int = 3
+  d_color_dim: int = 3
+  s_weight_dim: int = 1
 
   def setup(self):
     dense = functools.partial(
@@ -134,13 +137,19 @@ class NerfMLP(nn.Module):
                        hidden_init=jax.nn.initializers.glorot_uniform(),
                        output_init=jax.nn.initializers.glorot_uniform(),
                        output_channels=self.rgb_channels)
+    # output of alpha mlp: sigma 1, norm 3, d_color 3, s_weight 1
+    alpha_output_channel = self.alpha_channels
+    if self.predict_norm:
+      alpha_output_channel += self.norm_dim
+    if self.predict_d_color:
+      alpha_output_channel += self.d_color_dim + self.s_weight_dim
     self.alpha_mlp = MLP(depth=self.alpha_branch_depth,
                          width=self.alpha_branch_width,
                          hidden_activation=self.activation,
                          hidden_norm=self.norm,
                          hidden_init=jax.nn.initializers.glorot_uniform(),
                          output_init=jax.nn.initializers.glorot_uniform(),
-                         output_channels=self.alpha_channels + (3 if self.predict_norm else 0))
+                         output_channels=alpha_output_channel)
 
   def broadcast_condition(self, c, num_samples):
     # Broadcast condition from [batch, feature] to
@@ -239,56 +248,52 @@ class NerfMLP(nn.Module):
       num_samples = 1
     x = x.reshape([-1, feature_dim])
 
-    if self.trunk_depth > 0:
-      x = self.trunk_mlp(x)
+    assert self.trunk_depth > 0
+    trunk_output = self.trunk_mlp(x)
 
     if (alpha_condition is not None) or (rgb_condition is not None):
-      bottleneck = self.bottleneck_layer(x)
+      bottleneck = self.bottleneck_layer(trunk_output)
     else:
-      bottleneck = x
-    return x, bottleneck
+      bottleneck = trunk_output
+    return trunk_output, bottleneck
 
-  def query_sigma(self, x, bottleneck, alpha_condition):
-    feature_dim = x.shape[-1]
-    if len(x.shape) > 1:
-      num_samples = x.shape[1]
+  def query_sigma(self, trunk_output, bottleneck, alpha_condition):
+    feature_dim = trunk_output.shape[-1]
+    if len(trunk_output.shape) > 1:
+      num_samples = trunk_output.shape[1]
     else:
       num_samples = 1
-    x = x.reshape([-1, feature_dim])
+    trunk_output = trunk_output.reshape([-1, feature_dim])
 
     if alpha_condition is not None:
       if alpha_condition.shape[0] != bottleneck.shape[0]:
         alpha_condition = self.broadcast_condition(alpha_condition, num_samples)
       alpha_input = jnp.concatenate([bottleneck, alpha_condition], axis=-1)
     else:
-      alpha_input = x
-    alpha = self.alpha_mlp(alpha_input)
+      alpha_input = trunk_output
+    output = self.alpha_mlp(alpha_input)
+    alpha = output[..., :self.alpha_channels]
+    norm, d_color, s_weight = None, None, None
     if self.predict_norm:
-      alpha, norm = alpha[..., :self.alpha_channels], alpha[..., self.alpha_channels:]
-    else:
-      norm = None
-    return alpha, norm
+      norm = output[..., self.alpha_channels: self.alpha_channels + self.norm_dim]
+    if self.predict_d_color:
+      d_color = output[...,
+                self.alpha_channels + self.norm_dim:
+                self.alpha_channels + self.norm_dim + self.d_color_dim]
+      s_weight = output[...,
+                 self.alpha_channels + self.norm_dim + self.d_color_dim:
+                 self.alpha_channels + self.norm_dim + self.d_color_dim + self.s_weight_dim]
+    return alpha, norm, d_color, s_weight
 
-  def query_rgb(self, x, bottleneck, rgb_condition, screw_condition=None, norm=None, extra_rgb_condition=None):
-    feature_dim = x.shape[-1]
-    if len(x.shape) > 1:
-      num_samples = x.shape[1]
+  def query_rgb(self, trunk_output, bottleneck, rgb_condition, screw_condition=None, norm=None, extra_rgb_condition=None):
+    feature_dim = trunk_output.shape[-1]
+    if len(trunk_output.shape) > 1:
+      num_samples = trunk_output.shape[1]
     else:
       num_samples = 1
-    x = x.reshape([-1, feature_dim])
+    trunk_output = trunk_output.reshape([-1, feature_dim])
 
-    # rgb_input = x
-    # if rgb_condition is not None or extra_rgb_condition is not None:
-    #   rgb_input = bottleneck
-    #
-    # if rgb_condition is not None:
-    #   if rgb_condition.shape[0] != bottleneck.shape[0]:
-    #     rgb_condition = self.broadcast_condition(rgb_condition, num_samples)
-    #   rgb_input = jnp.concatenate([rgb_input, rgb_condition], axis=-1)
-    # if extra_rgb_condition is not None:
-    #   rgb_input = jnp.concatenate([rgb_input, extra_rgb_condition], axis=-1)
-
-    rgb_input = x
+    rgb_input = trunk_output
     if rgb_condition is not None:
       if rgb_condition.shape[0] != bottleneck.shape[0]:
         rgb_condition = self.broadcast_condition(rgb_condition, num_samples)

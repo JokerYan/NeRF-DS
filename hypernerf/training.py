@@ -190,7 +190,7 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_hyper_jacobian_reg',
                                     'use_hyper_c_jacobian_reg'
                                     ))
-def train_step(model: models.NerfModel,
+def train_step(model: models.CustomModel,
                rng_key: Callable[[int], jnp.ndarray],
                state: model_utils.TrainState,
                batch: Dict[str, Any],
