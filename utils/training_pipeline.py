@@ -83,7 +83,10 @@ training_schedule = [
   # ("bell-2_qualitative", "b2_q_hs_exp05", "hs", ["HyperSpecModel.use_norm_voxel = False",
   #                                                ])
 
-  ("vrig-bell-1_novel_view", "b2_nv_hs_exp02", "vhs", []),
+  ("vrig-bell-1_novel_view", "vb1_nv_hs_exp02", "vhs", ["ExperimentConfig.image_scale = 1"]),
+  ("vrig-bell-1_novel_view", "vb1_nv_ref_exp01", "vref", ["ExperimentConfig.image_scale = 1"]),
+  ("vrig-bell-1_novel_view", "vb1_nv_base_exp01", "vbase", ["ExperimentConfig.image_scale = 1"]),
+  ("bell-3_qualitative", "b3_q_hs_exp02", "hs", []),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params):

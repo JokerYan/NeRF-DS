@@ -15,7 +15,7 @@ else:
 # dataset = 'vrig-chicken'
 # dataset = 'single-vrig-chicken'
 # dataset = 'vrig-white-board-1_novel_view'
-dataset = 'vrig-cup-2_novel_view'
+dataset = 'vrig-bell-1_novel_view'
 data_dir = os.path.join(data_root, dataset)
 
 video_render_step = 9
@@ -24,7 +24,7 @@ target_height = 720
 # experiment_name_list = ['chicken_spec_exp01_base', 'chicken_spec_exp03']
 # experiment_name_list = ['s_chicken_spec_exp01_base']
 # experiment_name_list = ['vwb1_nv_hc_exp02']
-experiment_name_list = ['vc2_nv_hc_exp01', 'vc2_nv_ref_exp01']
+experiment_name_list = ['vb1_nv_hs_exp02']
 
 video_path_list = []
 for experiment_name in experiment_name_list:
