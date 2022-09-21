@@ -133,8 +133,10 @@ HyperSpecModel.hyper_embed_cls = @hyper/GLOEmbed
 hyper/GLOEmbed.num_dims = %hyper_num_dims
 
 # Use macros to make sure these are set somewhere.
+early_stop_steps = -1
 TrainConfig.batch_size = %batch_size
 TrainConfig.max_steps = %max_steps
+TrainConfig.early_stop_steps = %early_stop_steps
 TrainConfig.lr_schedule = %DEFAULT_LR_SCHEDULE
 TrainConfig.warp_alpha_schedule = %CONSTANT_WARP_ALPHA_SCHED
 

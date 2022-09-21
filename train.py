@@ -360,7 +360,14 @@ def main(argv):
   keys = random.split(rng, n_local_devices)
   time_tracker = utils.TimeTracker()
   time_tracker.tic('data', 'total')
-  for step, batch in zip(range(init_step, train_config.max_steps + 1),
+
+  early_stop_steps = train_config.early_stop_steps
+  if early_stop_steps > 0:
+    train_max_step = min(train_config.max_steps, early_stop_steps)
+  else:
+    train_max_step = train_config.max_steps
+
+  for step, batch in zip(range(init_step, train_max_step + 1),
                          train_iter):
     if points_iter is not None:
       batch['background_points'] = next(points_iter)

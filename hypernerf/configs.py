@@ -133,6 +133,7 @@ class TrainConfig:
   })
   # The maximum number of training steps.
   max_steps: int = 1000000
+  early_stop_steps: int = -1  # negative values for no early stop
 
   # Whether to use weight normalization.
   use_weight_norm: bool = False

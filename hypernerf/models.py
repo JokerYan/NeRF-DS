@@ -2188,9 +2188,7 @@ class HyperSpecModel(CustomModel):
 
     extra_rgb_condition = None
     if self.use_warp_c:
-      pass
-      # DEBUG
-      # extra_rgb_condition = warped_c_feat
+      extra_rgb_condition = warped_c_feat
     if self.use_hyper_c:
       if extra_rgb_condition is None:
         extra_rgb_condition = hyper_c_feat
