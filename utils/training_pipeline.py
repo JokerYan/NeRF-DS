@@ -29,6 +29,7 @@ config_dict = {
   "vhcxt": "test_local_spec_vhcxt.gin",
 
   "hs": "test_local_spec_hs.gin",
+  "vhs": "test_local_spec_hs_vrig.gin",
 }
 
 data_root = ""
@@ -74,13 +75,15 @@ training_schedule = [
 
   # ("spoon-1_qualitative", "s1_q_hcx_vn_exp01", "hcx_nv", []),
 
-  ("bell-2_qualitative", "b2_q_hs_exp02", "hs", []),
-  ("bell-2_qualitative", "b2_q_hs_exp03", "hs", ["HyperSpecModel.use_hyper_c = False",
-                                                 ]),
-  ("bell-2_qualitative", "b2_q_hs_exp04", "hs", ["HyperSpecModel.nerf_rgb_branch_depth = 3",
-                                                 ]),
-  ("bell-2_qualitative", "b2_q_hs_exp05", "hs", ["HyperSpecModel.use_norm_voxel = False",
-                                                 ])
+  # ("bell-2_qualitative", "b2_q_hs_exp02", "hs", []),
+  # ("bell-2_qualitative", "b2_q_hs_exp03", "hs", ["HyperSpecModel.use_hyper_c = False",
+  #                                                ]),
+  # ("bell-2_qualitative", "b2_q_hs_exp04", "hs", ["HyperSpecModel.nerf_rgb_branch_depth = 3",
+  #                                                ]),
+  # ("bell-2_qualitative", "b2_q_hs_exp05", "hs", ["HyperSpecModel.use_norm_voxel = False",
+  #                                                ])
+
+  ("vrig-bell-1_novel_view", "b2_nv_hs_exp02", "vhs", []),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params):
