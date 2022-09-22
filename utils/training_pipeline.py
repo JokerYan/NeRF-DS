@@ -83,15 +83,23 @@ training_schedule = [
   # ("bell-2_qualitative", "b2_q_hs_exp05", "hs", ["HyperSpecModel.use_norm_voxel = False",
   #                                                ])
 
-  ("vrig-bell-1_multi_view", "vb1_nv_hcx_mv_exp01", "vhs", ["ExperimentConfig.image_scale = 1"]),       # local
-  ("vrig-bell-1_multi_view", "vb1_nv_hcx_mv_exp02", "vhs", ["ExperimentConfig.image_scale = 1",
-                                                            "SpecularConfig.use_hyper_c = False"]),       # local
-  ("vrig-bell-1_novel_view", "vb1_nv_hs_exp05", "vhs", ["ExperimentConfig.image_scale = 1",
-                                                        "HyperSpecModel.use_norm_voxel = False"]),
-  ("vrig-bell-1_novel_view", "vb1_nv_hs_exp06", "vhs", ["ExperimentConfig.image_scale = 1",
-                                                        "HyperSpecModel.use_norm_voxel = False",
-                                                        "HyperSpecModel.use_hyper = False",
-                                                        "TrainConfig.use_elastic_loss = True"]),
+  # ("vrig-bell-1_multi_view", "vb1_nv_hcx_mv_exp01", "vhs", ["ExperimentConfig.image_scale = 1"]),       # local
+  # ("vrig-bell-1_multi_view", "vb1_nv_hcx_mv_exp02", "vhs", ["ExperimentConfig.image_scale = 1",
+  #                                                           "HyperSpecModel.use_hyper_c = False"]),       # local
+
+  # ("vrig-bell-1_multi_view", "vb1_nv_hcx_mv_exp03", "vhs", ["ExperimentConfig.image_scale = 1",
+  #                                                           "HyperSpecModel.nerf_rgb_branch_depth = 3"]),       # local
+
+  # ("vrig-bell-1_novel_view", "vb1_nv_hs_exp05", "vhs", ["ExperimentConfig.image_scale = 1",
+  #                                                       "HyperSpecModel.use_norm_voxel = False"]),
+  # ("vrig-bell-1_novel_view", "vb1_nv_hs_exp06", "vhs", ["ExperimentConfig.image_scale = 1",
+  #                                                       "HyperSpecModel.use_norm_voxel = False",
+  #                                                       "HyperSpecModel.use_hyper = False",
+  #                                                       "TrainConfig.use_elastic_loss = True"]),
+
+  ("vrig-cup-3_qualitative", "vc3_q_hs_exp02", "hs", ["ExperimentConfig.image_scale = 1"]),  # local
+  # ("vrig-cup-3_qualitative", "vc3_q_base_exp01", "base", ["ExperimentConfig.image_scale = 1"]),  # local
+  # ("vrig-cup-3_qualitative", "vc3_q_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),  # local
 
 
   # ("vrig-bell-1_novel_view", "vb1_nv_hcx_nv_exp01", "vhcx_nv", ["ExperimentConfig.image_scale = 1"]),       # local

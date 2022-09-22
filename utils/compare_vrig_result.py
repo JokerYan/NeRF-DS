@@ -24,7 +24,7 @@ target_height = 480
 # experiment_name_list = ['chicken_spec_exp01_base', 'chicken_spec_exp03']
 # experiment_name_list = ['s_chicken_spec_exp01_base']
 # experiment_name_list = ['vwb1_nv_hc_exp02']
-experiment_name_list = ['vb1_nv_hs_exp02', 'vb1_nv_ref_exp01']
+experiment_name_list = ['vb1_nv_hs_exp02', 'vb1_nv_base_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:
