@@ -889,7 +889,7 @@ class NerfModel(CustomModel):
     num_samples = points.shape[1]
     for key in aux_output.keys():
       if aux_output[key] is not None and len(aux_output[key].shape) > 2:
-        if key == 'hyper_jacobian':
+        if key == 'hyper_jacobian' or key == 'warp_jacobian':
           continue
         aux_output[key] = jnp.reshape(aux_output[key], (-1, aux_output[key].shape[-1]))
 
