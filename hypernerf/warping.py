@@ -273,6 +273,7 @@ class SE3Field(nn.Module):
 
     if return_jacobian:
       jac_fn = jax.jacfwd(self.warp, argnums=0)
-      out['jacobian'] = jac_fn(points, metadata, extra_params, False, vector, inverse)
+      warp_jacobian, _ = jac_fn(points, metadata, extra_params, False, vector, inverse)   # exclude jacobian of screw axis
+      out['jacobian'] = warp_jacobian
 
     return out
