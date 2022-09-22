@@ -1057,7 +1057,7 @@ class NerfModel(CustomModel):
 
     warped_points = jnp.reshape(warped_points, (-1, num_samples, warped_points.shape[-1]))
     if warp_jacobian is not None:
-      warp_jacobian = jnp.reshape(warp_jacobian, (-1, num_samples, warp_jacobian.shape[-1]))
+      warp_jacobian = jnp.reshape(warp_jacobian, (-1, num_samples, warp_jacobian.shape[-2], warp_jacobian.shape[-1]))
       out['warp_jacobian'] = warp_jacobian
     out['warped_points'] = warped_points
     out.update(model_utils.volumetric_rendering(
@@ -2222,7 +2222,7 @@ class HyperSpecModel(CustomModel):
 
     warped_points = jnp.reshape(warped_points, (-1, num_samples, warped_points.shape[-1]))
     if warp_jacobian is not None:
-      warp_jacobian = jnp.reshape(warp_jacobian, (-1, num_samples, warp_jacobian.shape[-1]))
+      warp_jacobian = jnp.reshape(warp_jacobian, (-1, num_samples, warp_jacobian.shape[-2], warp_jacobian.shape[-1]))
       out['warp_jacobian'] = warp_jacobian
     out['warped_points'] = warped_points
     out.update(model_utils.volumetric_rendering(
