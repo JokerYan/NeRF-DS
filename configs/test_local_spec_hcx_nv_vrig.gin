@@ -75,7 +75,7 @@ EvalConfig.num_train_eval = 5
 EvalConfig.num_val_eval = 5
 
 NerfModel.use_rgb_condition = True
-NerfModel.nerf_embed_key = 'appearance'
+NerfModel.nerf_embed_key = 'camera'
 
 # Specular configs
 SpecularConfig.screw_input_mode = None

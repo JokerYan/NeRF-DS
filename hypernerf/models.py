@@ -159,16 +159,9 @@ class NerfModel(CustomModel):
   hyper_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8))
 
+  use_hyper: bool = True
   # hyper_embed_key: str = 'appearance'
   hyper_embed_key: str = 'warp'
-  # TODO: change this key from 'appearance' to 'warp'
-  """
-  All current experiments have hyper_use_warp_embed turned on. This means that the hyper_embed_key is not used.
-  In our future double camera datasets, there will only be two appearance code, one for each camera.
-  In that case, the hyper embedding cannot use 'appearance' as the embedding key in all circumstances.
-  The best solution is the change this to a separate 'hyper' key, but it might cause errors on old dataset if 
-    hyper_use_warp_embed switched off.
-  """
   hyper_use_warp_embed: bool = True
   hyper_sheet_mlp_cls: Callable[..., nn.Module] = modules.HyperSheetMLP
   hyper_sheet_use_input_points: bool = True
@@ -697,24 +690,28 @@ class NerfModel(CustomModel):
       #   num_samples = hyper_embed.shape[1]
       #   viewdirs = jnp.tile(jnp.expand_dims(viewdirs, 1), [1, num_samples, 1])
       # hyper_embed = jnp.concatenate([hyper_embed, viewdirs], axis=-1)
-    if return_hyper_jacobian:
-      hyper_points = self.map_hyper_points(
-        points, hyper_embed, extra_params,
-        # Override hyper points if present in metadata dict.
-        hyper_point_override=hyper_point_override)
-      # jacobian wrt the hyper embedding
-      hyper_jacobian = jax.jacrev(self.map_hyper_points, argnums=1)(
-        points, hyper_embed, extra_params, hyper_point_override
-      )
-      # hyper_jacobian_x, hyper_jacobian_t = jax.jacrev(self.map_hyper_points, argnums=(0, 1))(
-      #   points, hyper_embed, extra_params, hyper_point_override
-      # )
-      # hyper_jacobian = jnp.concatenate([hyper_jacobian_x, hyper_jacobian_t], axis=-1)
+    if self.use_hyper:
+      if return_hyper_jacobian:
+        hyper_points = self.map_hyper_points(
+          points, hyper_embed, extra_params,
+          # Override hyper points if present in metadata dict.
+          hyper_point_override=hyper_point_override)
+        # jacobian wrt the hyper embedding
+        hyper_jacobian = jax.jacrev(self.map_hyper_points, argnums=1)(
+          points, hyper_embed, extra_params, hyper_point_override
+        )
+        # hyper_jacobian_x, hyper_jacobian_t = jax.jacrev(self.map_hyper_points, argnums=(0, 1))(
+        #   points, hyper_embed, extra_params, hyper_point_override
+        # )
+        # hyper_jacobian = jnp.concatenate([hyper_jacobian_x, hyper_jacobian_t], axis=-1)
+      else:
+        hyper_points = self.map_hyper_points(
+          points, hyper_embed, extra_params,
+          # Override hyper points if present in metadata dict.
+          hyper_point_override=hyper_point_override)
+        hyper_jacobian = None
     else:
-      hyper_points = self.map_hyper_points(
-        points, hyper_embed, extra_params,
-        # Override hyper points if present in metadata dict.
-        hyper_point_override=hyper_point_override)
+      hyper_points = None
       hyper_jacobian = None
 
     if hyper_points is not None:
@@ -1377,16 +1374,9 @@ class HyperSpecModel(CustomModel):
   hyper_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8))
 
+  use_hyper: bool = True
   # hyper_embed_key: str = 'appearance'
   hyper_embed_key: str = 'warp'
-  # TODO: change this key from 'appearance' to 'warp'
-  """
-  All current experiments have hyper_use_warp_embed turned on. This means that the hyper_embed_key is not used.
-  In our future double camera datasets, there will only be two appearance code, one for each camera.
-  In that case, the hyper embedding cannot use 'appearance' as the embedding key in all circumstances.
-  The best solution is the change this to a separate 'hyper' key, but it might cause errors on old dataset if
-    hyper_use_warp_embed switched off.
-  """
   hyper_use_warp_embed: bool = True
   hyper_sheet_mlp_cls: Callable[..., nn.Module] = modules.HyperSheetMLP
   hyper_sheet_use_input_points: bool = True
@@ -1820,20 +1810,24 @@ class HyperSpecModel(CustomModel):
       #   num_samples = hyper_embed.shape[1]
       #   viewdirs = jnp.tile(jnp.expand_dims(viewdirs, 1), [1, num_samples, 1])
       # hyper_embed = jnp.concatenate([hyper_embed, viewdirs], axis=-1)
-    if return_hyper_jacobian:
-      hyper_points = self.map_hyper_points(
-        points, hyper_embed, extra_params,
-        # Override hyper points if present in metadata dict.
-        hyper_point_override=hyper_point_override)
-      # jacobian wrt the hyper embedding
-      hyper_jacobian = jax.jacrev(self.map_hyper_points, argnums=1)(
-        points, hyper_embed, extra_params, hyper_point_override
-      )
+    if self.use_hyper:
+      if return_hyper_jacobian:
+        hyper_points = self.map_hyper_points(
+          points, hyper_embed, extra_params,
+          # Override hyper points if present in metadata dict.
+          hyper_point_override=hyper_point_override)
+        # jacobian wrt the hyper embedding
+        hyper_jacobian = jax.jacrev(self.map_hyper_points, argnums=1)(
+          points, hyper_embed, extra_params, hyper_point_override
+        )
+      else:
+        hyper_points = self.map_hyper_points(
+          points, hyper_embed, extra_params,
+          # Override hyper points if present in metadata dict.
+          hyper_point_override=hyper_point_override)
+        hyper_jacobian = None
     else:
-      hyper_points = self.map_hyper_points(
-        points, hyper_embed, extra_params,
-        # Override hyper points if present in metadata dict.
-        hyper_point_override=hyper_point_override)
+      hyper_points = None
       hyper_jacobian = None
 
     if hyper_points is not None:

@@ -83,10 +83,23 @@ training_schedule = [
   # ("bell-2_qualitative", "b2_q_hs_exp05", "hs", ["HyperSpecModel.use_norm_voxel = False",
   #                                                ])
 
-  ("vrig-bell-1_novel_view", "vb1_nv_hs_exp02", "vhs", ["ExperimentConfig.image_scale = 1"]),
-  ("vrig-bell-1_novel_view", "vb1_nv_ref_exp01", "vref", ["ExperimentConfig.image_scale = 1"]),
-  ("vrig-bell-1_novel_view", "vb1_nv_base_exp01", "vbase", ["ExperimentConfig.image_scale = 1"]),
-  ("bell-3_qualitative", "b3_q_hs_exp02", "hs", []),
+  ("vrig-bell-1_multi_view", "vb1_nv_hcx_mv_exp01", "vhs", ["ExperimentConfig.image_scale = 1"]),       # local
+  ("vrig-bell-1_multi_view", "vb1_nv_hcx_mv_exp02", "vhs", ["ExperimentConfig.image_scale = 1",
+                                                            "SpecularConfig.use_hyper_c = False"]),       # local
+  ("vrig-bell-1_novel_view", "vb1_nv_hs_exp05", "vhs", ["ExperimentConfig.image_scale = 1",
+                                                        "HyperSpecModel.use_norm_voxel = False"]),
+  ("vrig-bell-1_novel_view", "vb1_nv_hs_exp06", "vhs", ["ExperimentConfig.image_scale = 1",
+                                                        "HyperSpecModel.use_norm_voxel = False",
+                                                        "HyperSpecModel.use_hyper = False",
+                                                        "TrainConfig.use_elastic_loss = True"]),
+
+
+  # ("vrig-bell-1_novel_view", "vb1_nv_hcx_nv_exp01", "vhcx_nv", ["ExperimentConfig.image_scale = 1"]),       # local
+
+  # ("vrig-bell-1_novel_view", "vb1_nv_hs_exp02", "vhs", ["ExperimentConfig.image_scale = 1"]),       # local
+  # ("vrig-bell-1_novel_view", "vb1_nv_ref_exp01", "vref", ["ExperimentConfig.image_scale = 1"]),     # gpu3-2
+  # ("vrig-bell-1_novel_view", "vb1_nv_base_exp01", "vbase", ["ExperimentConfig.image_scale = 1"]),   # gpu3-3
+  # ("bell-3_qualitative", "b3_q_hs_exp02", "hs", []),                                                # gpu3-1
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params):
