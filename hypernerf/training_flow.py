@@ -25,14 +25,22 @@ class ScalarParams:
   elastic_loss_weight: float = 0
 
 
-def save_checkpoint(path, state, keep=5):
+def save_checkpoint(path, flow_only_path, state, keep=5):
   """Save the state to a checkpoint."""
   state_to_save = jax.device_get(jax.tree_map(lambda x: x[0], state))
   step = state_to_save.optimizer.state.step
   checkpoint_path = checkpoints.save_checkpoint(
       path, state_to_save, step, keep=keep)
   logging.info('Saved checkpoint: step=%d, path=%s', int(step), checkpoint_path)
-  return checkpoint_path
+
+  # save flow field params separately
+  params = state_to_save.optimizer.target
+  checkpoint_flow_only_path = checkpoints.save_checkpoint(
+    flow_only_path, params, step, keep=keep
+  )
+  logging.info('Saved flow only checkpoint: step=%d, path=%s', int(step), checkpoint_flow_only_path)
+
+  return checkpoint_path, checkpoint_flow_only_path
 
 
 def compute_elastic_loss(jacobian, eps=1e-6, loss_type='log_svals'):

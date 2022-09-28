@@ -13,7 +13,8 @@
 # limitations under the License.
 
 """Helper functions/classes for model definition."""
-from typing import Optional
+from typing import Optional, Dict, Any
+from dataclasses import field
 
 from flax import linen as nn
 from flax import optim
@@ -33,8 +34,9 @@ class TrainState:
   hyper_sheet_alpha: Optional[jnp.ndarray] = None
   norm_loss_weight: Optional[jnp.ndarray] = None
   norm_input_alpha: Optional[jnp.ndarray] = None
-  norm_voxel_lr: Optional[jnp.ndarray] = None,
-  norm_voxel_ratio: Optional[jnp.ndarray] = None,
+  norm_voxel_lr: Optional[jnp.ndarray] = None
+  norm_voxel_ratio: Optional[jnp.ndarray] = None
+  flow_params: Optional[Dict[str, Any]] = field(default_factory=dict)
 
   @property
   def extra_params(self):

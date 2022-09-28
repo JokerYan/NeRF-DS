@@ -30,6 +30,8 @@ config_dict = {
 
   "hs": "test_local_spec_hs.gin",
   "vhs": "test_local_spec_hs_vrig.gin",
+
+  "hsf": "test_local_spec_hsf.gin",
 }
 
 data_root = ""
@@ -116,20 +118,24 @@ training_schedule = [
 
   # ("hypernerf_americano", "h_am_q_base_exp01", "base", []),
   # ("hypernerf_cross-hands1", "h_ch1_q_base_exp01", "base", []),
-  ("hypernerf_keyboard", "h_k_q_base_exp01", "base", []),
+  # ("hypernerf_keyboard", "h_k_q_base_exp01", "base", []),
+
+  ("bell-2_qualitative", "b2_q_hsf_exp01", "hsf", [], "b2_q_ref_exp01"),
 ]
 
-def train_single(dataset_name, exp_name, config_key, gin_params):
+def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):
   print("Start training for: {:20} {:15} {:10}".format(
     dataset_name, exp_name, config_key))
 
   dataset_path = os.path.join(data_root, dataset_name)
   exp_path = os.path.join(exp_root, exp_name)
   config_path = os.path.join(config_root, config_dict[config_key])
+  flow_path = os.path.join(exp_root, flow_exp_name)
 
   process_str = [
     "python", "train.py",
     "--base_folder", exp_path,
+    "--flow_folder", flow_path,
     "--gin_bindings=data_dir=\'{}\'".format(dataset_path),
     "--gin_configs", config_path
   ]
@@ -163,8 +169,18 @@ if __name__ == "__main__":
   for i, exp in enumerate(training_schedule):
     if not args.exp_idx or i in args.exp_idx:
       training_schedule_selected.append(exp)
-  for dataset_name, exp_name, config_key, gin_params in training_schedule_selected:
+  for training_setting in training_schedule_selected:
     try:
-      train_single(dataset_name, exp_name, config_key, gin_params)
+      gin_params = []
+      flow_exp_name = ''
+      if len(training_setting) == 3:
+        dataset_name, exp_name, config_key = training_setting
+      elif len(training_setting) == 4:
+        dataset_name, exp_name, config_key, gin_params = training_setting
+      elif len(training_setting) == 5:
+        dataset_name, exp_name, config_key, gin_params, flow_exp_name = training_setting
+      else:
+        raise NotImplementedError
+      train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name)
     except:
       print("Error encountered when running {}".format(exp_name))

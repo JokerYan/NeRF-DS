@@ -20,6 +20,7 @@ from absl import logging
 import flax
 from flax import struct
 from flax import traverse_util
+from flax.core import FrozenDict
 from flax.training import checkpoints
 import jax
 from jax import lax
@@ -431,8 +432,8 @@ def train_step(model: models.CustomModel,
     ret = model.apply({'params': params['model']},
                       batch,
                       extra_params=state.extra_params,
-                      return_points=(use_warp_reg_loss or use_hyper_reg_loss),
-                      return_weights=(use_warp_reg_loss or use_elastic_loss),
+                      return_points=True,
+                      return_weights=True,
                       return_warp_jacobian=use_elastic_loss,
                       return_hyper_jacobian=use_hyper_jacobian_reg,
                       return_hyper_c_jacobian=use_hyper_c_jacobian_reg,
@@ -480,7 +481,14 @@ def train_step(model: models.CustomModel,
         state=zero_adam_param_states(optimizer.state, 'model/hyper_sheet_mlp'))
 
   grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
-  (_, (stats, model_out)), grad = grad_fn(optimizer.target)
+  # add flow params
+  params = optimizer.target
+  flow_params = state.flow_params['model']
+  model_params = params['model'].unfreeze()
+  model_params['flow_model'] = flow_params   # immutable problem
+  params['model'] = FrozenDict(model_params)
+
+  (_, (stats, model_out)), grad = grad_fn(params)
   grad = jax.lax.pmean(grad, axis_name='batch')
   if grad_max_val > 0.0 or grad_max_norm > 0.0:
     grad = utils.clip_gradients(grad, grad_max_val, grad_max_norm)

@@ -18,7 +18,7 @@ from jax import random
 import numpy as np
 import tensorflow as tf
 
-from hypernerf import configs
+from hypernerf import configs, training_flow
 from hypernerf import datasets
 from hypernerf import gpath
 from hypernerf import model_utils
@@ -97,6 +97,7 @@ def main(argv):
   summary_dir = exp_dir / 'summaries' / 'train_flow'
   nerf_checkpoint_dir = exp_dir / 'checkpoints'
   flow_checkpoint_dir = exp_dir / 'checkpoints_flow'
+  flow_only_checkpoint_dir = exp_dir / 'checkpoints_flow_only'
 
   # Log and create directories if this is the main process.
   if jax.process_index() == 0:
@@ -257,7 +258,7 @@ def main(argv):
       time_tracker.toc('total')
 
     if step % train_config.save_every == 0 and jax.process_index() == 0:
-      training.save_checkpoint(flow_checkpoint_dir, flow_state, keep=5)
+      training_flow.save_checkpoint(flow_checkpoint_dir, flow_only_checkpoint_dir, flow_state, keep=5)
 
     if step % flow_config.print_every == 0 and jax.process_index() == 0:
       logging.info('step=%d, loss=%0.6f, steps_per_second=%0.2f',

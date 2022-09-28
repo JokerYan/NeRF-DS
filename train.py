@@ -45,6 +45,7 @@ flags.DEFINE_enum('mode', None, ['jax_cpu', 'jax_gpu', 'jax_tpu'],
                   'Distributed strategy approach.')
 
 flags.DEFINE_string('base_folder', None, 'where to store ckpts and logs')
+flags.DEFINE_string('flow_folder', '', 'which experiments is the flow model coming from')
 flags.mark_flag_as_required('base_folder')
 flags.DEFINE_multi_string('gin_bindings', None, 'Gin parameter bindings.')
 flags.DEFINE_multi_string('gin_configs', (), 'Gin config files.')
@@ -299,6 +300,19 @@ def main(argv):
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
+
+  # load flow model
+  if model.use_flow_model:
+    flow_dir = gpath.GPath(FLAGS.flow_folder)
+    flow_checkpoint_dir = flow_dir / 'checkpoints_flow_only'
+    flow_params = checkpoints.restore_checkpoint(flow_checkpoint_dir, None)
+    """
+    {'model': {'warp_field': ..., 'warp_embed': ...}}
+    """
+    state = state.replace(
+      flow_params=flow_params
+    )
+
   state = jax_utils.replicate(state, devices=devices)
   del params
 
@@ -333,7 +347,7 @@ def main(argv):
       train_step,
       axis_name='batch',
       devices=devices,
-      # rng_key, state, batch, scalar_params.
+      # rng_key, state, batch, scalar_params
       in_axes=(0, 0, 0, None),
       # Treat use_elastic_loss as compile-time static.
       donate_argnums=(2,),  # Donate the 'batch' argument.

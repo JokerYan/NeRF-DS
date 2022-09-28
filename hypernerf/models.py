@@ -198,6 +198,9 @@ class NerfModel(CustomModel):
   # reflected radiance
   use_ref_radiance: bool = False
 
+  # flow config
+  use_flow_model: bool = False
+
 
   @property
   def num_nerf_embeds(self):
@@ -1511,6 +1514,9 @@ class HyperSpecModel(CustomModel):
   # color mixed from diffuse and specular
   mix_d_s_color: bool = False
 
+  # flow config
+  use_flow_model: bool = False
+
   @property
   def num_nerf_embeds(self):
     return max(self.embeddings_dict[self.nerf_embed_key]) + 1
@@ -1677,6 +1683,13 @@ class HyperSpecModel(CustomModel):
     # self.surface_norm_voxels = jnp.zeros((500, 100, 100, 100), dtype=jnp.float16)
     if self.use_norm_voxel:
       self.norm_voxel = modules.NormVoxels()
+
+    # flow model
+    if self.use_flow_model:
+      self.flow_model = FlowModelLight(
+        num_warp_embeds=self.num_warp_embeds,
+        warp_embed_key=self.warp_embed_key,
+      )
 
   def get_condition_inputs(self, metadata, metadata_encoded=False):
     """Create the condition inputs for the NeRF template."""
@@ -1868,7 +1881,7 @@ class HyperSpecModel(CustomModel):
 
     return hyper_points
 
-  def map_points(self, points, warp_embed, hyper_embed, viewdirs, extra_params,
+  def map_points(self, points, warp_embed, hyper_embed, viewdirs, extra_params, metadata=None,
                  use_warp=True, return_warp_jacobian=False, return_hyper_jacobian=False,
                  hyper_point_override=None):
     """Map input points to warped spatial and hyper points.
@@ -1886,10 +1899,14 @@ class HyperSpecModel(CustomModel):
     Returns:
       A tuple containing `(warped_points, warp_jacobian)`.
     """
+    screw_axis = None
     # Map input points to warped spatial and hyper points.
-    spatial_points, warp_jacobian, screw_axis = self.map_spatial_points(
-      points, warp_embed, extra_params, use_warp=use_warp,
-      return_warp_jacobian=return_warp_jacobian)
+    if self.use_flow_model:
+      spatial_points, warp_jacobian = self.flow_model(points, warp_embed)
+    else:
+      spatial_points, warp_jacobian, screw_axis = self.map_spatial_points(
+        points, warp_embed, extra_params, use_warp=use_warp,
+        return_warp_jacobian=return_warp_jacobian)
     if self.use_viewdirs_in_hyper:
       raise NotImplementedError
       # if len(hyper_embed.shape) == 3:
@@ -2034,6 +2051,9 @@ class HyperSpecModel(CustomModel):
     if use_warp:
       if metadata_encoded:
         warp_embed = metadata['encoded_warp']
+      elif self.use_flow_model:
+        warp_embed = metadata[self.flow_model.warp_embed_key]
+        warp_embed = self.flow_model.warp_embed(warp_embed)
       else:
         warp_embed = metadata[self.warp_embed_key]
         warp_embed = self.warp_embed(warp_embed)
@@ -2091,7 +2111,7 @@ class HyperSpecModel(CustomModel):
     def cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs):
       # Map input points to warped spatial and hyper points.
       warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
-        points, warp_embed, hyper_embed, viewdirs, extra_params, use_warp=use_warp,
+        points, warp_embed, hyper_embed, viewdirs, extra_params, metadata=metadata, use_warp=use_warp,
         return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
         # Override hyper points if present in metadata dict.
         hyper_point_override=metadata.get('hyper_point'))
@@ -2777,6 +2797,43 @@ class FlowModel(nn.Module):
     weights = out['weights']
 
     return sigma, weights
+
+
+@gin.configurable(denylist=['name'])
+class FlowModelLight(nn.Module):
+  """
+  Light weight version of the flow model used for inference.
+  It does not contain the reference nerf model that is only used for training.
+  """
+  # warp_field_cls = warping.SE3Field
+  warp_field_cls = warping.TranslationField
+  warp_embed_cls: Callable[..., nn.Module] = (
+    functools.partial(modules.GLOEmbed, num_dims=8))
+
+  def __init__(self, num_warp_embeds, warp_embed_key, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.num_warp_embeds = num_warp_embeds
+    self.warp_embed_key = warp_embed_key
+
+  def setup(self):
+    self.warp_field = self.warp_field_cls()
+    self.warp_embed = self.warp_embed_cls(num_embeddings=self.num_warp_embeds)
+
+  def __call__(self, points, warp_embed):
+    if len(points.shape) == 3:
+      warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None)),
+                         in_axes=(0, 0, None, None))
+    else:
+      warp_fn = self.warp_field
+
+    extra_params = {'warp_alpha': 4}  # TODO: load from flow model training checkpoints
+    warp_out = warp_fn(points, warp_embed, extra_params, True)  # return warp jacobian
+    warped_points = warp_out['warped_points']
+    warp_jacobian = warp_out['jacobian']
+
+    return warped_points, warp_jacobian
+
+
 
 
 def construct_nerf(key, use_hyper_spec_model: bool, batch_size: int, embeddings_dict: Dict[str, int],
