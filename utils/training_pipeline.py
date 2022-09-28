@@ -97,9 +97,12 @@ training_schedule = [
   #                                                       "HyperSpecModel.use_hyper = False",
   #                                                       "TrainConfig.use_elastic_loss = True"]),
 
-  ("vrig-cup-3_qualitative", "vc3_q_hs_exp02", "hs", ["ExperimentConfig.image_scale = 1"]),  # local
-  # ("vrig-cup-3_qualitative", "vc3_q_base_exp01", "base", ["ExperimentConfig.image_scale = 1"]),  # local
-  # ("vrig-cup-3_qualitative", "vc3_q_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),  # local
+  # ("vrig-cup-3_qualitative", "vc3_q_hs_exp02", "hs", ["ExperimentConfig.image_scale = 1",
+  #                                                     "TrainConfig.early_stop_steps = 90000"]),  # local
+  # ("vrig-cup-3_qualitative", "vc3_q_base_exp01", "base", ["ExperimentConfig.image_scale = 1",
+  #                                                         "TrainConfig.early_stop_steps = 90000"]),  # local
+  # ("vrig-cup-3_qualitative", "vc3_q_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1",
+  #                                                       "TrainConfig.early_stop_steps = 90000"]),  # local
 
 
   # ("vrig-bell-1_novel_view", "vb1_nv_hcx_nv_exp01", "vhcx_nv", ["ExperimentConfig.image_scale = 1"]),       # local
@@ -108,6 +111,12 @@ training_schedule = [
   # ("vrig-bell-1_novel_view", "vb1_nv_ref_exp01", "vref", ["ExperimentConfig.image_scale = 1"]),     # gpu3-2
   # ("vrig-bell-1_novel_view", "vb1_nv_base_exp01", "vbase", ["ExperimentConfig.image_scale = 1"]),   # gpu3-3
   # ("bell-3_qualitative", "b3_q_hs_exp02", "hs", []),                                                # gpu3-1
+
+  # ("plate-1_qualitative", "p1_q_hs_exp02", "hs", []),
+
+  # ("hypernerf_americano", "h_am_q_base_exp01", "base", []),
+  # ("hypernerf_cross-hands1", "h_ch1_q_base_exp01", "base", []),
+  ("hypernerf_keyboard", "h_k_q_base_exp01", "base", []),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params):

@@ -14,7 +14,7 @@ else:
 # dataset = 'white-board-6'
 # dataset = 'aluminium-sheet-6'
 # dataset = 'vrig-chicken'
-dataset = 'vrig-cup-3_qualitative'
+dataset = 'hypernerf_keyboard'
 data_dir = os.path.join(data_root, dataset)
 
 train_camera_folder = os.path.join(data_dir, "camera")

@@ -95,10 +95,7 @@ def render_scene(dataset_name, exp_name, camera_path_name,
     logging.info('Loading config from %s', config_path)
     config_str = f.read()
   gin.parse_config(config_str)
-  config_path = Path(train_dir, 'config.gin')
-  with open(config_path, 'w') as f:
-    logging.info('Saving config to %s', config_path)
-    f.write(config_str)
+
   exp_config = configs.ExperimentConfig()
   train_config = configs.TrainConfig()
   eval_config = configs.EvalConfig()

@@ -2,6 +2,7 @@ import os
 import cv2
 import json
 import numpy as np
+from tkinter import filedialog, Tk
 
 if os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
     data_root = '/hdd/zhiwen/data/hypernerf/raw/'
@@ -15,16 +16,17 @@ else:
 # dataset = 'vrig-chicken'
 # dataset = 'single-vrig-chicken'
 # dataset = 'vrig-white-board-1_novel_view'
-dataset = 'vrig-bell-1_novel_view'
+dataset = 'vrig-cup-3_qualitative'
 data_dir = os.path.join(data_root, dataset)
+save = False
 
 video_render_step = 9
-target_height = 480
+target_height = 360
 
 # experiment_name_list = ['chicken_spec_exp01_base', 'chicken_spec_exp03']
 # experiment_name_list = ['s_chicken_spec_exp01_base']
 # experiment_name_list = ['vwb1_nv_hc_exp02']
-experiment_name_list = ['vb1_nv_hs_exp02', 'vb1_nv_base_exp01']
+experiment_name_list = ['vc3_q_hs_exp02', 'vc3_q_ref_exp01', 'vc3_q_base_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:
@@ -80,6 +82,27 @@ for frame_list in exp_frame_list:
 
 # concat image between experiments and show
 frame_idx = 0
+selected_idx_list = []
+full_image_list = []
+def get_full_image(frame_idx):
+  full_image = None
+  for exp_id in range(len(exp_concat_image_list)):
+    exp_image = exp_concat_image_list[exp_id][frame_idx]
+    if full_image is None:
+      full_image = exp_image
+    else:
+      full_image = np.concatenate([full_image, exp_image], axis=0)
+  actual_idx, total_idx = frame_idx * video_render_step + 1, len(exp_concat_image_list[0]) * video_render_step + 1
+  full_image = cv2.putText(full_image, "{}/{}".format(actual_idx, total_idx),
+                           (10, target_height - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+  return full_image
+
+for i in range(len(exp_concat_image_list[0])):
+  full_image_list.append(get_full_image(i))
+
+
+# concat image between experiments and show
+frame_idx = 0
 while True:
   full_image = None
   for exp_id in range(len(exp_concat_image_list)):
@@ -105,3 +128,23 @@ while True:
     frame_idx = min(len(exp_concat_image_list[0]) - 1, frame_idx + 10)
 
 cv2.destroyAllWindows()
+
+# save pictures if needed
+if save:
+  root = Tk()
+  root.withdraw()
+  folder_selected = filedialog.askdirectory()
+  all_image_folder = os.path.join(folder_selected, 'all')
+  selected_image_folder = os.path.join(folder_selected, 'selected')
+  os.makedirs(all_image_folder, exist_ok=True)
+  os.makedirs(selected_image_folder, exist_ok=True)
+
+  for i in range(len(full_image_list)):
+    filename = os.path.join(all_image_folder, '{}.png'.format(i))
+    cv2.imwrite(filename, full_image_list[i])
+
+    if i in selected_idx_list:
+      filename = os.path.join(selected_image_folder, '{}.png'.format(i))
+      cv2.imwrite(filename, full_image_list[i])
+
+  print("Images saved to: {}".format(folder_selected))

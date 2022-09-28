@@ -16,7 +16,7 @@ else:
     raise NotImplemented
 
 # dataset = 'vrig-cup-2_qualitative'
-dataset = 'bell-3_qualitative'
+dataset = 'bell-2_qualitative'
 data_dir = os.path.join(data_root, dataset)
 save = False
 
@@ -24,7 +24,7 @@ camera_idx = 93
 video_render_step = 10
 target_height = 500
 
-experiment_name_list = ['b3_q_hs_exp02', 'b3_q_ref_exp01']
+experiment_name_list = ['b2_q_ref_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:

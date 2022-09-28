@@ -725,6 +725,92 @@ class NerfModel(CustomModel):
     warp_embed = self.warp_embed(warp_embed)
     return self.warp_field(points, warp_embed, extra_params)
 
+  def render_samples_sigma_only(self,
+                                level,
+                                points,
+                                z_vals,
+                                directions,
+                                viewdirs,
+                                metadata,
+                                extra_params,
+                                use_warp=True,
+                                metadata_encoded=False,
+                                return_warp_jacobian=False,
+                                return_hyper_jacobian=False,
+                                use_sample_at_infinity=False,
+                                render_opts=None,
+                                ):
+    num_rays = len(points)
+    out = {'points': points}
+
+    batch_shape = points.shape[:-1]
+    # Create the warp embedding.
+    if use_warp:
+      if metadata_encoded:
+        warp_embed = metadata['encoded_warp']
+      else:
+        warp_embed = metadata[self.warp_embed_key]
+        warp_embed = self.warp_embed(warp_embed)
+    else:
+      warp_embed = None
+
+    # Create the hyper embedding.
+    if self.has_hyper_embed:
+      if metadata_encoded:
+        hyper_embed = metadata['encoded_hyper']
+      elif self.hyper_use_warp_embed:
+        hyper_embed = warp_embed
+      else:
+        hyper_embed = metadata[self.hyper_embed_key]
+        hyper_embed = self.hyper_embed(hyper_embed)
+    else:
+      hyper_embed = None
+
+    # Broadcast embeddings.
+    if warp_embed is not None:
+      warp_embed = jnp.broadcast_to(
+        warp_embed[:, jnp.newaxis, :],
+        shape=(*batch_shape, warp_embed.shape[-1]))
+    if hyper_embed is not None:
+      hyper_embed = jnp.broadcast_to(
+        hyper_embed[:, jnp.newaxis, :],
+        shape=(*batch_shape, hyper_embed.shape[-1]))
+
+    # Map input points to warped spatial and hyper points.
+    warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
+      points, warp_embed, hyper_embed, viewdirs, extra_params, use_warp=use_warp,
+      return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
+      # Override hyper points if present in metadata dict.
+      hyper_point_override=metadata.get('hyper_point'))
+
+    points_feat, alpha_condition, rgb_condition, num_samples = self.pre_process_query(warped_points, viewdirs,
+                                                                                      metadata,
+                                                                                      extra_params, metadata_encoded)
+    points_feat, bottleneck = self.query_template_bottleneck(level, points_feat, alpha_condition, rgb_condition)
+    sigma, norm = self.query_template_sigma(level, points_feat, bottleneck, alpha_condition)
+
+    rgb = jnp.zeros((num_rays, num_samples, self.rgb_channels))
+    rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
+    out['sigma'] = sigma
+
+    # Filter densities based on rendering options.
+    sigma = filter_sigma(points, sigma, render_opts)
+
+    warped_points = jnp.reshape(warped_points, (-1, num_samples, warped_points.shape[-1]))
+    if warp_jacobian is not None:
+      warp_jacobian = jnp.reshape(warp_jacobian, (-1, num_samples, warp_jacobian.shape[-2], warp_jacobian.shape[-1]))
+      out['warp_jacobian'] = warp_jacobian
+    out['warped_points'] = warped_points
+    out.update(model_utils.volumetric_rendering(
+      rgb,
+      sigma,
+      z_vals,
+      directions,
+      use_white_background=self.use_white_background,
+      sample_at_infinity=use_sample_at_infinity))
+
+    return out
+
   def render_samples(self,
                      level,
                      points,
@@ -2464,6 +2550,234 @@ class HyperSpecModel(CustomModel):
 
     return out
 
+@gin.configurable(denylist=['name'])
+class FlowModel(nn.Module):
+  """
+  Predict the scene flow of the dynamic scene, supervised by the pseudo label of sigma prediction from NeRF
+  """
+  # warp_field_cls = warping.SE3Field
+  warp_field_cls = warping.TranslationField
+  warp_embed_cls: Callable[..., nn.Module] = (
+    functools.partial(modules.GLOEmbed, num_dims=8))
+
+  nerf_model: CustomModel = gin.REQUIRED
+
+  def setup(self):
+    self.warp_field = self.warp_field_cls()
+    self.warp_embed = self.warp_embed_cls(num_embeddings=self.nerf_model.num_warp_embeds)
+
+  def __call__(
+      self,
+      rays_dict: Dict[str, Any],
+      extra_params: Dict[str, Any],
+      time_offset: float = 0,
+      metadata_encoded=False,
+      return_warp_jacobian=False,
+      return_hyper_jacobian=False,
+      near=None,
+      far=None,
+      use_sample_at_infinity=None,
+  ):
+    cur_points, z_vals, directions, viewdirs = self.sample_nerf(
+      rays_dict, extra_params, metadata_encoded=metadata_encoded, return_warp_jacobian=return_warp_jacobian,
+      return_hyper_jacobian=return_hyper_jacobian, near=near, far=far, use_sample_at_infinity=use_sample_at_infinity
+    )
+    rays_num, sample_num, _ = cur_points.shape
+
+    cur_sigma, cur_weights = self.render_nerf_sigma(
+      cur_points, z_vals, rays_dict, extra_params, time_offset=None, metadata_encoded=metadata_encoded,
+      return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
+      use_sample_at_infinity=use_sample_at_infinity
+    )
+
+    # warp
+    metadata = rays_dict['metadata']
+    warp_embed = metadata[self.nerf_model.warp_embed_key]
+    warp_embed = self.warp_embed(warp_embed)
+    warp_embed = jnp.broadcast_to(
+      warp_embed[:, jnp.newaxis, :],
+      shape=(rays_num, sample_num, warp_embed.shape[-1]))
+
+    # warp_embed = metadata[self.nerf_model.warp_embed_key]
+    # warp_embed = warp_embed / self.nerf_model.num_warp_embeds
+    # warp_embed = jnp.broadcast_to(
+    #   warp_embed[:, jnp.newaxis, :],
+    #   shape=(rays_num, sample_num, warp_embed.shape[-1]))
+
+    warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None)),
+                       in_axes=(0, 0, None, None))
+
+    warp_out = warp_fn(cur_points, warp_embed, extra_params, True)  # return warp jacobian
+    warped_points = warp_out['warped_points']
+    warp_jacobian = warp_out['jacobian']
+
+    # query the sigma of the warped position at time 0
+    time_offset = jnp.array(time_offset, int)
+    warped_sigma, warped_weights = self.render_nerf_sigma(
+      warped_points, z_vals, rays_dict, extra_params, time_offset=time_offset, metadata_encoded=metadata_encoded,
+      return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
+      use_sample_at_infinity=use_sample_at_infinity
+    )
+
+    # calculate delta x
+    delta_x = warped_points - cur_points
+
+    # filter sigma
+    # cur_sigma = jnp.heaviside(cur_sigma - 3, 0)
+    # warped_sigma = jnp.heaviside(warped_sigma - 3, 0)
+
+    cur_sigma = jax.nn.sigmoid((cur_sigma - 3) * 5)
+    warped_sigma = jax.nn.sigmoid((warped_sigma - 3) * 5)
+
+    # calculate weights
+    joint_weights = jnp.maximum(cur_weights, warped_weights)
+    weights = cur_weights
+
+    # rendered delta x
+    ray_delta_x = (weights[..., None] * delta_x).sum(axis=-2)
+
+    # construct ouptut
+    out = {
+      "cur_sigma": cur_sigma,
+      "warped_sigma": warped_sigma,
+      "joint_weights": joint_weights,
+      "weights": weights,
+      "warp_jacobian": warp_jacobian,
+      "delta_x": delta_x,
+      "ray_delta_x": ray_delta_x
+    }
+
+    return out
+
+  def sample_nerf(
+      self,
+      rays_dict: Dict[str, Any],
+      extra_params: Dict[str, Any],
+      metadata_encoded=False,
+      return_warp_jacobian=False,
+      return_hyper_jacobian=False,
+      near=None,
+      far=None,
+      use_sample_at_infinity=None,
+  ):
+    """Nerf Model.
+
+    Args:
+      rays_dict: a dictionary containing the ray information. Contains:
+        'origins': the ray origins.
+        'directions': unit vectors which are the ray directions.
+        'viewdirs': (optional) unit vectors which are viewing directions.
+        'metadata': a dictionary of metadata indices e.g., for warping.
+      extra_params: parameters for the warp e.g., alpha.
+      metadata_encoded: if True, assume the metadata is already encoded.
+      use_warp: if True use the warp field (if also enabled in the model).
+      return_points: if True return the points (and warped points if
+        applicable).
+      return_weights: if True return the density weights.
+      return_warp_jacobian: if True computes and returns the warp Jacobians.
+      near: if not None override the default near value.
+      far: if not None override the default far value.
+      use_sample_at_infinity: override for `self.use_sample_at_infinity`.
+      render_opts: an optional dictionary of render options.
+      deterministic: whether evaluation should be deterministic.
+
+    Returns:
+      ret: list, [(rgb, disp, acc), (rgb_coarse, disp_coarse, acc_coarse)]
+    """
+    use_warp = self.nerf_model.use_warp
+    # Extract viewdirs from the ray array
+    origins = rays_dict['origins']
+    directions = rays_dict['directions']
+    metadata = rays_dict['metadata']
+    if 'viewdirs' in rays_dict:
+      viewdirs = rays_dict['viewdirs']
+    else:  # viewdirs are normalized rays_d
+      viewdirs = directions
+
+    if near is None:
+      near = self.nerf_model.near
+    if far is None:
+      far = self.nerf_model.far
+    if use_sample_at_infinity is None:
+      use_sample_at_infinity = self.nerf_model.use_sample_at_infinity
+
+    # Evaluate coarse samples.
+    z_vals, points = model_utils.sample_along_rays(
+      self.nerf_model.make_rng('coarse'), origins, directions, self.nerf_model.num_coarse_samples,
+      near, far, self.nerf_model.use_stratified_sampling,
+      self.nerf_model.use_linear_disparity)
+
+    coarse_ret = self.nerf_model.render_samples_sigma_only(
+      'coarse',
+      points,
+      z_vals,
+      directions,
+      viewdirs,
+      metadata,
+      extra_params,
+      use_warp=use_warp,
+      metadata_encoded=metadata_encoded,
+      return_warp_jacobian=return_warp_jacobian,
+      return_hyper_jacobian=return_hyper_jacobian,
+      use_sample_at_infinity=use_sample_at_infinity,
+    )
+
+    # Evaluate fine samples.
+    z_vals_mid = .5 * (z_vals[..., 1:] + z_vals[..., :-1])
+    z_vals, points = model_utils.sample_pdf(
+      self.nerf_model.make_rng('fine'), z_vals_mid, coarse_ret['weights'][..., 1:-1],
+      origins, directions, z_vals, self.nerf_model.num_fine_samples,
+      self.nerf_model.use_stratified_sampling)
+    return points, z_vals, directions, viewdirs
+
+  def render_nerf_sigma(
+          self,
+          points,
+          z_vals,
+          rays_dict,
+          extra_params,
+          time_offset=None,
+          metadata_encoded=False,
+          return_warp_jacobian=False,
+          return_hyper_jacobian=False,
+          use_sample_at_infinity=None,
+  ):
+    use_warp = self.nerf_model.use_warp
+    # Extract viewdirs from the ray array
+    directions = rays_dict['directions']
+    metadata = rays_dict['metadata']
+
+    # override time
+    if time_offset is not None:
+      # metadata['warp'] = jnp.ones_like(metadata['warp']) * time_override
+      metadata['warp'] = jnp.maximum(jnp.zeros_like(metadata['warp']),
+                                     metadata['warp'].astype(jnp.int16) - time_offset)
+
+    if 'viewdirs' in rays_dict:
+      viewdirs = rays_dict['viewdirs']
+    else:  # viewdirs are normalized rays_d
+      viewdirs = directions
+
+    out = self.nerf_model.render_samples_sigma_only(
+      'fine',
+      points,
+      z_vals,
+      directions,
+      viewdirs,
+      metadata,
+      extra_params,
+      use_warp=use_warp,
+      metadata_encoded=metadata_encoded,
+      return_warp_jacobian=return_warp_jacobian,
+      return_hyper_jacobian=return_hyper_jacobian,
+      use_sample_at_infinity=use_sample_at_infinity,
+    )
+
+    sigma = out['sigma']
+    weights = out['weights']
+
+    return sigma, weights
+
 
 def construct_nerf(key, use_hyper_spec_model: bool, batch_size: int, embeddings_dict: Dict[str, int],
                    near: float, far: float, screw_input_mode: str, use_sigma_gradient: bool,
@@ -2533,3 +2847,72 @@ def construct_nerf(key, use_hyper_spec_model: bool, batch_size: int, embeddings_
   )['params']
 
   return model, params
+
+def construct_flow(key, use_hyper_spec_model: bool, batch_size: int, embeddings_dict: Dict[str, int],
+                   near: float, far: float, screw_input_mode: str, use_sigma_gradient: bool,
+                   use_predicted_norm: bool):
+  # nerf_model, nerf_params = construct_nerf(
+  #   key,
+  #   use_hyper_spec_model, batch_size,
+  #   embeddings_dict,
+  #   near,
+  #   far,
+  #   screw_input_mode,
+  #   use_sigma_gradient,
+  #   use_predicted_norm
+  # )
+
+  if use_hyper_spec_model:
+    nerf_model = HyperSpecModel(
+      embeddings_dict=immutabledict.immutabledict(embeddings_dict),
+      near=near,
+      far=far
+    )
+  else:
+    nerf_model = NerfModel(
+      embeddings_dict=immutabledict.immutabledict(embeddings_dict),
+      near=near,
+      far=far
+    )
+
+  init_rays_dict = {
+    'origins': jnp.ones((batch_size, 3), jnp.float32),
+    'directions': jnp.ones((batch_size, 3), jnp.float32),
+    'metadata': {
+      'warp': jnp.ones((batch_size, 1), jnp.uint32),
+      'camera': jnp.ones((batch_size, 1), jnp.uint32),
+      'appearance': jnp.ones((batch_size, 1), jnp.uint32),
+      'time': jnp.ones((batch_size, 1), jnp.float32),
+    }
+  }
+  extra_params = {
+    'nerf_alpha': 0.0,
+    'warp_alpha': 0.0,
+    'hyper_alpha': 0.0,
+    'hyper_sheet_alpha': 0.0,
+    'norm_loss_weight': 0.0,
+    'norm_input_alpha': 0.0
+  }
+
+  flow_model = FlowModel(
+    nerf_model=nerf_model,
+  )
+
+  key, key1, key2, key3 = random.split(key, 4)
+  params = flow_model.init(
+    {
+      'params': key,
+      'coarse': key1,
+      'fine': key2,
+      'voxel': key3
+    },
+    init_rays_dict,
+    extra_params=extra_params,
+    time_offset=0,
+  )['params']
+
+  nerf_params = params['nerf_model']
+  flow_params = dict(params)
+  del flow_params['nerf_model']
+
+  return flow_model, nerf_params, flow_params

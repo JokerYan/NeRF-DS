@@ -111,6 +111,11 @@ HyperSpecModel.spatial_point_min_deg = %spatial_point_min_deg
 HyperSpecModel.spatial_point_max_deg = %spatial_point_max_deg
 TrainConfig.nerf_alpha_schedule = ('constant', %spatial_point_max_deg)
 
+
+# concat image between experiments and show
+frame_idx = 0
+selected_idx_list = []
+full_image_list = []
 # NeRF Metadata
 NerfModel.nerf_embed_cls = @nerf/GLOEmbed
 HyperSpecModel.nerf_embed_cls = @nerf/GLOEmbed

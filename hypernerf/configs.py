@@ -105,6 +105,48 @@ class SpecularConfig:
 
 @gin.configurable()
 @dataclasses.dataclass
+class FlowConfig:
+  """ Configurations for FlowModel """
+  max_steps: int = 100000
+  learning_rate_sched: ScheduleDef = immutabledict.immutabledict({
+      'type': 'exponential',
+      'initial_value': 1e-4,
+      'final_value': 1e-6,
+      'num_steps': max_steps,
+  })
+  # learning_rate_sched: ScheduleDef = immutabledict.immutabledict({
+  #     'type': 'constant',
+  #     'value': 1e-2,
+  # })
+  # learning_rate_sched: ScheduleDef = immutabledict.immutabledict({
+  #     'type': 'constant',
+  #     'value': 0,
+  # })
+  # time_offset_sched: ScheduleDef = immutabledict.immutabledict({
+  #   'type': 'linear',
+  #   'initial_value': 1,
+  #   'final_value': 1000,
+  #   'num_steps': int(max_steps * 0.7)
+  # })
+  time_offset_sched: ScheduleDef = immutabledict.immutabledict({
+    'type': 'constant',
+    'value': 1000
+  })
+  warp_alpha_schedule = {
+    'type': 'linear',
+    'initial_value': 0,
+    'final_value': 4,
+    'num_steps': 10000,
+  }
+
+  elastic_loss_weight = 1
+
+  print_every: int = 100
+  log_every: int = 100
+  save_every: int = 1000
+
+@gin.configurable()
+@dataclasses.dataclass
 class ExperimentConfig:
   """Experiment configuration."""
   # A subname for the experiment e.g., for parameter sweeps. If this is set
