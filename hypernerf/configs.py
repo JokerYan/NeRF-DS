@@ -132,13 +132,16 @@ class FlowConfig:
     'type': 'constant',
     'value': 1000
   })
-  warp_alpha_schedule = {
+  warp_alpha_schedule: ScheduleDef = immutabledict.immutabledict({
     'type': 'linear',
     'initial_value': 0,
     'final_value': 4,
     'num_steps': 10000,
-  }
-
+  })
+  flow_model_light_learning_rate_sched: ScheduleDef = immutabledict.immutabledict({
+      'type': 'constant',
+      'value': 0,
+  })
   elastic_loss_weight = 1
 
   print_every: int = 100

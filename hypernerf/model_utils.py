@@ -36,7 +36,6 @@ class TrainState:
   norm_input_alpha: Optional[jnp.ndarray] = None
   norm_voxel_lr: Optional[jnp.ndarray] = None
   norm_voxel_ratio: Optional[jnp.ndarray] = None
-  flow_params: Optional[Dict[str, Any]] = field(default_factory=dict)
 
   @property
   def extra_params(self):

@@ -21,8 +21,10 @@ from typing import Dict, Union
 from absl import app
 from absl import flags
 from absl import logging
+import flax
 from flax import jax_utils
 from flax import optim
+from flax.core import FrozenDict
 from flax.metrics import tensorboard
 from flax.training import checkpoints
 import gin
@@ -66,6 +68,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
       writer.scalar(tag, value, step)
 
   _log_scalar('params/learning_rate', scalar_params.learning_rate)
+  _log_scalar('params/flow_model_light_learning_rate', scalar_params.flow_model_light_learning_rate)
   _log_scalar('params/nerf_alpha', state.nerf_alpha)
   _log_scalar('params/warp_alpha', state.warp_alpha)
   _log_scalar('params/hyper_alpha', state.hyper_alpha)
@@ -156,6 +159,7 @@ def main(argv):
   exp_config = configs.ExperimentConfig()
   train_config = configs.TrainConfig()
   spec_config = configs.SpecularConfig()
+  flow_config = configs.FlowConfig()
   if spec_config.use_hyper_spec_model:
     dummy_model = models.HyperSpecModel({}, 0, 0)
   else:
@@ -264,11 +268,24 @@ def main(argv):
   norm_input_alpha_sched = schedules.from_config(spec_config.norm_input_alpha_schedule)
   norm_voxel_lr_sched = schedules.from_config(spec_config.norm_voxel_lr_schedule)
   norm_voxel_ratio_sched = schedules.from_config(spec_config.norm_voxel_ratio_schedule)
+  flow_model_light_lr_sched = schedules.from_config(flow_config.flow_model_light_learning_rate_sched)
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
   if train_config.use_weight_norm:
     optimizer_def = optim.WeightNorm(optimizer_def)
-  optimizer = optimizer_def.create(params)
+
+  if model.use_flow_model:
+    # nerf_focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
+    # flow_focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' in p)
+    # optimizer = flax.optim.MultiOptimizer(
+    #   (nerf_focus, optimizer_def),
+    #   (flow_focus, optimizer_def)
+    # ).create(params)
+
+    focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
+    optimizer = optimizer_def.create(params, focus=focus)
+  else:
+    optimizer = optimizer_def.create(params)
   state = model_utils.TrainState(
     optimizer=optimizer,
     nerf_alpha=nerf_alpha_sched(0),
@@ -297,21 +314,34 @@ def main(argv):
     hyper_c_jacobian_reg_weight=spec_config.hyper_c_jacobian_reg_weight,
     hyper_c_jacobian_reg_scale=spec_config.hyper_c_jacobian_reg_scale,
     norm_voxel_loss_weight=spec_config.norm_voxel_loss_weight,
+    flow_model_light_learning_rate=flow_model_light_lr_sched(0),
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
+
 
   # load flow model
   if model.use_flow_model:
     flow_dir = gpath.GPath(FLAGS.flow_folder)
     flow_checkpoint_dir = flow_dir / 'checkpoints_flow_only'
     flow_params = checkpoints.restore_checkpoint(flow_checkpoint_dir, None)
+    # logging.info(state.optimizer.target['model']['flow_model'])
+    # logging.info(flow_params)
+    # exit()
     """
     {'model': {'warp_field': ..., 'warp_embed': ...}}
     """
-    state = state.replace(
-      flow_params=flow_params
-    )
+    # add flow params
+    # params['model']['flow_model'] = flow_params
+    model_params = params['model'].unfreeze()
+    model_params['flow_model'] = flow_params['model']  # immutable problem
+    params['model'] = FrozenDict(model_params)
+
+    optimizer = state.optimizer.replace(target=params)
+    state = state.replace(optimizer=optimizer)
+
+    # logging.info(params['model']['flow_model'])
+    # logging.info(optimizer.target['model']['flow_model'])
 
   state = jax_utils.replicate(state, devices=devices)
   del params
@@ -390,7 +420,9 @@ def main(argv):
     # pytype: disable=attribute-error
     scalar_params = scalar_params.replace(
         learning_rate=learning_rate_sched(step),
-        elastic_loss_weight=elastic_loss_weight_sched(step))
+        elastic_loss_weight=elastic_loss_weight_sched(step),
+        flow_model_light_learning_rate=flow_model_light_lr_sched(step),
+    )
     # pytype: enable=attribute-error
     nerf_alpha = jax_utils.replicate(nerf_alpha_sched(step), devices)
     warp_alpha = jax_utils.replicate(warp_alpha_sched(step), devices)

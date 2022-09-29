@@ -90,7 +90,7 @@ SpecularConfig.use_back_facing_reg = True
 SpecularConfig.back_facing_reg_weight = 0.1
 
 HyperSpecModel.predict_norm = True
-HyperSpecModel.norm_supervision_type = 'warped'
+HyperSpecModel.norm_supervision_type = 'direct'
 
 SpecularConfig.norm_input_alpha_schedule = %CONSTANT_NORM_INPUT_ALPHA_SCHED
 # SpecularConfig.norm_input_alpha_schedule = %DELAYED_NORM_INPUT_ALPHA_SCHED
@@ -142,3 +142,11 @@ HyperSpecModel.mix_d_s_color = False
 
 # flow related
 HyperSpecModel.use_flow_model = True
+flow_model_light_learning_rate_sched = {
+  'type': 'piecewise',
+  'schedules': [
+    (0, ('constant', 0.0)),
+    (100000, ('linear', 0.0, 1e-4, 50000)),
+    (50000, ('exponential', 1e-4, 1e-6, 100000)),
+  ],
+}

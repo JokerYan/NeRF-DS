@@ -53,6 +53,7 @@ class ScalarParams:
   hyper_c_jacobian_reg_weight: float = 0.0,
   hyper_c_jacobian_reg_scale: float = 0.0,
   norm_voxel_loss_weight: float = 0.0
+  flow_model_light_learning_rate: float = 0.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -476,19 +477,24 @@ def train_step(model: models.CustomModel,
     return sum(losses.values()), (stats, ret)
 
   optimizer = state.optimizer
+
   if disable_hyper_grads:
     optimizer = optimizer.replace(
         state=zero_adam_param_states(optimizer.state, 'model/hyper_sheet_mlp'))
+  # # disable flow model optimization
+  ## Does not seem to freeze the parameters
+  # optimizer = optimizer.replace(
+  #   state=zero_adam_param_states(optimizer.state, 'model/flow_model')
+  # )
 
   grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
-  # add flow params
-  params = optimizer.target
-  flow_params = state.flow_params['model']
-  model_params = params['model'].unfreeze()
-  model_params['flow_model'] = flow_params   # immutable problem
-  params['model'] = FrozenDict(model_params)
+  (_, (stats, model_out)), grad = grad_fn(optimizer.target)
 
-  (_, (stats, model_out)), grad = grad_fn(params)
+  # # remove flow model from grad
+  # model_grad = grad['model']
+  # model_grad = model_grad.pop('flow_model')
+  # grad['model'] = model_grad
+
   grad = jax.lax.pmean(grad, axis_name='batch')
   if grad_max_val > 0.0 or grad_max_norm > 0.0:
     grad = utils.clip_gradients(grad, grad_max_val, grad_max_norm)

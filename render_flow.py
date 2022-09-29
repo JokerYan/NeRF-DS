@@ -41,7 +41,7 @@ camera_path_name = 'fix_camera_93'
 
 start = 0
 end = float('inf')
-interval = 50
+interval = 500
 
 #####################################
 
@@ -234,6 +234,7 @@ def render_scene(argv):
   rng = rng + jax.process_index()  # Make random seed separate across hosts.
   render_start = max(start, 0)
   render_end = int(min(end, len(test_cameras)))
+  frames = []
   for i in range(render_start, render_end, interval):
     print(f'Rendering frame {i + 1}/{len(test_cameras)}')
     camera = test_cameras[i]
@@ -259,8 +260,18 @@ def render_scene(argv):
     loss = (weights * jnp.abs(cur_sigma - warped_sigma)).sum(-1).mean()
     print(loss)
 
-    cv2.imshow("ray_delta_x", ray_delta_x)
-    cv2.waitKey()
+    frames.append(np.array(ray_delta_x * 255, np.uint8))
+    # cv2.imshow("ray_delta_x", ray_delta_x)
+    # cv2.waitKey()
+
+  # save as video
+  _fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+  height, width = frames[0].shape[:2]
+  video_writer = cv2.VideoWriter(os.path.join(train_dir, "flow.mp4"), _fourcc, 30.0, (width, height))
+  for frame in frames:
+    video_writer.write(frame)
+  video_writer.release()
+  print("Flow video saved to {}".format(os.path.join(train_dir, "flow.mp4")))
 
 
 if __name__ == '__main__':

@@ -2322,9 +2322,10 @@ class HyperSpecModel(CustomModel):
     rotation_field = model_utils.normalize_vector(rotation_field)
 
     # visualize t
-    translation_reference = jnp.zeros_like(points)
-    translation_field, _, _ = self.map_vectors(points, translation_reference, warp_embed, extra_params, with_translation=True)
-    translation_field = translation_field[..., :3]
+    # translation_reference = jnp.zeros_like(points)
+    # translation_field, _, _ = self.map_vectors(points, translation_reference, warp_embed, extra_params, with_translation=True)
+    # translation_field = translation_field[..., :3]
+    translation_field = warped_points[..., :3].reshape([-1, num_samples, 3]) - points
 
     warped_points = jnp.reshape(warped_points, (-1, num_samples, warped_points.shape[-1]))
     if warp_jacobian is not None:
@@ -2575,8 +2576,8 @@ class FlowModel(nn.Module):
   """
   Predict the scene flow of the dynamic scene, supervised by the pseudo label of sigma prediction from NeRF
   """
-  # warp_field_cls = warping.SE3Field
-  warp_field_cls = warping.TranslationField
+  warp_field_cls = warping.SE3Field
+  # warp_field_cls = warping.TranslationField
   warp_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8))
 
@@ -2805,8 +2806,8 @@ class FlowModelLight(nn.Module):
   Light weight version of the flow model used for inference.
   It does not contain the reference nerf model that is only used for training.
   """
-  # warp_field_cls = warping.SE3Field
-  warp_field_cls = warping.TranslationField
+  warp_field_cls = warping.SE3Field
+  # warp_field_cls = warping.TranslationField
   warp_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8))
 

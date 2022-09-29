@@ -120,7 +120,9 @@ training_schedule = [
   # ("hypernerf_cross-hands1", "h_ch1_q_base_exp01", "base", []),
   # ("hypernerf_keyboard", "h_k_q_base_exp01", "base", []),
 
-  ("bell-2_qualitative", "b2_q_hsf_exp01", "hsf", [], "b2_q_ref_exp01"),
+  # ("bell-2_qualitative", "b2_q_hsf_exp01", "hsf", [], "b2_q_ref_exp01"),
+  # ("bell-2_qualitative", "b2_q_hsf_exp02", "hsf", [], "b2_q_ref_exp01"),
+  ("bell-2_qualitative", "b2_q_hsf_exp04", "hsf", ["HyperSpecModel.use_norm_voxel = False"], "b2_q_ref_exp01"),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):
