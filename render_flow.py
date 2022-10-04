@@ -35,13 +35,14 @@ from hypernerf.training_flow import ScalarParams, train_step
 
 ######## parameter settings #########
 
-dataset_name = 'bell-2_qualitative/'
-exp_name = 'b2_q_ref_exp01'
+dataset_name = 'vrig-cup-3_qualitative'
+exp_name = 'vc3_q_ref_exp01'
 camera_path_name = 'fix_camera_93'
 
 start = 0
 end = float('inf')
-interval = 500
+interval = 50
+show_image = True
 
 #####################################
 
@@ -261,8 +262,9 @@ def render_scene(argv):
     print(loss)
 
     frames.append(np.array(ray_delta_x * 255, np.uint8))
-    # cv2.imshow("ray_delta_x", ray_delta_x)
-    # cv2.waitKey()
+    if show_image:
+      cv2.imshow("ray_delta_x", ray_delta_x)
+      cv2.waitKey()
 
   # save as video
   _fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')

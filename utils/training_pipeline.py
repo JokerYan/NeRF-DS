@@ -122,7 +122,21 @@ training_schedule = [
 
   # ("bell-2_qualitative", "b2_q_hsf_exp01", "hsf", [], "b2_q_ref_exp01"),
   # ("bell-2_qualitative", "b2_q_hsf_exp02", "hsf", [], "b2_q_ref_exp01"),
-  ("bell-2_qualitative", "b2_q_hsf_exp04", "hsf", ["HyperSpecModel.use_norm_voxel = False"], "b2_q_ref_exp01"),
+
+  # ("bell-2_qualitative", "b2_q_hsf_exp05", "hsf", ["HyperSpecModel.use_norm_voxel = False"], "b2_q_ref_exp01"),
+  # ("plate-1_qualitative", "p1_q_hsf_exp05", "hsf", ["HyperSpecModel.use_norm_voxel = False"], "p1_q_ref_exp01"),
+  # ("bell-2_qualitative", "b2_q_hsf_exp06", "hsf", [], "b2_q_ref_exp01"),
+  # ("vrig-cup-3_qualitative", "vc3_q_hsf_exp06", "hsf", ["ExperimentConfig.image_scale = 1"], "vc3_q_ref_exp01"),
+  # ("vrig-cup-3_qualitative", "vc3_q_hsf_exp05", "hsf", ["ExperimentConfig.image_scale = 1",
+  #                                                       "flow_model_light_learning_rate_sched = {'type': 'constant','value': 0,}"
+  #                                                       ], "vc3_q_ref_exp01"),
+
+  # ("bell-3_qualitative", "b3_q_ref_exp02", "ref", []),
+  # ("bell-3_qualitative", "b3_q_base_exp02", "base", []),
+  # ("bell-3_qualitative", "b3_q_hsf_exp06", "hsf", [], "b3_q_ref_exp02"),
+  # ("bell-3_qualitative", "b3_q_hsf_exp07", "hsf", ["HyperSpecModel.norm_supervision_type = 'warped'"], "b3_q_ref_exp02"),
+
+  ("000_bell_01_novel_view", "000_b01_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):

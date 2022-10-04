@@ -1183,18 +1183,19 @@ class NerfModel(CustomModel):
     # ray_sigma_gradient = (weights[..., None] * sigma_gradient_w).sum(axis=-2)
     # ray_sigma_gradient = (weights[..., None] * sigma_gradient).sum(axis=-2)
     if norm is not None:
-      ray_sigma_gradient = (weights[..., None] * norm).sum(axis=-2)
+      ray_norm = (weights[..., None] * norm).sum(axis=-2)
     else:
-      ray_sigma_gradient = jnp.zeros_like((weights[..., None] * sigma_gradient).sum(axis=-2))
-    out['ray_sigma_gradient'] = ray_sigma_gradient
-    # ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_w).sum(axis=-2)
-    ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_r).sum(axis=-2)
-    # ray_sigma_gradient_r = (weights[..., None] * warped_dummy_points).sum(axis=-2)
-    out['ray_sigma_gradient_r'] = ray_sigma_gradient_r
+      ray_norm = (weights[..., None] * sigma_gradient).sum(axis=-2)
+    out['ray_norm'] = ray_norm
     ray_rotation_field = (weights[..., None] * rotation_field).sum(axis=-2)
     out['ray_rotation_field'] = ray_rotation_field
     ray_translation_field = (weights[..., None] * translation_field).sum(axis=-2)
     out['ray_translation_field'] =ray_translation_field
+
+    # rendered delta x
+    delta_x = warped_points[..., :3] - points
+    ray_delta_x = (weights[..., None] * delta_x).sum(axis=-2)
+    out['ray_delta_x'] = ray_delta_x
 
     # accumulate hyper coordinates for each ray
     hyper_points = warped_points[..., 3:]
@@ -1805,12 +1806,16 @@ class HyperSpecModel(CustomModel):
   def map_vectors(self, points, vectors, warp_embed, extra_params, return_warp_jacobian=False, inverse=False, with_translation=False):
     warp_jacobian = None
     screw_axis = None
+    if self.use_flow_model:
+      active_warp_field = self.flow_model.warp_field
+    else:
+      active_warp_field = self.warp_field
     if self.use_warp:
       if len(vectors.shape) > 1:
-        warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None, 0, None, None)),
+        warp_fn = jax.vmap(jax.vmap(active_warp_field, in_axes=(0, 0, None, None, 0, None, None)),
                            in_axes=(0, 0, None, None, 0, None, None))
       else:
-        warp_fn = self.warp_field
+        warp_fn = active_warp_field
       warp_out = warp_fn(points,
                          warp_embed,
                          extra_params,
@@ -2367,18 +2372,20 @@ class HyperSpecModel(CustomModel):
     # ray_sigma_gradient = (weights[..., None] * sigma_gradient_w).sum(axis=-2)
     # ray_sigma_gradient = (weights[..., None] * sigma_gradient).sum(axis=-2)
     if norm is not None:
-      ray_sigma_gradient = (weights[..., None] * norm).sum(axis=-2)
+      ray_norm = (weights[..., None] * norm).sum(axis=-2)
     else:
-      ray_sigma_gradient = jnp.zeros_like((weights[..., None] * sigma_gradient).sum(axis=-2))
-    out['ray_sigma_gradient'] = ray_sigma_gradient
-    # ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_w).sum(axis=-2)
-    ray_sigma_gradient_r = (weights[..., None] * sigma_gradient_r).sum(axis=-2)
-    # ray_sigma_gradient_r = (weights[..., None] * warped_dummy_points).sum(axis=-2)
-    out['ray_sigma_gradient_r'] = ray_sigma_gradient_r
+      ray_norm = (weights[..., None] * sigma_gradient).sum(axis=-2)
+    out['ray_norm'] = ray_norm
+
     ray_rotation_field = (weights[..., None] * rotation_field).sum(axis=-2)
     out['ray_rotation_field'] = ray_rotation_field
     ray_translation_field = (weights[..., None] * translation_field).sum(axis=-2)
     out['ray_translation_field'] = ray_translation_field
+
+    # rendered delta x
+    delta_x = warped_points[..., :3] - points
+    ray_delta_x = (weights[..., None] * delta_x).sum(axis=-2)
+    out['ray_delta_x'] = ray_delta_x
 
     # accumulate hyper coordinates for each ray
     hyper_points = warped_points[..., 3:]

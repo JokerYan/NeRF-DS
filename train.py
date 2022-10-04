@@ -76,6 +76,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
   _log_scalar('params/norm_loss_weight', state.norm_loss_weight)
   _log_scalar('params/norm_input_alpha', state.norm_input_alpha)
   _log_scalar('params/norm_voxel_lr', state.norm_voxel_lr)
+  _log_scalar('params/norm_voxel_ratio', state.norm_voxel_ratio)
   _log_scalar('params/elastic_loss/weight', scalar_params.elastic_loss_weight)
 
   # pmean is applied in train_step so just take the item.
@@ -275,15 +276,16 @@ def main(argv):
     optimizer_def = optim.WeightNorm(optimizer_def)
 
   if model.use_flow_model:
-    # nerf_focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
-    # flow_focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' in p)
-    # optimizer = flax.optim.MultiOptimizer(
-    #   (nerf_focus, optimizer_def),
-    #   (flow_focus, optimizer_def)
-    # ).create(params)
+    flow_optimizer_def = optim.Adam(flow_model_light_lr_sched(0))
+    nerf_focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
+    flow_focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' in p)
+    optimizer = flax.optim.MultiOptimizer(
+      (nerf_focus, optimizer_def),
+      (flow_focus, flow_optimizer_def)
+    ).create(params)
 
-    focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
-    optimizer = optimizer_def.create(params, focus=focus)
+    # focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
+    # optimizer = optimizer_def.create(params, focus=focus)
   else:
     optimizer = optimizer_def.create(params)
   state = model_utils.TrainState(
@@ -319,9 +321,8 @@ def main(argv):
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
 
-
   # load flow model
-  if model.use_flow_model:
+  if model.use_flow_model and init_step == 1:
     flow_dir = gpath.GPath(FLAGS.flow_folder)
     flow_checkpoint_dir = flow_dir / 'checkpoints_flow_only'
     flow_params = checkpoints.restore_checkpoint(flow_checkpoint_dir, None)

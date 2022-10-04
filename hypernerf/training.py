@@ -506,7 +506,17 @@ def train_step(model: models.CustomModel,
   # norm_voxel_grad = jnp.max(jnp.abs(norm_voxel_grad))
   # stats['norm_voxel_grad'] = norm_voxel_grad
 
-  new_optimizer = optimizer.apply_gradient(
-      grad, learning_rate=scalar_params.learning_rate)
+  if model.use_flow_model:
+    hparams = optimizer.optimizer_def.hyper_params
+    new_optimizer = optimizer.apply_gradient(
+      grad,
+      hyper_params=[
+        hparams[0].replace(learning_rate=scalar_params.learning_rate),
+        hparams[1].replace(learning_rate=scalar_params.flow_model_light_learning_rate)
+      ]
+    )
+  else:
+    new_optimizer = optimizer.apply_gradient(
+        grad, learning_rate=scalar_params.learning_rate)
   new_state = state.replace(optimizer=new_optimizer)
   return new_state, stats, rng_key, model_out

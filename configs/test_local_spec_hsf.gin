@@ -129,9 +129,9 @@ SpecularConfig.norm_voxel_loss_weight = 1000
 SpecularConfig.norm_voxel_ratio_schedule = {
   'type': 'piecewise',
   'schedules': [
-    (0, ('constant', 0.0)),
+    (10000, ('constant', 0.0)),
     (10000, ('linear', 0.0, 1.0, 10000)),
-    (10000, ('constant', 1.0)),
+    (230000, ('constant', 1.0)),
   ],
 }
 HyperSpecModel.use_ref_radiance = False
@@ -142,11 +142,11 @@ HyperSpecModel.mix_d_s_color = False
 
 # flow related
 HyperSpecModel.use_flow_model = True
-flow_model_light_learning_rate_sched = {
+FlowConfig.flow_model_light_learning_rate_sched = {
   'type': 'piecewise',
   'schedules': [
-    (0, ('constant', 0.0)),
-    (100000, ('linear', 0.0, 1e-4, 50000)),
-    (50000, ('exponential', 1e-4, 1e-6, 100000)),
+    (100000, ('constant', 1e-8)),
+    (50000, ('linear', 0.0, 1e-5, 50000)),
+    (100000, ('exponential', 1e-5, 1e-6, 100000)),
   ],
 }

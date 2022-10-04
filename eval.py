@@ -69,16 +69,16 @@ def compute_multiscale_ssim(image1: jnp.ndarray, image2: jnp.ndarray):
 def compute_ssim(image1: jnp.ndarray, image2: jnp.ndarray, pad=0,
                  pad_mode='linear_ramp'):
   """Compute the LPIPS metric."""
-  image1 = np.array(image1)
-  image2 = np.array(image2)
-  if pad > 0:
-    image1 = image_utils.pad_image(image1, pad, pad_mode)
-    image2 = image_utils.pad_image(image2, pad, pad_mode)
-  psnr = tf.image.ssim(
-      tf.convert_to_tensor(image1),
-      tf.convert_to_tensor(image2),
-      max_val=1.0)
-  return np.asarray(psnr)
+  # image1 = np.array(image1)
+  # image2 = np.array(image2)
+  # if pad > 0:
+  #   image1 = image_utils.pad_image(image1, pad, pad_mode)
+  #   image2 = image_utils.pad_image(image2, pad, pad_mode)
+  # psnr = tf.image.ssim(
+  #     tf.convert_to_tensor(image1),
+  #     tf.convert_to_tensor(image2),
+  #     max_val=1.0)
+  return np.asarray(lpips)
 
 
 def compute_stats(batch, model_out):

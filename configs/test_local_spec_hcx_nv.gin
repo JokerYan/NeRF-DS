@@ -129,8 +129,8 @@ SpecularConfig.norm_voxel_loss_weight = 1000
 SpecularConfig.norm_voxel_ratio_schedule = {
   'type': 'piecewise',
   'schedules': [
-    (0, ('constant', 0.0)),
+    (10000, ('constant', 0.0)),
     (10000, ('linear', 0.0, 1.0, 10000)),
-    (10000, ('constant', 1.0)),
+    (230000, ('constant', 1.0)),
   ],
 }
