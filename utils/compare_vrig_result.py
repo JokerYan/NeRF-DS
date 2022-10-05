@@ -12,21 +12,15 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
     experiment_root = '/home/zwyan/3d_cv/repos/hypernerf_barf/experiments/'
 else:
     raise NotImplemented
-# dataset = 'americano'
-# dataset = 'vrig-chicken'
-# dataset = 'single-vrig-chicken'
-# dataset = 'vrig-white-board-1_novel_view'
-dataset = '000_bell_01_novel_view'
+
+dataset = '009_bell_05_novel_view'
 data_dir = os.path.join(data_root, dataset)
 save = False
 
 video_render_step = 9
 target_height = 360
 
-# experiment_name_list = ['chicken_spec_exp01_base', 'chicken_spec_exp03']
-# experiment_name_list = ['s_chicken_spec_exp01_base']
-# experiment_name_list = ['vwb1_nv_hc_exp02']
-experiment_name_list = ['000_b01_nv_ref_exp01']
+experiment_name_list = ['009_b05_nv_ref_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:

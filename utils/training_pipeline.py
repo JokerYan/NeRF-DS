@@ -136,7 +136,14 @@ training_schedule = [
   # ("bell-3_qualitative", "b3_q_hsf_exp06", "hsf", [], "b3_q_ref_exp02"),
   # ("bell-3_qualitative", "b3_q_hsf_exp07", "hsf", ["HyperSpecModel.norm_supervision_type = 'warped'"], "b3_q_ref_exp02"),
 
-  ("000_bell_01_novel_view", "000_b01_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
+  # ("000_bell_01_novel_view", "000_b01_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
+  # ("002_bell_03_novel_view", "002_b03_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
+  # ("006_spoon_01_novel_view", "006_s01_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
+  # ("008_bell_04_novel_view", "008_b04_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
+  # ("009_bell_05_novel_view", "009_b05_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
+
+  # ("008_bell_04_novel_view", "008_b04_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "008_b04_nv_ref_exp01"),
+  ("009_bell_05_novel_view", "009_b05_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "009_b05_nv_ref_exp01"),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):
