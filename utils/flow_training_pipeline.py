@@ -3,6 +3,7 @@ import re
 import subprocess
 import argparse
 from tqdm import tqdm
+import traceback
 
 # os.environ["XLA_FLAGS"] = '--xla_force_host_platform_device_count=64'
 """
@@ -109,6 +110,7 @@ if __name__ == "__main__":
         dataset_name, exp_name, config_key, gin_params = training_setting
       else:
         raise NotImplementedError
-      train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name)
+      train_single(dataset_name, exp_name, config_key, gin_params)
     except:
+      traceback.print_exc()
       print("Error encountered when running {}".format(exp_name))
