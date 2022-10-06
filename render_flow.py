@@ -35,8 +35,8 @@ from hypernerf.training_flow import ScalarParams, train_step
 
 ######## parameter settings #########
 
-dataset_name = '010_bell_06_novel_view'
-exp_name = '010_b06_nv_ref_exp01'
+dataset_name = '012_cup_01_novel_view'
+exp_name = '012_c01_nv_ref_exp01'
 camera_path_name = 'vrig_camera'
 
 start = 0
@@ -59,6 +59,7 @@ def render_scene(argv):
     data_root = '/home/zwyan/3d_cv/data/hypernerf/raw/'
   else:
     raise NotImplemented
+  data_dir = os.path.join(data_root, dataset_name)  # @param {type: "string"}
 
   # Load configurations.
   train_dir = os.path.join(project_root, 'experiments', exp_name)
@@ -121,6 +122,7 @@ def render_scene(argv):
   devices = jax.local_devices()
   logging.info('Creating datasource')
   datasource = exp_config.datasource_cls(
+    data_dir=data_dir,    # override data_dir from training
     image_scale=exp_config.image_scale,
     random_seed=exp_config.random_seed,
     # Enable metadata based on model needs.
@@ -224,7 +226,6 @@ def render_scene(argv):
                                 chunk=8192)
 
   # load cameras
-  data_dir = os.path.join(data_root, dataset_name)  # @param {type: "string"}
   camera_dir = Path(data_dir, camera_path_name)
   print(f'Loading cameras from {camera_dir}')
   test_camera_paths = datasource.glob_cameras(camera_dir)
