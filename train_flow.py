@@ -52,7 +52,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
       writer.scalar(tag, value, step)
 
   _log_scalar('params/learning_rate', scalar_params.learning_rate)
-  _log_scalar('params/time_offset', scalar_params.time_offset)
+  _log_scalar('params/time_override', scalar_params.time_override)
   _log_scalar('params/warp_alpha', state.extra_params['warp_alpha'])
   _log_scalar('loss/flow/total', stats['loss/total'])
   _log_scalar('loss/flow/sigma', stats['loss/sigma'])
@@ -163,10 +163,9 @@ def main(argv):
 
   learning_rate_sched = schedules.from_config(flow_config.learning_rate_sched)
   warp_alpha_sched = schedules.from_config(flow_config.warp_alpha_schedule)
-  time_offset_sched = schedules.from_config(flow_config.time_offset_sched)
   scalar_params = ScalarParams(
     learning_rate=learning_rate_sched(0),
-    time_offset=time_offset_sched(0),
+    time_override=flow_config.time_override,
     elastic_loss_weight=flow_config.elastic_loss_weight,
   )
 
@@ -245,7 +244,6 @@ def main(argv):
     # pytype: enable=attribute-error
     scalar_params = scalar_params.replace(
       learning_rate=learning_rate_sched(step),
-      time_offset=time_offset_sched(step),
     )
     warp_alpha = jax_utils.replicate(warp_alpha_sched(step), devices)
     flow_state = flow_state.replace(

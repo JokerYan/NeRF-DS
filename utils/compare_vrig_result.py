@@ -13,14 +13,15 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 
-dataset = '008_bell_04_novel_view'
+# dataset = '011_bell_07_novel_view'
+dataset = '012_cup_01_novel_view'
 data_dir = os.path.join(data_root, dataset)
 save = False
 
 video_render_step = 9
 target_height = 360
 
-experiment_name_list = ['008_b04_nv_ref_exp01']
+experiment_name_list = ['012_c01_nv_ref_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:

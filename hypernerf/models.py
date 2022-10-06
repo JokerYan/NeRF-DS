@@ -2598,7 +2598,7 @@ class FlowModel(nn.Module):
       self,
       rays_dict: Dict[str, Any],
       extra_params: Dict[str, Any],
-      time_offset: float = 0,
+      time_override: float = 0,
       metadata_encoded=False,
       return_warp_jacobian=False,
       return_hyper_jacobian=False,
@@ -2613,7 +2613,7 @@ class FlowModel(nn.Module):
     rays_num, sample_num, _ = cur_points.shape
 
     cur_sigma, cur_weights = self.render_nerf_sigma(
-      cur_points, z_vals, rays_dict, extra_params, time_offset=None, metadata_encoded=metadata_encoded,
+      cur_points, z_vals, rays_dict, extra_params, time_override=None, metadata_encoded=metadata_encoded,
       return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
       use_sample_at_infinity=use_sample_at_infinity
     )
@@ -2640,9 +2640,9 @@ class FlowModel(nn.Module):
     warp_jacobian = warp_out['jacobian']
 
     # query the sigma of the warped position at time 0
-    time_offset = jnp.array(time_offset, int)
+    time_override = jnp.array(time_override, int)
     warped_sigma, warped_weights = self.render_nerf_sigma(
-      warped_points, z_vals, rays_dict, extra_params, time_offset=time_offset, metadata_encoded=metadata_encoded,
+      warped_points, z_vals, rays_dict, extra_params, time_override=time_override, metadata_encoded=metadata_encoded,
       return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
       use_sample_at_infinity=use_sample_at_infinity
     )
@@ -2764,7 +2764,7 @@ class FlowModel(nn.Module):
           z_vals,
           rays_dict,
           extra_params,
-          time_offset=None,
+          time_override=None,
           metadata_encoded=False,
           return_warp_jacobian=False,
           return_hyper_jacobian=False,
@@ -2776,10 +2776,10 @@ class FlowModel(nn.Module):
     metadata = rays_dict['metadata']
 
     # override time
-    if time_offset is not None:
-      # metadata['warp'] = jnp.ones_like(metadata['warp']) * time_override
-      metadata['warp'] = jnp.maximum(jnp.zeros_like(metadata['warp']),
-                                     metadata['warp'].astype(jnp.int16) - time_offset)
+    if time_override is not None:
+      metadata['warp'] = jnp.ones_like(metadata['warp']) * time_override
+      # metadata['warp'] = jnp.maximum(jnp.zeros_like(metadata['warp']),
+      #                                metadata['warp'].astype(jnp.int16) - time_override)
 
     if 'viewdirs' in rays_dict:
       viewdirs = rays_dict['viewdirs']
@@ -2973,7 +2973,7 @@ def construct_flow(key, use_hyper_spec_model: bool, batch_size: int, embeddings_
     },
     init_rays_dict,
     extra_params=extra_params,
-    time_offset=0,
+    time_override=0,
   )['params']
 
   nerf_params = params['nerf_model']

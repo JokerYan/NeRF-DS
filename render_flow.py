@@ -149,10 +149,9 @@ def render_scene(argv):
 
   learning_rate_sched = schedules.from_config(flow_config.learning_rate_sched)
   warp_alpha_sched = schedules.from_config(flow_config.warp_alpha_schedule)
-  time_offset_sched = schedules.from_config(flow_config.time_offset_sched)
   scalar_params = ScalarParams(
     learning_rate=learning_rate_sched(0),
-    time_offset=time_offset_sched(0),
+    time_override=flow_config.time_override,
     elastic_loss_weight=flow_config.elastic_loss_weight,
   )
 
@@ -204,7 +203,7 @@ def render_scene(argv):
       {'params': params},
       batch,
       extra_params=extra_params,
-      time_offset=0,
+      time_override=0,
       rngs={
         'coarse': random.PRNGKey(0),
         'fine': random.PRNGKey(0),

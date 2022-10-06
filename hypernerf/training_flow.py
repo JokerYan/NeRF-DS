@@ -21,7 +21,7 @@ from hypernerf import utils
 class ScalarParams:
   """Scalar parameters for flow model training"""
   learning_rate: float
-  time_offset: float
+  time_override: float
   elastic_loss_weight: float = 0
 
 
@@ -110,7 +110,7 @@ def train_step(
       {'params': params},
       batch,
       extra_params=state.extra_params,
-      time_offset=scalar_params.time_offset,
+      time_override=scalar_params.time_override,
       rngs={
         'fine': fine_key,
         'coarse': coarse_key

@@ -122,16 +122,17 @@ class FlowConfig:
   #     'type': 'constant',
   #     'value': 0,
   # })
-  # time_offset_sched: ScheduleDef = immutabledict.immutabledict({
+  # time_override_sched: ScheduleDef = immutabledict.immutabledict({
   #   'type': 'linear',
   #   'initial_value': 1,
   #   'final_value': 1000,
   #   'num_steps': int(max_steps * 0.7)
   # })
-  time_offset_sched: ScheduleDef = immutabledict.immutabledict({
-    'type': 'constant',
-    'value': 1000
-  })
+  # time_override_sched: ScheduleDef = immutabledict.immutabledict({
+  #   'type': 'constant',
+  #   'value': 0
+  # })
+  time_override = 0
   warp_alpha_schedule: ScheduleDef = immutabledict.immutabledict({
     'type': 'linear',
     'initial_value': 0,
