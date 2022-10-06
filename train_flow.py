@@ -260,7 +260,7 @@ def main(argv):
 
     if step % flow_config.print_every == 0 and jax.process_index() == 0:
       logging.info('step=%d, loss=%0.6f, steps_per_second=%0.2f',
-                   step, stats['loss/total'], time_tracker.summary()['steps_per_sec'])
+                   step, stats['loss/total'].mean(), time_tracker.summary()['steps_per_sec'])
 
     if step % train_config.log_every == 0 and jax.process_index() == 0:
       # Only log via process 0.
