@@ -52,7 +52,7 @@ exp_root = "./experiments/"
 # training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
   ("011_bell_07_novel_view", "011_b07_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1",
-                                                             "FlowConfig.timer_override = 640"]),
+                                                             "FlowConfig.time_override = 640"]),
   ("012_cup_01_novel_view", "012_c01_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
 ]
 
