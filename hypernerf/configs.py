@@ -107,7 +107,7 @@ class SpecularConfig:
 @dataclasses.dataclass
 class FlowConfig:
   """ Configurations for FlowModel """
-  max_steps: int = 100000
+  max_steps: int = 50000
   learning_rate_sched: ScheduleDef = immutabledict.immutabledict({
       'type': 'exponential',
       'initial_value': 1e-4,

@@ -51,9 +51,7 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
-  ("002_bell_03_novel_view", "002_b03_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
-  # ("008_bell_04_novel_view", "008_b04_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
-  # ("009_bell_05_novel_view", "009_b05_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
+  ("010_bell_06_novel_view", "010_b06_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params):
@@ -73,7 +71,7 @@ def train_single(dataset_name, exp_name, config_key, gin_params):
   for gin_param in gin_params:
     process_str += ["--gin_bindings", gin_param]
 
-  pbar = tqdm(total=250000)
+  pbar = tqdm(total=50000)
   with subprocess.Popen(process_str,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,

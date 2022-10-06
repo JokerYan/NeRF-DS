@@ -35,8 +35,8 @@ from hypernerf.training_flow import ScalarParams, train_step
 
 ######## parameter settings #########
 
-dataset_name = '009_bell_05_novel_view'
-exp_name = '009_b05_nv_ref_exp01'
+dataset_name = '010_bell_06_novel_view'
+exp_name = '010_b06_nv_ref_exp01'
 camera_path_name = 'vrig_camera'
 
 start = 0
