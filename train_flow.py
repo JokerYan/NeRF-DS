@@ -191,8 +191,8 @@ def main(argv):
 
   logging.info('Restoring flow checkpoint from %s', flow_checkpoint_dir)
   flow_state = checkpoints.restore_checkpoint(flow_checkpoint_dir, flow_state)
-  flow_state = jax_utils.replicate(flow_state, devices=devices)
   init_step = int(flow_state.optimizer.state.step) + 1
+  flow_state = jax_utils.replicate(flow_state, devices=devices)
 
   # Create Jax iterator.
   logging.info('Creating dataset iterator.')
