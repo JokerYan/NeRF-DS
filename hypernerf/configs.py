@@ -132,7 +132,7 @@ class FlowConfig:
   #   'type': 'constant',
   #   'value': 0
   # })
-  time_override = 0
+  time_override: int = 0
   warp_alpha_schedule: ScheduleDef = immutabledict.immutabledict({
     'type': 'linear',
     'initial_value': 0,
