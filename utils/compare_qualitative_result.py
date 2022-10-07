@@ -18,7 +18,7 @@ else:
 # dataset = 'vrig-cup-2_qualitative'
 dataset = 'bell-2_qualitative'
 data_dir = os.path.join(data_root, dataset)
-save = False
+save = True
 
 camera_idx = 93
 video_render_step = 10

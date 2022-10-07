@@ -21,7 +21,8 @@ save = False
 video_render_step = 9
 target_height = 360
 
-experiment_name_list = ['012_c01_nv_ref_exp01']
+# experiment_name_list = ['011_b07_nv_hsf_exp01', '011_b07_nv_ref_exp01']
+experiment_name_list = ['012_c01_nv_hsf_exp01', '012_c01_nv_ref_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:
@@ -61,7 +62,7 @@ for video_path in video_path_list:
 # concatenate and show
 exp_concat_image_list = []
 for frame_list in exp_frame_list:
-  assert len(frame_list) == len(gt_images)
+  assert len(frame_list) == len(gt_images), (len(frame_list), len(gt_images))
   concat_image_list = []
   for i in range(len(gt_images)):
     gt_image = gt_images[i]

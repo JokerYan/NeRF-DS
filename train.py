@@ -463,7 +463,7 @@ def main(argv):
         logging.info('\tfine metrics: %s', fine_metrics_str)
 
     if step % train_config.save_every == 0 and jax.process_index() == 0:
-      training.save_checkpoint(checkpoint_dir, state, keep=5)
+      training.save_checkpoint(checkpoint_dir, state, keep=2)
 
     if step % train_config.log_every == 0 and jax.process_index() == 0:
       # Only log via process 0.
@@ -481,7 +481,7 @@ def main(argv):
     time_tracker.tic('data', 'total')
 
   if train_config.max_steps % train_config.save_every != 0:
-    training.save_checkpoint(checkpoint_dir, state, keep=5)
+    training.save_checkpoint(checkpoint_dir, state, keep=2)
 
 
 if __name__ == '__main__':

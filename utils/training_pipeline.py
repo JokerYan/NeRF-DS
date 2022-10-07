@@ -146,12 +146,12 @@ training_schedule = [
   # ("009_bell_05_novel_view", "009_b05_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "009_b05_nv_ref_exp01"),
 
   # ("010_bell_06_novel_view", "010_b06_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
-  # ("010_bell_06_novel_view", "010_b06_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "010_b06_nv_ref_exp01"),
+  ("010_bell_06_novel_view", "010_b06_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "010_b06_nv_ref_exp01"),
 
   # ("011_bell_07_novel_view", "011_b07_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
   # ("012_cup_01_novel_view", "012_c01_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
-  ("011_bell_07_novel_view", "011_b07_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "011_b07_nv_ref_exp01"),
-  ("012_cup_01_novel_view", "012_c01_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "012_c01_nv_ref_exp01"),
+  # ("011_bell_07_novel_view", "011_b07_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "011_b07_nv_ref_exp01"),
+  # ("012_cup_01_novel_view", "012_c01_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "012_c01_nv_ref_exp01"),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):

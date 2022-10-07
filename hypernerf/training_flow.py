@@ -25,7 +25,7 @@ class ScalarParams:
   elastic_loss_weight: float = 0
 
 
-def save_checkpoint(path, flow_only_path, state, keep=5):
+def save_checkpoint(path, flow_only_path, state, keep=2):
   """Save the state to a checkpoint."""
   state_to_save = jax.device_get(jax.tree_map(lambda x: x[0], state))
   step = state_to_save.optimizer.state.step
