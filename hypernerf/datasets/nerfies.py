@@ -107,6 +107,7 @@ class NerfiesDataSource(core.DataSource):
 
     self.rgb_dir = gpath.GPath(data_dir, 'rgb', f'{image_scale}x')
     self.depth_dir = gpath.GPath(data_dir, 'depth', f'{image_scale}x')
+    self.mask_dir = gpath.GPath(data_dir, 'mask', f'{image_scale}x')
     if camera_type not in ['json']:
       raise ValueError('The camera type needs to be json.')
     self.camera_type = camera_type
@@ -137,6 +138,12 @@ class NerfiesDataSource(core.DataSource):
 
   def load_rgb(self, item_id: str) -> np.ndarray:
     return _load_image(self.rgb_dir / f'{item_id}.png')
+
+  def load_mask(self, item_id: str) -> np.ndarray:
+    mask = _load_image(self.mask_dir / f'{item_id}.png.png')
+    # invert mask, so that moving part is 1, static part is 0
+    mask = 1 - mask
+    return mask
 
   def load_camera(self,
                   item_id: types.PathType,

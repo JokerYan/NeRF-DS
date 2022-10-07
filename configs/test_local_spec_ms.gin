@@ -1,0 +1,117 @@
+include 'configs/defaults.gin'
+
+image_scale = 4
+batch_size = 512
+# eval_batch_size = 8192
+eval_batch_size = 4096
+
+elastic_init_weight = 0.01
+max_steps = 250000
+lr_decay_steps = 500000
+init_lr = 1e-3
+final_lr = 1e-5
+
+NerfModel.num_coarse_samples = 64
+NerfModel.num_fine_samples = 64
+NerfModel.use_viewdirs = True
+NerfModel.use_stratified_sampling = True
+
+NerfModel.norm_type = 'none'
+NerfModel.activation = @jax.nn.relu
+
+spatial_point_min_deg = 0
+spatial_point_max_deg = 8
+
+# Hyper config.
+hyper_num_dims = 2
+hyper_point_min_deg = 0
+hyper_point_max_deg = 1
+NerfModel.hyper_point_min_deg = %hyper_point_min_deg
+NerfModel.hyper_point_max_deg = %hyper_point_max_deg
+# TrainConfig.hyper_alpha_schedule = %DELAYED_HYPER_ALPHA_SCHED
+TrainConfig.hyper_alpha_schedule = %CONSTANT_HYPER_ALPHA_SCHED
+
+
+NerfModel.hyper_slice_method = 'bendy_sheet'
+# NerfModel.hyper_slice_method = 'axis_aligned_plane'
+NerfModel.hyper_sheet_mlp_cls = @HyperSheetMLP
+NerfModel.hyper_use_warp_embed = True
+
+hyper_sheet_min_deg = 0
+hyper_sheet_max_deg = 6
+HyperSheetMLP.min_deg = %hyper_sheet_min_deg
+HyperSheetMLP.max_deg = %hyper_sheet_max_deg
+HyperSheetMLP.output_channels = %hyper_num_dims
+TrainConfig.hyper_sheet_alpha_schedule = ('constant', %hyper_sheet_max_deg)
+
+NerfModel.use_warp = True
+warp_min_deg = 0
+warp_max_deg = 4
+TrainConfig.warp_alpha_schedule = {
+  'type': 'linear',
+  'initial_value': %warp_min_deg,
+  'final_value': %warp_max_deg,
+  'num_steps': 50000,
+}
+
+TrainConfig.use_weight_norm = False
+TrainConfig.use_elastic_loss = False
+TrainConfig.use_background_loss = True
+TrainConfig.background_loss_weight = 1.0
+
+TrainConfig.use_warp_reg_loss = True
+TrainConfig.warp_reg_loss_weight = 0.001
+TrainConfig.use_hyper_reg_loss = False
+TrainConfig.hyper_reg_loss_weight = 0.001
+
+TrainConfig.print_every = 100
+TrainConfig.log_every = 100
+TrainConfig.histogram_every = 100
+TrainConfig.save_every = 1000
+
+EvalConfig.eval_once = False
+EvalConfig.save_output = False
+EvalConfig.num_train_eval = 5
+EvalConfig.num_val_eval = 5
+
+NerfModel.use_rgb_condition = False
+
+# Specular configs
+SpecularConfig.screw_input_mode = None
+SpecularConfig.use_sigma_gradient = False
+SpecularConfig.use_sigma_grad_diff_reg = False
+SpecularConfig.sigma_grad_diff_reg_weight = 0
+
+SpecularConfig.use_predicted_norm = True
+SpecularConfig.norm_loss_weight_schedule = %CONSTANT_NORM_LOSS_WEIGHT_SCHED
+# SpecularConfig.norm_loss_weight_schedule = %DELAYED_NORM_LOSS_WEIGHT_SCHED
+
+SpecularConfig.use_back_facing_reg = True
+SpecularConfig.back_facing_reg_weight = 0.1
+
+NerfModel.predict_norm = True
+NerfModel.norm_supervision_type = 'direct'
+
+# SpecularConfig.norm_input_alpha_schedule = %CONSTANT_NORM_INPUT_ALPHA_SCHED
+SpecularConfig.norm_input_alpha_schedule = %DELAYED_NORM_INPUT_ALPHA_SCHED
+
+# warp/GLOEmbed.num_dims = 2
+
+SpecularConfig.use_hyper_concentration_reg_loss = False
+SpecularConfig.hyper_concentration_reg_weight = 0.0001
+SpecularConfig.hyper_concentration_reg_scale = 0.1
+
+SpecularConfig.use_hyper_jacobian_reg_loss = False
+SpecularConfig.hyper_jacobian_reg_weight = 3e-6
+SpecularConfig.hyper_jacobian_reg_scale = 0.1
+
+NerfModel.use_viewdirs_in_hyper = False
+NerfModel.use_x_in_rgb_condition = False
+
+NerfModel.use_hyper_c = False
+NerfModel.hyper_c_hyper_input = True
+NerfModel.use_hyper_c_embed = False
+
+SpecularConfig.use_hyper_c_jacobian_reg_loss = False
+SpecularConfig.hyper_c_jacobian_reg_weight = 3e-5
+SpecularConfig.hyper_c_jacobian_reg_scale = 0.1

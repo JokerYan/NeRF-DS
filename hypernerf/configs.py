@@ -103,6 +103,9 @@ class SpecularConfig:
   # hyper specular model
   use_hyper_spec_model: bool = False
 
+  # mask related
+  canonical_idx: int = 0
+
 @gin.configurable()
 @dataclasses.dataclass
 class FlowConfig:

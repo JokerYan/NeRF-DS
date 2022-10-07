@@ -215,6 +215,9 @@ def main(argv):
       use_camera_id=dummy_model.nerf_embed_key == 'camera',
       use_time=dummy_model.warp_embed_key == 'time')
 
+  # load canonical space camera
+  canonical_camera = datasource.load_camera(datasource.train_ids[spec_config.canonical_idx], exp_config.image_scale)
+
   # Create Model.
   logging.info('Initializing models.')
   rng, key = random.split(rng)

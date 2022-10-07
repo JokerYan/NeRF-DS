@@ -258,6 +258,10 @@ class DataSource(abc.ABC):
   def load_rgb(self, item_id):
     raise NotImplementedError()
 
+  @abc.abstractmethod
+  def load_mask(self, item_id):
+    raise NotImplementedError()
+
   def load_depth(self, item_id):
     raise NotImplementedError()
 
@@ -612,10 +616,15 @@ class DataSource(abc.ABC):
     if scale_factor != 1.0:
       rgb = image_utils.rescale_image(rgb, scale_factor)
 
+    mask = self.load_mask(item_id)
+    if scale_factor != 1.0:
+      mask = image_utils.rescale_image(mask, scale_factor)
+
     camera = self.load_camera(item_id, scale_factor)
     data = {
         'camera_params': camera.get_parameters(),
         'rgb': rgb,
+        'mask': mask,
         'metadata': {},
     }
 
