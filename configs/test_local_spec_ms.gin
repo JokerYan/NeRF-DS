@@ -56,7 +56,7 @@ TrainConfig.warp_alpha_schedule = {
 
 TrainConfig.use_weight_norm = False
 TrainConfig.use_elastic_loss = False
-TrainConfig.use_background_loss = True
+TrainConfig.use_background_loss = False
 TrainConfig.background_loss_weight = 1.0
 
 TrainConfig.use_warp_reg_loss = True
@@ -115,3 +115,9 @@ NerfModel.use_hyper_c_embed = False
 SpecularConfig.use_hyper_c_jacobian_reg_loss = False
 SpecularConfig.hyper_c_jacobian_reg_weight = 3e-5
 SpecularConfig.hyper_c_jacobian_reg_scale = 0.1
+
+# mask related
+NerfModel.use_mask_in_warp = True
+NerfModel.use_mask_in_hyper = True
+NerfModel.use_mask_in_rgb = True
+SpecConfig.use_mask_consistency_loss = True

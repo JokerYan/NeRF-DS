@@ -84,7 +84,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
     if branch not in stats:
       continue
     for stat_key, stat_value in stats[branch].items():
-      assert not jnp.isnan(stat_value)
+      assert not jnp.isnan(stat_value), stat_key
       writer.scalar(f'{stat_key}/{branch}', stat_value, step)
   for stat_key, stat_value in stats.items():
     if stat_key not in {'coarse', 'fine'}:

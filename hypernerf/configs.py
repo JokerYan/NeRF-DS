@@ -105,6 +105,7 @@ class SpecularConfig:
 
   # mask related
   canonical_idx: int = 0
+  use_mask_consistency_loss: bool = False
 
 @gin.configurable()
 @dataclasses.dataclass

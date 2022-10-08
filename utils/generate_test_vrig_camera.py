@@ -10,7 +10,7 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 # dataset = 'americano'
-dataset = '012_cup_01_novel_view'
+dataset = '011_bell_07_novel_view'
 data_dir = os.path.join(data_root, dataset)
 
 train_camera_folder = os.path.join(data_dir, "camera")
@@ -31,7 +31,7 @@ for val_id in val_camera_name_list:
     val_id_number = val_id.split('_')[0]
     int(val_id_number)
   reference_camera_path = os.path.join(train_camera_folder, val_id + ".json")
-  target_camera_path = os.path.join(test_camera_folder, val_id_number + ".json")
+  target_camera_path = os.path.join(test_camera_folder, val_id + ".json")
   shutil.copy(reference_camera_path, target_camera_path)
 
 

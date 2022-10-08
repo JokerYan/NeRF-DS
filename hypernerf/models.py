@@ -201,6 +201,10 @@ class NerfModel(CustomModel):
   # flow config
   use_flow_model: bool = False
 
+  # mask config
+  use_mask_in_warp: bool = False
+  use_mask_in_hyper: bool = False
+  use_mask_in_rgb: bool = False
 
   @property
   def num_nerf_embeds(self):
@@ -548,10 +552,12 @@ class NerfModel(CustomModel):
 
     return rgb, sigma
 
-  def map_vectors(self, points, vectors, warp_embed, extra_params, return_warp_jacobian=False, inverse=False, with_translation=False):
+  def map_vectors(self, points, vectors, warp_embed, extra_params, mask, return_warp_jacobian=False, inverse=False, with_translation=False):
     warp_jacobian = None
     screw_axis = None
     if self.use_warp:
+      if self.use_mask_in_warp:
+        warp_embed = jnp.concatenate([warp_embed, mask], axis=-1)
       if len(vectors.shape) > 1:
         warp_fn = jax.vmap(jax.vmap(self.warp_field, in_axes=(0, 0, None, None, 0, None, None)),
                            in_axes=(0, 0, None, None, 0, None, None))
@@ -665,7 +671,7 @@ class NerfModel(CustomModel):
     assert hyper_c.shape[-1] == self.hyper_c_num_dims, (hyper_c.shape, self.hyper_c_num_dims)
     return hyper_c, hyper_c_jacobian
 
-  def map_points(self, points, warp_embed, hyper_embed, viewdirs, extra_params,
+  def map_points(self, points, warp_embed, hyper_embed, viewdirs, extra_params, mask,
                  use_warp=True, return_warp_jacobian=False, return_hyper_jacobian=False,
                  hyper_point_override=None):
     """Map input points to warped spatial and hyper points.
@@ -683,6 +689,12 @@ class NerfModel(CustomModel):
     Returns:
       A tuple containing `(warped_points, warp_jacobian)`.
     """
+    # add in mask to embed
+    if self.use_mask_in_warp:
+      warp_embed = jnp.concatenate([warp_embed, mask], axis=-1)
+    if self.use_mask_in_hyper:
+      hyper_embed = jnp.concatenate([hyper_embed, mask], axis=-1)
+
     # Map input points to warped spatial and hyper points.
     spatial_points, warp_jacobian, screw_axis = self.map_spatial_points(
       points, warp_embed, extra_params, use_warp=use_warp,
@@ -736,6 +748,7 @@ class NerfModel(CustomModel):
                                 viewdirs,
                                 metadata,
                                 extra_params,
+                                mask,
                                 use_warp=True,
                                 metadata_encoded=False,
                                 return_warp_jacobian=False,
@@ -781,7 +794,7 @@ class NerfModel(CustomModel):
 
     # Map input points to warped spatial and hyper points.
     warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
-      points, warp_embed, hyper_embed, viewdirs, extra_params, use_warp=use_warp,
+      points, warp_embed, hyper_embed, viewdirs, extra_params, mask, use_warp=use_warp,
       return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
       # Override hyper points if present in metadata dict.
       hyper_point_override=metadata.get('hyper_point'))
@@ -822,6 +835,7 @@ class NerfModel(CustomModel):
                      viewdirs,
                      metadata,
                      extra_params,
+                     mask,
                      use_warp=True,
                      metadata_encoded=False,
                      return_warp_jacobian=False,
@@ -881,6 +895,13 @@ class NerfModel(CustomModel):
         hyper_c_embed[:, jnp.newaxis, :],
         shape=(*batch_shape, hyper_c_embed.shape[-1]))
 
+    # broadcast mask
+    if mask is not None:
+      mask = jnp.broadcast_to(
+        mask[:, jnp.newaxis, :],
+        shape=(*batch_shape, mask.shape[-1])
+      )
+
     # # # Map input points to warped spatial and hyper points.
     # warped_points, warp_jacobian, screw_axis = self.map_points(
     #   points, warp_embed, hyper_embed, extra_params, use_warp=use_warp,
@@ -910,10 +931,11 @@ class NerfModel(CustomModel):
     if self.predict_norm and self.norm_supervision_type == 'canonical':
       # Map input points to warped spatial and hyper points.
       warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
-        points, warp_embed, hyper_embed, viewdirs, extra_params, use_warp=use_warp,
+        points, warp_embed, hyper_embed, viewdirs, extra_params, mask, use_warp=use_warp,
         return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=False,
         # Override hyper points if present in metadata dict.
-        hyper_point_override=metadata.get('hyper_point'))
+        hyper_point_override=metadata.get('hyper_point'),
+      )
       def cal_single_pt_sigma_from_warped(warped_points, viewdirs):
         points_feat, alpha_condition, rgb_condition, num_samples = self.pre_process_query(warped_points, viewdirs, metadata,
                                                                                           extra_params, metadata_encoded)
@@ -931,10 +953,10 @@ class NerfModel(CustomModel):
       sigma_gradient_w = sigma_gradient_w_fn(warped_points, viewdirs)
       sigma_gradient_w = model_utils.normalize_vector(sigma_gradient_w)
 
-    def cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs):
+    def cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs, mask):
       # Map input points to warped spatial and hyper points.
       warped_points, warp_jacobian, hyper_jacobian, screw_axis = self.map_points(
-        points, warp_embed, hyper_embed, viewdirs, extra_params, use_warp=use_warp,
+        points, warp_embed, hyper_embed, viewdirs, extra_params, mask, use_warp=use_warp,
         return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
         # Override hyper points if present in metadata dict.
         hyper_point_override=metadata.get('hyper_point'))
@@ -958,15 +980,15 @@ class NerfModel(CustomModel):
       sigma = jnp.squeeze(sigma)
       return sigma, aux_output
 
-    def cal_sigma_gradient(points, warp_embed, hyper_embed, viewdirs):
+    def cal_sigma_gradient(points, warp_embed, hyper_embed, viewdirs, mask):
       # gradient = jax.jacfwd(single_pt_sigma)(points, warp_embed, hyper_embed, viewdirs)
       # gradient, _ = jax.jacrev(cal_single_pt_sigma, argnums=0, has_aux=True)(points, warp_embed, hyper_embed, viewdirs)
       # value = cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs)
-      value, gradient = jax.value_and_grad(cal_single_pt_sigma, argnums=0, has_aux=True)(points, warp_embed, hyper_embed, viewdirs)
+      value, gradient = jax.value_and_grad(cal_single_pt_sigma, argnums=0, has_aux=True)(points, warp_embed, hyper_embed, viewdirs, mask)
       return value, - gradient
 
-    sigma_gradient_fn = jax.vmap(jax.vmap(cal_sigma_gradient, in_axes=(0, 0, 0, None)), in_axes=(0, 0, 0, 0))
-    (sigma, aux_output), sigma_gradient = sigma_gradient_fn(points, warp_embed, hyper_embed, viewdirs)
+    sigma_gradient_fn = jax.vmap(jax.vmap(cal_sigma_gradient, in_axes=(0, 0, 0, None, 0)), in_axes=(0, 0, 0, 0, 0))
+    (sigma, aux_output), sigma_gradient = sigma_gradient_fn(points, warp_embed, hyper_embed, viewdirs, mask)
     sigma_gradient = jnp.squeeze(sigma_gradient)
 
     # normalize
@@ -1044,7 +1066,7 @@ class NerfModel(CustomModel):
       # transform from canonical space to observation space
       normalized_norm = model_utils.normalize_vector(norm)
       if self.norm_supervision_type == 'warped' or self.norm_supervision_type == 'canonical':
-        inverse_norm, _, _ = self.map_vectors(points, normalized_norm, warp_embed, extra_params, inverse=True)
+        inverse_norm, _, _ = self.map_vectors(points, normalized_norm, warp_embed, extra_params, mask, inverse=True)
         norm_input = inverse_norm
       elif self.norm_supervision_type == 'direct':
         norm_input = norm
@@ -1112,13 +1134,27 @@ class NerfModel(CustomModel):
     else:
       extra_rgb_condition = None
 
+    # add mask
+    if self.use_mask_in_rgb:
+      filtered_sigma = filter_sigma(points, sigma, render_opts)
+      sigmoid_sigma = self.sigma_activation(filtered_sigma)
+
+      weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
+      weights = lax.stop_gradient(weights)
+      mask_3d = weights[..., None] * mask
+      mask_3d = mask_3d.reshape([-1, 1])
+      if extra_rgb_condition is not None:
+        extra_rgb_condition = jnp.concatenate([extra_rgb_condition, mask_3d], axis=-1)
+      else:
+        extra_rgb_condition = mask_3d
+
     rgb = self.query_template_rgb(level, points_feat, bottleneck, rgb_condition, screw_axis, screw_input_mode,
                                   norm_input_feat, extra_rgb_condition)
     rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
     out['sigma'] = sigma
 
     # transform norm from observation to canonical
-    sigma_gradient_r, _, _ = self.map_vectors(points, sigma_gradient, warp_embed, extra_params)
+    sigma_gradient_r, _, _ = self.map_vectors(points, sigma_gradient, warp_embed, extra_params, mask)
     sigma_gradient_r = model_utils.normalize_vector(sigma_gradient_r)
 
     # # inversely transform norm from canonical(warped) to observation
@@ -1135,13 +1171,14 @@ class NerfModel(CustomModel):
     # visualize R
     rotation_reference = jnp.ones_like(points)
     rotation_reference = model_utils.normalize_vector(rotation_reference)
-    rotation_field, _, _ = self.map_vectors(points, rotation_reference, warp_embed, extra_params)
+    rotation_field, _, _ = self.map_vectors(points, rotation_reference, warp_embed, extra_params, mask)
     rotation_field = rotation_field[..., :3]
     rotation_field = model_utils.normalize_vector(rotation_field)
 
     # visualize t
     translation_reference = jnp.zeros_like(points)
-    translation_field, _, _ = self.map_vectors(points, translation_reference, warp_embed, extra_params, with_translation=True)
+    translation_field, _, _ = self.map_vectors(points, translation_reference, warp_embed, extra_params, mask,
+                                               with_translation=True)
     translation_field = translation_field[..., :3]
 
     warped_points = jnp.reshape(warped_points, (-1, num_samples, warped_points.shape[-1]))
@@ -1289,6 +1326,8 @@ class NerfModel(CustomModel):
     origins = rays_dict['origins']
     directions = rays_dict['directions']
     metadata = rays_dict['metadata']
+    mask = rays_dict['mask']
+
     if 'viewdirs' in rays_dict:
       viewdirs = rays_dict['viewdirs']
     else:  # viewdirs are normalized rays_d
@@ -1315,6 +1354,7 @@ class NerfModel(CustomModel):
       viewdirs,
       metadata,
       extra_params,
+      mask,
       use_warp=use_warp,
       metadata_encoded=metadata_encoded,
       return_warp_jacobian=return_warp_jacobian,
@@ -1345,6 +1385,7 @@ class NerfModel(CustomModel):
         viewdirs,
         metadata,
         extra_params,
+        mask,
         use_warp=use_warp,
         metadata_encoded=metadata_encoded,
         return_warp_jacobian=return_warp_jacobian,
@@ -2774,6 +2815,7 @@ class FlowModel(nn.Module):
     # Extract viewdirs from the ray array
     directions = rays_dict['directions']
     metadata = rays_dict['metadata']
+    mask = rays_dict['mask']
 
     # override time
     if time_override is not None:
@@ -2794,6 +2836,7 @@ class FlowModel(nn.Module):
       viewdirs,
       metadata,
       extra_params,
+      mask,
       use_warp=use_warp,
       metadata_encoded=metadata_encoded,
       return_warp_jacobian=return_warp_jacobian,
@@ -2842,8 +2885,6 @@ class FlowModelLight(nn.Module):
     return warped_points, warp_jacobian
 
 
-
-
 def construct_nerf(key, use_hyper_spec_model: bool, batch_size: int, embeddings_dict: Dict[str, int],
                    near: float, far: float, screw_input_mode: str, use_sigma_gradient: bool,
                    use_predicted_norm: bool):
@@ -2883,7 +2924,8 @@ def construct_nerf(key, use_hyper_spec_model: bool, batch_size: int, embeddings_
       'camera': jnp.ones((batch_size, 1), jnp.uint32),
       'appearance': jnp.ones((batch_size, 1), jnp.uint32),
       'time': jnp.ones((batch_size, 1), jnp.float32),
-    }
+    },
+    'mask': jnp.ones((batch_size, 1), jnp.float32),
   }
   extra_params = {
     'nerf_alpha': 0.0,

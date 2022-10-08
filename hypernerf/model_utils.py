@@ -151,6 +151,24 @@ def volumetric_rendering(rgb,
   return out
 
 
+def cal_weights(sigma, z_vals, dirs, sample_at_infinity=True, eps=1e-10):
+  last_sample_z = 1e10 if sample_at_infinity else 1e-19
+  dists = jnp.concatenate([
+      z_vals[..., 1:] - z_vals[..., :-1],
+      jnp.broadcast_to(jnp.array([last_sample_z]), z_vals[..., :1].shape)
+  ], -1)
+  dists = dists * jnp.linalg.norm(dirs[..., None, :], axis=-1)
+  alpha = 1.0 - jnp.exp(-sigma * dists)
+  # Prepend a 1.0 to make this an 'exclusive' cumprod as in `tf.math.cumprod`.
+  accum_prod = jnp.concatenate([
+      jnp.ones_like(alpha[..., :1], alpha.dtype),
+      jnp.cumprod(1.0 - alpha[..., :-1] + eps, axis=-1),
+  ], axis=-1)
+  weights = alpha * accum_prod
+
+  return weights
+
+
 def piecewise_constant_pdf(key, bins, weights, num_coarse_samples,
                            use_stratified_sampling):
   """Piecewise-Constant PDF sampling.

@@ -66,6 +66,15 @@ def _load_image(path: types.PathType) -> np.ndarray:
     return image
 
 
+def _load_grayscale_image(path: types.PathType) -> np.ndarray:
+  path = gpath.GPath(path)
+  with path.open('rb') as f:
+    raw_im = np.asarray(bytearray(f.read()), dtype=np.uint8)
+    image = cv2.imdecode(raw_im, cv2.IMREAD_GRAYSCALE)
+    image = np.asarray(image).astype(np.float32) / 255.0
+    return image
+
+
 def _load_dataset_ids(data_dir: types.PathType) -> Tuple[List[str], List[str]]:
   """Loads dataset IDs."""
   dataset_json_path = gpath.GPath(data_dir, 'dataset.json')
@@ -140,7 +149,8 @@ class NerfiesDataSource(core.DataSource):
     return _load_image(self.rgb_dir / f'{item_id}.png')
 
   def load_mask(self, item_id: str) -> np.ndarray:
-    mask = _load_image(self.mask_dir / f'{item_id}.png.png')
+    mask = _load_grayscale_image(self.mask_dir / f'{item_id}.png.png')
+    mask = mask[:, :, np.newaxis]
     # invert mask, so that moving part is 1, static part is 0
     mask = 1 - mask
     return mask

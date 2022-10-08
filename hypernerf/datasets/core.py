@@ -16,11 +16,12 @@
 import abc
 import functools
 import itertools
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union, List
 
 from absl import logging
 from flax import jax_utils
 import immutabledict
+import cv2
 import jax
 import numpy as np
 import tensorflow as tf
@@ -108,6 +109,37 @@ def load_camera(
     camera.position = camera.position * scene_scale
 
   return camera
+
+
+def load_mask_from_path(
+        mask_path: gpath.GPath,
+        scale_factor: float = 1.0):
+  with mask_path.open('rb') as f:
+    mask = np.asarray(bytearray(f.read()), dtype=np.uint8)
+    mask = cv2.imdecode(mask, cv2.IMREAD_GRAYSCALE)
+    mask = np.asarray(mask).astype(np.float32) / 255.0
+
+  mask = mask[:, :, np.newaxis]
+  # invert mask, so that moving part is 1, static part is 0
+  mask = 1 - mask
+  if scale_factor != 1.0:
+    mask = image_utils.rescale_image(mask, scale_factor)
+
+  return mask
+
+
+def load_camera_masks(
+        mask_dir: gpath.GPath,
+        camera_path_list: List[gpath.GPath],
+        scale_factor: float = 1.0
+):
+  mask_list = []
+  for camera_path in camera_path_list:
+    item_id = camera_path.stem
+    mask_path = mask_dir / f"{item_id}.png.png"
+    mask = load_mask_from_path(mask_path, scale_factor)
+    mask_list.append(mask)
+  return mask_list
 
 
 def prepare_data(xs):
