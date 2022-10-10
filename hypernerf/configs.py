@@ -105,7 +105,15 @@ class SpecularConfig:
 
   # mask related
   canonical_idx: int = 0
+  use_mask_weighted_loss: bool = False
+  mask_weight_schedule: ScheduleDef = immutabledict.immutabledict({
+    'type': 'linear',
+    'initial_value': 0.5,
+    'final_value': 0.8,
+    'num_steps': 250000,
+  })
   use_mask_consistency_loss: bool = False
+  mask_consistency_loss_weight: float = 1.0
 
 @gin.configurable()
 @dataclasses.dataclass

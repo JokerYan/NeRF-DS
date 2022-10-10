@@ -120,4 +120,4 @@ SpecularConfig.hyper_c_jacobian_reg_scale = 0.1
 NerfModel.use_mask_in_warp = True
 NerfModel.use_mask_in_hyper = True
 NerfModel.use_mask_in_rgb = True
-SpecConfig.use_mask_consistency_loss = True
+SpecularConfig.use_mask_weighted_loss = True

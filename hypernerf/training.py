@@ -31,6 +31,7 @@ from jax import vmap
 from hypernerf import model_utils
 from hypernerf import models
 from hypernerf import utils
+from hypernerf import camera as cam
 
 
 @struct.dataclass
@@ -50,10 +51,12 @@ class ScalarParams:
   hyper_concentration_reg_scale: float = 0.0
   hyper_jacobian_reg_weight: float = 0.0
   hyper_jacobian_reg_scale: float = 0.0
-  hyper_c_jacobian_reg_weight: float = 0.0,
-  hyper_c_jacobian_reg_scale: float = 0.0,
+  hyper_c_jacobian_reg_weight: float = 0.0
+  hyper_c_jacobian_reg_scale: float = 0.0
   norm_voxel_loss_weight: float = 0.0
   flow_model_light_learning_rate: float = 0.0
+  mask_weight: float = 0.5
+  mask_consistency_loss_weight: float = 1.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -190,7 +193,10 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_back_facing_reg',
                                     'use_hyper_concentration_reg',
                                     'use_hyper_jacobian_reg',
-                                    'use_hyper_c_jacobian_reg'
+                                    'use_hyper_c_jacobian_reg',
+                                    'use_mask_weighted_loss',
+                                    'use_mask_consistency_loss',
+                                    'canonical_camera',
                                     ))
 def train_step(model: models.CustomModel,
                rng_key: Callable[[int], jnp.ndarray],
@@ -214,6 +220,9 @@ def train_step(model: models.CustomModel,
                use_hyper_concentration_reg: bool = False,
                use_hyper_jacobian_reg: bool = False,
                use_hyper_c_jacobian_reg: bool = False,
+               use_mask_weighted_loss: bool = False,
+               use_mask_consistency_loss: bool = False,
+               canonical_camera: cam.Camera = None,
                ):
   """One optimization step.
 
@@ -249,6 +258,7 @@ def train_step(model: models.CustomModel,
       use_elastic_loss=False,
       use_hyper_reg_loss=False):
 
+    stats = {}
     if 'channel_set' in batch['metadata']:
       num_sets = int(model_out['rgb'].shape[-1] / 3)
       losses = []
@@ -256,12 +266,23 @@ def train_step(model: models.CustomModel,
         loss = (model_out['rgb'][..., i * 3:(i + 1) * 3] - batch['rgb'])**2
         loss *= (batch['metadata']['channel_set'] == i)
         losses.append(loss)
-      rgb_loss = jnp.sum(jnp.asarray(losses), axis=0).mean()
+      rgb_loss = jnp.sum(jnp.asarray(losses), axis=0)
     else:
-      rgb_loss = ((model_out['rgb'][..., :3] - batch['rgb'][..., :3])**2).mean()
-    stats = {
-        'loss/rgb': rgb_loss,
-    }
+      rgb_loss = ((model_out['rgb'][..., :3] - batch['rgb'][..., :3])**2)
+
+    # mask weighted loss
+    if use_mask_weighted_loss:
+      mask = batch['mask']
+      mask_weight = scalar_params.mask_weight
+      in_mask_rgb_loss = mask_weight * mask * rgb_loss
+      out_mask_rgb_loss = (1 - mask_weight) * (1 - mask) * rgb_loss
+      stats['loss/in_mask_rgb'] = in_mask_rgb_loss.mean()
+      stats['loss/out_mask_rgb'] = out_mask_rgb_loss.mean()
+      rgb_loss = in_mask_rgb_loss + out_mask_rgb_loss
+
+    rgb_loss = rgb_loss.mean()
+
+    stats['loss/rgb'] = rgb_loss
     loss = rgb_loss
     if use_elastic_loss:
       elastic_fn = functools.partial(compute_elastic_loss,
@@ -417,6 +438,28 @@ def train_step(model: models.CustomModel,
 
       stats['loss/inter_norm_loss'] = inter_norm_loss
       loss += scalar_params.norm_voxel_loss_weight * inter_norm_loss
+
+    if use_mask_consistency_loss:
+      canonical_mask = canonical_camera.get_mask()
+      cur_mask = batch['mask']
+      warped_points = model_out['warped_points'][..., :3]
+
+      # project
+      warped_points_2d = canonical_camera.project_jnp(warped_points)
+      warped_points_2d = jnp.array(warped_points_2d, jnp.int16)
+      warped_points_2d = jnp.concatenate([warped_points_2d[..., 1, jnp.newaxis],
+                                          warped_points_2d[..., 0, jnp.newaxis]], axis=-1)    # x,y to y,x
+      height, width, _ = canonical_mask.shape
+
+      # handle out of bounds
+      max_bounds = jnp.array([height, width])
+      warped_points_2d = jnp.maximum(warped_points_2d, 0)
+      # assert warped_points_2d.shape == 0, (warped_points_2d.shape, max_bounds.shape)
+      warped_points_2d = jnp.minimum(warped_points_2d, max_bounds)
+
+      # mask consistency loss
+      warped_mask = canonical_mask[warped_points_2d]
+
 
     stats['loss/total'] = loss
     stats['metric/psnr'] = utils.compute_psnr(rgb_loss)

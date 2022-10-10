@@ -18,6 +18,7 @@ import json
 from typing import Tuple, Union, Optional
 
 import numpy as np
+import jax.numpy as jnp
 
 from hypernerf import gpath
 from hypernerf import types
@@ -281,6 +282,11 @@ class Camera:
     local_points = (np.matmul(self.orientation, translated_points.T)).T
     return local_points
 
+  def points_to_local_points_jnp(self, points: jnp.ndarray):
+    translated_points = points - self.position
+    local_points = (jnp.matmul(self.orientation, translated_points.T)).T
+    return local_points
+
   def project(self, points: np.ndarray):
     """Projects a 3D point (x,y,z) to a pixel position (x,y)."""
     batch_shape = points.shape[:-1]
@@ -312,6 +318,40 @@ class Camera:
                + self.principal_point_y)
 
     pixels = np.stack([pixel_x, pixel_y], axis=-1)
+    return pixels.reshape((*batch_shape, 2))
+
+  def project_jnp(self, points: jnp.ndarray):
+    """jnp version"""
+    """Projects a 3D point (x,y,z) to a pixel position (x,y)."""
+    batch_shape = points.shape[:-1]
+    points = points.reshape((-1, 3))
+    local_points = self.points_to_local_points_jnp(points)
+
+    # Get normalized local pixel positions.
+    x = local_points[..., 0] / local_points[..., 2]
+    y = local_points[..., 1] / local_points[..., 2]
+    r2 = x**2 + y**2
+
+    # Apply radial distortion.
+    distortion = 1.0 + r2 * (
+        self.radial_distortion[0] + r2 *
+        (self.radial_distortion[1] + self.radial_distortion[2] * r2))
+
+    # Apply tangential distortion.
+    x_times_y = x * y
+    x = (
+        x * distortion + 2.0 * self.tangential_distortion[0] * x_times_y +
+        self.tangential_distortion[1] * (r2 + 2.0 * x**2))
+    y = (
+        y * distortion + 2.0 * self.tangential_distortion[1] * x_times_y +
+        self.tangential_distortion[0] * (r2 + 2.0 * y**2))
+
+    # Map the distorted ray to the image plane and return the depth.
+    pixel_x = self.focal_length * x + self.skew * y + self.principal_point_x
+    pixel_y = (self.focal_length * self.pixel_aspect_ratio * y
+               + self.principal_point_y)
+
+    pixels = jnp.stack([pixel_x, pixel_y], axis=-1)
     return pixels.reshape((*batch_shape, 2))
 
   def get_pixel_centers(self):
@@ -425,3 +465,9 @@ class Camera:
 
   def copy(self):
     return copy.deepcopy(self)
+
+  def set_mask(self, mask: jnp.ndarray):
+    self.mask = mask
+
+  def get_mask(self):
+    return self.mask

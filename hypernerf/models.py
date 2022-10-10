@@ -401,68 +401,68 @@ class NerfModel(CustomModel):
       jnp.concatenate(rgb_conditions, axis=-1)
       if rgb_conditions else None)
     return alpha_conditions, rgb_conditions
-
-  def query_template(self,
-                     level,
-                     points,
-                     viewdirs,
-                     screw_axis,
-                     metadata,
-                     extra_params,
-                     metadata_encoded=False,
-                     screw_input_mode=None  # None, rotation, full
-                     ):
-    """Queries the NeRF template."""
-    alpha_condition, rgb_condition = (
-      self.get_condition_inputs(viewdirs, metadata, metadata_encoded))
-
-    points_feat = model_utils.posenc(
-      points[..., :3],
-      min_deg=self.spatial_point_min_deg,
-      max_deg=self.spatial_point_max_deg,
-      use_identity=self.use_posenc_identity,
-      alpha=extra_params['nerf_alpha'])
-    # Encode hyper-points if present.
-    if points.shape[-1] > 3:
-      hyper_feats = model_utils.posenc(
-        points[..., 3:],
-        min_deg=self.hyper_point_min_deg,
-        max_deg=self.hyper_point_max_deg,
-        use_identity=False,
-        alpha=extra_params['hyper_alpha'])
-      points_feat = jnp.concatenate([points_feat, hyper_feats], axis=-1)
-
-    if len(points_feat.shape) > 1:
-      num_samples = points_feat.shape[1]
-    else:
-      num_samples = 1
-
-    if screw_input_mode is None or screw_input_mode == "none" or screw_input_mode == "None":
-      screw_condition = None
-    elif screw_input_mode == "rotation":
-      screw_condition = screw_axis[..., :3]
-    elif screw_input_mode == "full":
-      screw_condition = screw_axis
-    else:
-      raise NotImplementedError
-
-    # raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_condition)
-    points_feat, bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
-    sigma, norm, _, _ = self.nerf_mlps[level].query_sigma(points_feat, bottleneck, alpha_condition)
-    rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition,
-                                          self.use_x_in_rgb_condition)
-    raw = {
-      'rgb': rgb.reshape((-1, num_samples, self.rgb_channels)),
-      'alpha': sigma.reshape((-1, num_samples, self.alpha_channels)),
-    }
-
-    raw = model_utils.noise_regularize(
-      self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
-
-    rgb = nn.sigmoid(raw['rgb'])
-    sigma = self.sigma_activation(jnp.squeeze(raw['alpha'], axis=-1))
-
-    return rgb, sigma
+  #
+  # def query_template(self,
+  #                    level,
+  #                    points,
+  #                    viewdirs,
+  #                    screw_axis,
+  #                    metadata,
+  #                    extra_params,
+  #                    metadata_encoded=False,
+  #                    screw_input_mode=None  # None, rotation, full
+  #                    ):
+  #   """Queries the NeRF template."""
+  #   alpha_condition, rgb_condition = (
+  #     self.get_condition_inputs(viewdirs, metadata, metadata_encoded))
+  #
+  #   points_feat = model_utils.posenc(
+  #     points[..., :3],
+  #     min_deg=self.spatial_point_min_deg,
+  #     max_deg=self.spatial_point_max_deg,
+  #     use_identity=self.use_posenc_identity,
+  #     alpha=extra_params['nerf_alpha'])
+  #   # Encode hyper-points if present.
+  #   if points.shape[-1] > 3:
+  #     hyper_feats = model_utils.posenc(
+  #       points[..., 3:],
+  #       min_deg=self.hyper_point_min_deg,
+  #       max_deg=self.hyper_point_max_deg,
+  #       use_identity=False,
+  #       alpha=extra_params['hyper_alpha'])
+  #     points_feat = jnp.concatenate([points_feat, hyper_feats], axis=-1)
+  #
+  #   if len(points_feat.shape) > 1:
+  #     num_samples = points_feat.shape[1]
+  #   else:
+  #     num_samples = 1
+  #
+  #   if screw_input_mode is None or screw_input_mode == "none" or screw_input_mode == "None":
+  #     screw_condition = None
+  #   elif screw_input_mode == "rotation":
+  #     screw_condition = screw_axis[..., :3]
+  #   elif screw_input_mode == "full":
+  #     screw_condition = screw_axis
+  #   else:
+  #     raise NotImplementedError
+  #
+  #   # raw = self.nerf_mlps[level](points_feat, alpha_condition, rgb_condition, screw_condition)
+  #   points_feat, bottleneck = self.nerf_mlps[level].query_bottleneck(points_feat, alpha_condition, rgb_condition)
+  #   sigma, norm, _, _ = self.nerf_mlps[level].query_sigma(points_feat, bottleneck, alpha_condition)
+  #   rgb = self.nerf_mlps[level].query_rgb(points_feat, bottleneck, rgb_condition, screw_condition,
+  #                                         self.use_x_in_rgb_condition)
+  #   raw = {
+  #     'rgb': rgb.reshape((-1, num_samples, self.rgb_channels)),
+  #     'alpha': sigma.reshape((-1, num_samples, self.alpha_channels)),
+  #   }
+  #
+  #   raw = model_utils.noise_regularize(
+  #     self.make_rng(level), raw, self.noise_std, self.use_stratified_sampling)
+  #
+  #   rgb = nn.sigmoid(raw['rgb'])
+  #   sigma = self.sigma_activation(jnp.squeeze(raw['alpha'], axis=-1))
+  #
+  #   return rgb, sigma
 
   def pre_process_query(self,
                         points,

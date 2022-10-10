@@ -78,6 +78,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
   _log_scalar('params/norm_voxel_lr', state.norm_voxel_lr)
   _log_scalar('params/norm_voxel_ratio', state.norm_voxel_ratio)
   _log_scalar('params/elastic_loss/weight', scalar_params.elastic_loss_weight)
+  _log_scalar('params/mask_weight', scalar_params.mask_weight)
 
   # pmean is applied in train_step so just take the item.
   for branch in {'coarse', 'fine'}:
@@ -217,6 +218,11 @@ def main(argv):
 
   # load canonical space camera
   canonical_camera = datasource.load_camera(datasource.train_ids[spec_config.canonical_idx], exp_config.image_scale)
+  mask_dir = gpath.GPath(datasource.data_dir) / 'mask' / f"{int(exp_config.image_scale)}x"
+  canonical_mask_path = mask_dir / (datasource.train_ids[spec_config.canonical_idx] + ".png.png")
+  canonical_mask = datasets.load_mask_from_path(canonical_mask_path, exp_config.image_scale)
+  canonical_mask = jnp.array(canonical_mask)
+  canonical_camera.set_mask(canonical_mask)
 
   # Create Model.
   logging.info('Initializing models.')
@@ -273,6 +279,7 @@ def main(argv):
   norm_voxel_lr_sched = schedules.from_config(spec_config.norm_voxel_lr_schedule)
   norm_voxel_ratio_sched = schedules.from_config(spec_config.norm_voxel_ratio_schedule)
   flow_model_light_lr_sched = schedules.from_config(flow_config.flow_model_light_learning_rate_sched)
+  mask_weight_sched = schedules.from_config(spec_config.mask_weight_schedule)
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
   if train_config.use_weight_norm:
@@ -320,6 +327,8 @@ def main(argv):
     hyper_c_jacobian_reg_scale=spec_config.hyper_c_jacobian_reg_scale,
     norm_voxel_loss_weight=spec_config.norm_voxel_loss_weight,
     flow_model_light_learning_rate=flow_model_light_lr_sched(0),
+    mask_weight=mask_weight_sched(0),
+    mask_consistency_loss_weight=spec_config.mask_consistency_loss_weight,
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
@@ -376,6 +385,9 @@ def main(argv):
       use_hyper_concentration_reg=spec_config.use_hyper_concentration_reg_loss,
       use_hyper_jacobian_reg=spec_config.use_hyper_jacobian_reg_loss,
       use_hyper_c_jacobian_reg=spec_config.use_hyper_c_jacobian_reg_loss,
+      use_mask_weighted_loss=spec_config.use_mask_weighted_loss,
+      use_mask_consistency_loss=spec_config.use_mask_consistency_loss,
+      canonical_camera=canonical_camera,
   )
   ptrain_step = jax.pmap(
       train_step,
@@ -426,6 +438,7 @@ def main(argv):
         learning_rate=learning_rate_sched(step),
         elastic_loss_weight=elastic_loss_weight_sched(step),
         flow_model_light_learning_rate=flow_model_light_lr_sched(step),
+        mask_weight=mask_weight_sched(step),
     )
     # pytype: enable=attribute-error
     nerf_alpha = jax_utils.replicate(nerf_alpha_sched(step), devices)
