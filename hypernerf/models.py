@@ -1232,6 +1232,7 @@ class NerfModel(CustomModel):
     # rendered delta x
     delta_x = warped_points[..., :3] - points
     ray_delta_x = (weights[..., None] * delta_x).sum(axis=-2)
+    out['delta_x'] = delta_x
     out['ray_delta_x'] = ray_delta_x
 
     # accumulate hyper coordinates for each ray

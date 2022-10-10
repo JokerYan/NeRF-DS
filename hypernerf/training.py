@@ -32,6 +32,7 @@ from hypernerf import model_utils
 from hypernerf import models
 from hypernerf import utils
 from hypernerf import camera as cam
+from hypernerf.utils import grid_sample
 
 
 @struct.dataclass
@@ -56,7 +57,8 @@ class ScalarParams:
   norm_voxel_loss_weight: float = 0.0
   flow_model_light_learning_rate: float = 0.0
   mask_weight: float = 0.5
-  mask_consistency_loss_weight: float = 1.0
+  in_mask_consistency_loss_weight: float = 1.0
+  out_mask_consistency_loss_weight: float = 1.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -440,26 +442,35 @@ def train_step(model: models.CustomModel,
       loss += scalar_params.norm_voxel_loss_weight * inter_norm_loss
 
     if use_mask_consistency_loss:
-      canonical_mask = canonical_camera.get_mask()
+      canonical_mask = canonical_camera.get_mask().squeeze(axis=-1)
       cur_mask = batch['mask']
       warped_points = model_out['warped_points'][..., :3]
 
       # project
       warped_points_2d = canonical_camera.project_jnp(warped_points)
-      warped_points_2d = jnp.array(warped_points_2d, jnp.int16)
       warped_points_2d = jnp.concatenate([warped_points_2d[..., 1, jnp.newaxis],
                                           warped_points_2d[..., 0, jnp.newaxis]], axis=-1)    # x,y to y,x
-      height, width, _ = canonical_mask.shape
 
-      # handle out of bounds
-      max_bounds = jnp.array([height, width])
-      warped_points_2d = jnp.maximum(warped_points_2d, 0)
-      # assert warped_points_2d.shape == 0, (warped_points_2d.shape, max_bounds.shape)
-      warped_points_2d = jnp.minimum(warped_points_2d, max_bounds)
+      # grid sample
+      warped_mask = grid_sample(canonical_mask, warped_points_2d)
 
-      # mask consistency loss
-      warped_mask = canonical_mask[warped_points_2d]
+      # in mask consistency loss
+      weights = lax.stop_gradient(model_out['weights'])
+      cur_mask = jnp.broadcast_to(cur_mask, warped_mask.shape)  # broadcast to samples along the ray
+      in_mask_consistency_loss = (cur_mask * (1 - warped_mask) * weights).sum(axis=1).mean()
+      stats['loss/in_mask_cons_loss'] = in_mask_consistency_loss
+      loss += scalar_params.in_mask_consistency_loss_weight * in_mask_consistency_loss
 
+      # out mask consistency loss
+      delta_x = model_out['delta_x']
+      delta_x_magnitude = jnp.linalg.norm(delta_x, axis=-1)
+      # assert delta_x_magnitude.shape == 0, (delta_x_magnitude.shape, weights.shape)   # both 512 x 128
+      out_mask_consistency_loss = ((1 - cur_mask) * delta_x_magnitude * weights).sum(axis=1).mean()
+      stats['loss/out_mask_cons_loss'] = out_mask_consistency_loss
+      loss += scalar_params.out_mask_consistency_loss_weight * out_mask_consistency_loss
+
+      in_mask_delta_x = (cur_mask * delta_x_magnitude * weights).sum(axis=1).mean()
+      stats['stats/in_mask_delta_x'] = in_mask_delta_x
 
     stats['loss/total'] = loss
     stats['metric/psnr'] = utils.compute_psnr(rgb_loss)

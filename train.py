@@ -18,6 +18,7 @@
 import functools
 from typing import Dict, Union
 
+import cv2
 from absl import app
 from absl import flags
 from absl import logging
@@ -221,8 +222,17 @@ def main(argv):
   mask_dir = gpath.GPath(datasource.data_dir) / 'mask' / f"{int(exp_config.image_scale)}x"
   canonical_mask_path = mask_dir / (datasource.train_ids[spec_config.canonical_idx] + ".png.png")
   canonical_mask = datasets.load_mask_from_path(canonical_mask_path, exp_config.image_scale)
+  canonical_mask = cv2.blur(canonical_mask, ksize=(3, 3))[..., np.newaxis]
+  # cv2.imshow('', canonical_mask)
+  # cv2.waitKey()
+  # cv2.destroyAllWindows()
   canonical_mask = jnp.array(canonical_mask)
   canonical_camera.set_mask(canonical_mask)
+
+  # logging.info((canonical_camera.position, canonical_camera.focal_length))
+  # dummy_point = jnp.array([[1, -1, 1], [1, 0, 1], [1, 1, 1]])
+  # logging.info(canonical_camera.project_jnp(dummy_point))
+  # exit()
 
   # Create Model.
   logging.info('Initializing models.')
@@ -328,7 +338,8 @@ def main(argv):
     norm_voxel_loss_weight=spec_config.norm_voxel_loss_weight,
     flow_model_light_learning_rate=flow_model_light_lr_sched(0),
     mask_weight=mask_weight_sched(0),
-    mask_consistency_loss_weight=spec_config.mask_consistency_loss_weight,
+    in_mask_consistency_loss_weight=spec_config.in_mask_consistency_loss_weight,
+    out_mask_consistency_loss_weight=spec_config.out_mask_consistency_loss_weight,
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1

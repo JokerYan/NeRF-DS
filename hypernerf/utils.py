@@ -433,3 +433,59 @@ class TimeTracker:
     """Returns a string of reduced times."""
     strings = [f'{k}={v:.04f}' for k, v in self.summary(reduction).items()]
     return ', '.join(strings)
+
+
+def grid_sample(image: jnp.ndarray, coord: jnp.ndarray):
+  """
+  2D bilinear grid sample, designed for mask consistency loss
+  image: shape H x W
+  coord: shape ... x 2, for x and y coordinates
+  """
+  # flatten coord
+  batch_shape = coord.shape[:-1]
+  assert coord.shape[-1] == 2
+  coord = coord.reshape([-1, 2])    # N x 2
+
+  # x,y to y,x
+  coord = jnp.concatenate([coord[:, 1, jnp.newaxis],
+                           coord[:, 0, jnp.newaxis]], axis=-1)
+
+  # handle bounds
+  height, width = image.shape
+  max_bounds = jnp.array([height, width])
+  coord = jnp.maximum(coord, 0)
+  coord = jnp.minimum(coord, max_bounds)
+
+  # edge padding of image
+  image = jnp.pad(image, 1, mode='edge')
+  coord = coord + 1   # consistent with padding
+
+  # integer coord of four corners
+  floor_coord = jnp.array(jnp.floor(coord), jnp.int32)
+  corner_coord = jnp.tile(floor_coord[:, jnp.newaxis, :], [1, 4, 1])      # N x 4 x 2
+  corner_coord_offset = jnp.array([[0, 0], [0, 1], [1, 0], [1, 1]])       # 0, x+, y+, xy+
+  corner_coord = corner_coord + corner_coord_offset
+
+  # corner values
+  corner_values = image[corner_coord[..., 0], corner_coord[..., 1]]       # N x 4
+
+  # bilinear weights
+  # reference: https://www.omnicalculator.com/math/bilinear-interpolation
+  local_coord = coord - floor_coord
+  local_coord_x, local_coord_y = local_coord[..., 1], local_coord[..., 0]
+  w1 = (1 - local_coord_x) * (1 - local_coord_y)
+  w2 = local_coord_x * (1 - local_coord_y)
+  w3 = (1 - local_coord_x) * local_coord_y
+  w4 = local_coord_x * local_coord_y
+  weights = jnp.array([w1, w2, w3, w4]).transpose()          # N x 4
+
+  # interpolated value
+  inter_value = corner_values * weights
+  inter_value = jnp.sum(inter_value, axis=-1)
+
+  # reshape back to batch shape
+  inter_value = inter_value.reshape(batch_shape)
+
+  return inter_value
+
+

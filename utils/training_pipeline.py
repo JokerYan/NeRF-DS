@@ -155,11 +155,11 @@ training_schedule = [
   # ("012_cup_01_novel_view", "012_c01_nv_hsf_exp01", "hsf", ["ExperimentConfig.image_scale = 1"], "012_c01_nv_ref_exp01"),
 
   # ("011_bell_07_novel_view", "011_b07_nv_ms_exp02", "ms", ["ExperimentConfig.image_scale = 1"]),
-  ("012_cup_01_novel_view", "012_c01_nv_ms_exp02", "ms", ["ExperimentConfig.image_scale = 1"]),
+  # ("012_cup_01_novel_view", "012_c01_nv_ms_exp02", "ms", ["ExperimentConfig.image_scale = 1"]),
 
-  # ("011_bell_07_novel_view", "011_b07_nv_ms_exp03", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                          "SpecularConfig.use_mask_weighted_loss = False",
-  #                                                          "SpecularConfig.use_mask_consistency_loss = True"]),
+  ("011_bell_07_novel_view", "011_b07_nv_ms_exp03", "ms", ["ExperimentConfig.image_scale = 1",
+                                                           "SpecularConfig.use_mask_weighted_loss = False",
+                                                           "SpecularConfig.use_mask_consistency_loss = True"]),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):

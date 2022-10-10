@@ -327,6 +327,10 @@ class Camera:
     points = points.reshape((-1, 3))
     local_points = self.points_to_local_points_jnp(points)
 
+    # handle underflow
+    eps = 1e-5
+    local_points = jnp.where(jnp.abs(local_points) < eps, eps, local_points)
+
     # Get normalized local pixel positions.
     x = local_points[..., 0] / local_points[..., 2]
     y = local_points[..., 1] / local_points[..., 2]

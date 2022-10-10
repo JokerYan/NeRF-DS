@@ -121,3 +121,5 @@ NerfModel.use_mask_in_warp = True
 NerfModel.use_mask_in_hyper = True
 NerfModel.use_mask_in_rgb = True
 SpecularConfig.use_mask_weighted_loss = True
+SpecularConfig.in_mask_consistency_loss_weight = 0.001
+SpecularConfig.out_mask_consistency_loss_weight = 1.0

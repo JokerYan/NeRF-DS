@@ -66,7 +66,7 @@ def camera_to_rays(camera: cam.Camera):
 
   img_rays_origin = np.tile(camera.position[None, None, :],
                             image_shape + (1,))
-  img_rays_dir = camera.pixels_to_rays(camera.get_pixel_centers())  # Zhiwen: Camera pose used here
+  img_rays_dir = camera.pixels_to_rays(camera.get_pixel_centers())
   img_rays_pixels = camera.get_pixel_centers()
 
   return {
