@@ -59,6 +59,7 @@ class ScalarParams:
   mask_weight: float = 0.5
   in_mask_consistency_loss_weight: float = 1.0
   out_mask_consistency_loss_weight: float = 1.0
+  predicted_mask_loss_weight: float = 1.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -471,6 +472,16 @@ def train_step(model: models.CustomModel,
 
       in_mask_delta_x = (cur_mask * delta_x_magnitude * weights).sum(axis=1).mean()
       stats['stats/in_mask_delta_x'] = in_mask_delta_x
+
+    if 'predicted_mask' in model_out:
+      weights = lax.stop_gradient(model_out['weights'])
+      predicted_mask = model_out['predicted_mask']
+      gt_mask = batch['mask']
+      gt_mask = jnp.broadcast_to(gt_mask[:, jnp.newaxis, :], predicted_mask.shape)
+      mask_diff = jnp.abs(predicted_mask - gt_mask).squeeze(axis=-1)
+      predicted_mask_loss = (weights * mask_diff).sum(axis=1).mean()
+      stats['loss/predicted_mask_loss'] = predicted_mask_loss
+      loss += scalar_params.predicted_mask_loss_weight * predicted_mask_loss
 
     stats['loss/total'] = loss
     stats['metric/psnr'] = utils.compute_psnr(rgb_loss)

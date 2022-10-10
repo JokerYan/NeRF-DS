@@ -340,6 +340,7 @@ def main(argv):
     mask_weight=mask_weight_sched(0),
     in_mask_consistency_loss_weight=spec_config.in_mask_consistency_loss_weight,
     out_mask_consistency_loss_weight=spec_config.out_mask_consistency_loss_weight,
+    predicted_mask_loss_weight=spec_config.predicted_mask_loss_weight,
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1

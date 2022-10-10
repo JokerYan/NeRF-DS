@@ -115,6 +115,7 @@ class SpecularConfig:
   use_mask_consistency_loss: bool = False
   in_mask_consistency_loss_weight: float = 1.0
   out_mask_consistency_loss_weight: float = 1.0
+  predicted_mask_loss_weight: float = 1.0
 
 @gin.configurable()
 @dataclasses.dataclass

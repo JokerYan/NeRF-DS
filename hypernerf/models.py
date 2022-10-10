@@ -205,6 +205,7 @@ class NerfModel(CustomModel):
   use_mask_in_warp: bool = False
   use_mask_in_hyper: bool = False
   use_mask_in_rgb: bool = False
+  use_predicted_mask: bool = False
 
   @property
   def num_nerf_embeds(self):
@@ -363,6 +364,9 @@ class NerfModel(CustomModel):
     # self.surface_norm_voxels = jnp.zeros((500, 100, 100, 100), dtype=jnp.float16)
     if self.use_norm_voxel:
       self.norm_voxel = modules.NormVoxels()
+
+    if self.use_predicted_mask:
+      self.mask_mlp = modules.MaskMLP()
 
   def get_condition_inputs(self, viewdirs, metadata, metadata_encoded=False):
     """Create the condition inputs for the NeRF template."""
@@ -896,7 +900,12 @@ class NerfModel(CustomModel):
         shape=(*batch_shape, hyper_c_embed.shape[-1]))
 
     # broadcast mask
-    if mask is not None:
+    if self.use_predicted_mask:
+      mask = self.mask_mlp(points, warp_embed)
+      out['predicted_mask'] = mask
+      mask = lax.stop_gradient(mask)
+
+    if not self.use_predicted_mask and mask is not None:
       mask = jnp.broadcast_to(
         mask[:, jnp.newaxis, :],
         shape=(*batch_shape, mask.shape[-1])

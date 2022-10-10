@@ -391,6 +391,48 @@ class HyperSheetMLP(nn.Module):
     else:
       return mlp(inputs)
 
+@gin.configurable(denylist=['name'])
+class MaskMLP(nn.Module):
+  """An MLP that defines a bendy slicing surface through hyper space."""
+  output_channels: int = 1
+  min_deg: int = 0
+  max_deg: int = 6
+
+  depth: int = 6
+  width: int = 64
+  skips: Tuple[int] = (4,)
+  hidden_init: types.Initializer = jax.nn.initializers.glorot_uniform()
+  output_init: types.Initializer = jax.nn.initializers.normal(1e-5)
+  # output_init: types.Initializer = jax.nn.initializers.glorot_uniform()
+
+  use_residual: bool = False
+
+  @nn.compact
+  def __call__(self, points, embed, alpha=None, use_embed=True, output_channel=None):
+    """
+    output_channel: override the attribute settings.
+                    Only temporary implementation, until old experiments are no longer needed
+    """
+    points_feat = model_utils.posenc(
+      points, self.min_deg, self.max_deg, alpha=alpha)
+    if use_embed:
+      inputs = jnp.concatenate([points_feat, embed], axis=-1)
+    else:
+      inputs = points_feat
+    if output_channel is not None:
+      output_channel_used = output_channel
+    else:
+      output_channel_used = self.output_channels
+    mlp = MLP(depth=self.depth,
+              width=self.width,
+              skips=self.skips,
+              hidden_init=self.hidden_init,
+              output_channels=output_channel_used,
+              output_init=self.output_init)
+    if self.use_residual:
+      return mlp(inputs) + embed
+    else:
+      return mlp(inputs)
 
 @gin.configurable(denylist=['name'])
 class NormVoxels(nn.Module):
