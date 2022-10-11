@@ -116,6 +116,10 @@ class SpecularConfig:
   in_mask_consistency_loss_weight: float = 1.0
   out_mask_consistency_loss_weight: float = 1.0
   predicted_mask_loss_weight: float = 1.0
+  mask_ratio_schedule: ScheduleDef = immutabledict.immutabledict({
+    'type': 'constant',
+    'value': 0.0
+  })
 
 @gin.configurable()
 @dataclasses.dataclass

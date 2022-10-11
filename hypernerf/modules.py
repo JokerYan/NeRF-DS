@@ -405,8 +405,6 @@ class MaskMLP(nn.Module):
   output_init: types.Initializer = jax.nn.initializers.normal(1e-5)
   # output_init: types.Initializer = jax.nn.initializers.glorot_uniform()
 
-  use_residual: bool = False
-
   @nn.compact
   def __call__(self, points, embed, alpha=None, use_embed=True, output_channel=None):
     """
@@ -429,10 +427,10 @@ class MaskMLP(nn.Module):
               hidden_init=self.hidden_init,
               output_channels=output_channel_used,
               output_init=self.output_init)
-    if self.use_residual:
-      return mlp(inputs) + embed
-    else:
-      return mlp(inputs)
+    outputs = mlp(inputs)
+    # mask = jax.nn.sigmoid(outputs)
+    mask = outputs
+    return mask
 
 @gin.configurable(denylist=['name'])
 class NormVoxels(nn.Module):

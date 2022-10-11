@@ -147,6 +147,7 @@ def volumetric_rendering(rgb,
       'med_depth': med_depth,
       'acc': acc,
       'weights': weights,
+      'alpha': alpha
   }
   return out
 

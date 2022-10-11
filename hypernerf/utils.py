@@ -487,5 +487,3 @@ def grid_sample(image: jnp.ndarray, coord: jnp.ndarray):
   inter_value = inter_value.reshape(batch_shape)
 
   return inter_value
-
-

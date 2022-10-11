@@ -27,6 +27,7 @@ from jax import lax
 from jax import numpy as jnp
 from jax import random
 from jax import vmap
+from optax._src.loss import sigmoid_binary_cross_entropy
 
 from hypernerf import model_utils
 from hypernerf import models
@@ -60,6 +61,7 @@ class ScalarParams:
   in_mask_consistency_loss_weight: float = 1.0
   out_mask_consistency_loss_weight: float = 1.0
   predicted_mask_loss_weight: float = 1.0
+  mask_ratio: float = 1.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -474,14 +476,30 @@ def train_step(model: models.CustomModel,
       stats['stats/in_mask_delta_x'] = in_mask_delta_x
 
     if 'predicted_mask' in model_out:
-      weights = lax.stop_gradient(model_out['weights'])
-      predicted_mask = model_out['predicted_mask']
-      gt_mask = batch['mask']
-      gt_mask = jnp.broadcast_to(gt_mask[:, jnp.newaxis, :], predicted_mask.shape)
-      mask_diff = jnp.abs(predicted_mask - gt_mask).squeeze(axis=-1)
+      alpha = lax.stop_gradient(model_out['alpha'])       # R x S   1 - exp(-sigma * dist)
+      normalized_alpha = alpha / jnp.sum(alpha, axis=1)[:, jnp.newaxis]
+      weights = lax.stop_gradient(model_out['weights'])   # R x S
+      normalized_weights = weights / jnp.sum(weights, axis=1)[:, jnp.newaxis]
+
+      predicted_mask = model_out['predicted_mask'].squeeze(axis=-1)   # R x S
+      gt_mask = batch['mask']                                         # R x 1
+      gt_mask = jnp.broadcast_to(gt_mask, predicted_mask.shape)       # R x S
+
+      # # supervise 3d mask
+      # mask_diff = jnp.abs(predicted_mask - weights * gt_mask)  # R x S
+      # predicted_mask_loss = (normalized_alpha * mask_diff).sum(axis=1).mean()
+
+      # supervise 2d mask
+      mask_diff = jnp.abs(predicted_mask - gt_mask)
+      # mask_diff = sigmoid_binary_cross_entropy(predicted_mask, gt_mask)
       predicted_mask_loss = (weights * mask_diff).sum(axis=1).mean()
+
       stats['loss/predicted_mask_loss'] = predicted_mask_loss
       loss += scalar_params.predicted_mask_loss_weight * predicted_mask_loss
+
+      stats['stats/predicted_mask_max'] = jnp.max(predicted_mask)
+      stats['stats/predicted_mask_sigmoid_max'] = jnp.max(jax.nn.sigmoid(predicted_mask))
+      stats['stats/gt_mask_max'] = jnp.max(gt_mask)
 
     stats['loss/total'] = loss
     stats['metric/psnr'] = utils.compute_psnr(rgb_loss)
@@ -512,7 +530,8 @@ def train_step(model: models.CustomModel,
                       use_sigma_gradient=use_sigma_gradient,
                       use_predicted_norm=use_predicted_norm,
                       norm_voxel_lr=state.norm_voxel_lr,
-                      norm_voxel_ratio=state.norm_voxel_ratio
+                      norm_voxel_ratio=state.norm_voxel_ratio,
+                      mask_ratio=scalar_params.mask_ratio
                       )
 
     losses = {}

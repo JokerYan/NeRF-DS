@@ -80,6 +80,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
   _log_scalar('params/norm_voxel_ratio', state.norm_voxel_ratio)
   _log_scalar('params/elastic_loss/weight', scalar_params.elastic_loss_weight)
   _log_scalar('params/mask_weight', scalar_params.mask_weight)
+  _log_scalar('params/mask_ratio', scalar_params.mask_ratio)
 
   # pmean is applied in train_step so just take the item.
   for branch in {'coarse', 'fine'}:
@@ -290,6 +291,7 @@ def main(argv):
   norm_voxel_ratio_sched = schedules.from_config(spec_config.norm_voxel_ratio_schedule)
   flow_model_light_lr_sched = schedules.from_config(flow_config.flow_model_light_learning_rate_sched)
   mask_weight_sched = schedules.from_config(spec_config.mask_weight_schedule)
+  mask_ratio_sched = schedules.from_config(spec_config.mask_ratio_schedule)
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
   if train_config.use_weight_norm:
@@ -341,6 +343,7 @@ def main(argv):
     in_mask_consistency_loss_weight=spec_config.in_mask_consistency_loss_weight,
     out_mask_consistency_loss_weight=spec_config.out_mask_consistency_loss_weight,
     predicted_mask_loss_weight=spec_config.predicted_mask_loss_weight,
+    mask_ratio=mask_ratio_sched(0),
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
@@ -451,6 +454,7 @@ def main(argv):
         elastic_loss_weight=elastic_loss_weight_sched(step),
         flow_model_light_learning_rate=flow_model_light_lr_sched(step),
         mask_weight=mask_weight_sched(step),
+        mask_ratio=mask_ratio_sched(step),
     )
     # pytype: enable=attribute-error
     nerf_alpha = jax_utils.replicate(nerf_alpha_sched(step), devices)
@@ -461,7 +465,6 @@ def main(argv):
     norm_loss_weight = jax_utils.replicate(norm_loss_weight_sched(step), devices)
     norm_input_alpha = jax_utils.replicate(norm_input_alpha_sched(step), devices)
     norm_voxel_lr = jax_utils.replicate(norm_voxel_lr_sched(step), devices)
-    norm_voxel_ratio = jax_utils.replicate(norm_voxel_ratio_sched(step), devices)
     state = state.replace(nerf_alpha=nerf_alpha,
                           warp_alpha=warp_alpha,
                           hyper_alpha=hyper_alpha,
@@ -469,7 +472,6 @@ def main(argv):
                           norm_loss_weight=norm_loss_weight,
                           norm_input_alpha=norm_input_alpha,
                           norm_voxel_lr=norm_voxel_lr,
-                          norm_voxel_ratio=norm_voxel_ratio,
                           )
 
     with time_tracker.record_time('train_step'):

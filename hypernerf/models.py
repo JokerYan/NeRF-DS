@@ -206,6 +206,8 @@ class NerfModel(CustomModel):
   use_mask_in_hyper: bool = False
   use_mask_in_rgb: bool = False
   use_predicted_mask: bool = False
+  mask_embed_cls: Callable[..., nn.Module] = (
+    functools.partial(modules.GLOEmbed, num_dims=8))
 
   @property
   def num_nerf_embeds(self):
@@ -311,6 +313,8 @@ class NerfModel(CustomModel):
       self.nerf_embed = self.nerf_embed_cls(num_embeddings=self.num_nerf_embeds)
     if self.use_warp:
       self.warp_embed = self.warp_embed_cls(num_embeddings=self.num_warp_embeds)
+    if self.use_predicted_mask:
+      self.mask_embed = self.mask_embed_cls(num_embeddings=self.num_warp_embeds)
 
     if self.hyper_slice_method == 'axis_aligned_plane':
       self.hyper_embed = self.hyper_embed_cls(
@@ -839,7 +843,7 @@ class NerfModel(CustomModel):
                      viewdirs,
                      metadata,
                      extra_params,
-                     mask,
+                     gt_mask,
                      use_warp=True,
                      metadata_encoded=False,
                      return_warp_jacobian=False,
@@ -853,6 +857,7 @@ class NerfModel(CustomModel):
                      use_predicted_norm=False,
                      norm_voxel_lr=0,
                      norm_voxel_ratio=1,
+                     mask_ratio=1,
                      ):
     out = {'points': points}
 
@@ -885,6 +890,12 @@ class NerfModel(CustomModel):
     else:
       hyper_c_embed = None
 
+    if self.use_predicted_mask:
+      mask_embed = metadata[self.warp_embed_key]
+      mask_embed = self.mask_embed(mask_embed)
+    else:
+      mask_embed = None
+
     # Broadcast embeddings.
     if warp_embed is not None:
       warp_embed = jnp.broadcast_to(
@@ -898,18 +909,26 @@ class NerfModel(CustomModel):
       hyper_c_embed = jnp.broadcast_to(
         hyper_c_embed[:, jnp.newaxis, :],
         shape=(*batch_shape, hyper_c_embed.shape[-1]))
+    if mask_embed is not None:
+      mask_embed = jnp.broadcast_to(
+        mask_embed[:, jnp.newaxis, :],
+        shape=(*batch_shape, mask_embed.shape[-1])
+      )
 
     # broadcast mask
-    if self.use_predicted_mask:
-      mask = self.mask_mlp(points, warp_embed)
-      out['predicted_mask'] = mask
-      mask = lax.stop_gradient(mask)
-
-    if not self.use_predicted_mask and mask is not None:
-      mask = jnp.broadcast_to(
-        mask[:, jnp.newaxis, :],
-        shape=(*batch_shape, mask.shape[-1])
+    if gt_mask is not None:
+      gt_mask = jnp.broadcast_to(
+        gt_mask[:, jnp.newaxis, :],
+        shape=(*batch_shape, gt_mask.shape[-1])
       )
+    if self.use_predicted_mask:
+      predicted_mask = self.mask_mlp(points, mask_embed)
+      out['predicted_mask'] = predicted_mask
+      predicted_mask = lax.stop_gradient(predicted_mask)
+
+      mask = predicted_mask * mask_ratio + gt_mask * (1 - mask_ratio)
+    else:
+      mask = gt_mask
 
     # # # Map input points to warped spatial and hyper points.
     # warped_points, warp_jacobian, screw_axis = self.map_points(
@@ -1150,7 +1169,13 @@ class NerfModel(CustomModel):
 
       weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
       weights = lax.stop_gradient(weights)
-      mask_3d = weights[..., None] * mask
+
+      gt_mask_3d = weights[..., None] * gt_mask
+      if self.use_predicted_mask:
+        predicted_mask_3d = weights[..., None] * predicted_mask
+        mask_3d = predicted_mask_3d * mask_ratio + gt_mask_3d * (1 - mask_ratio)
+      else:
+        mask_3d = gt_mask_3d
       mask_3d = mask_3d.reshape([-1, 1])
       if extra_rgb_condition is not None:
         extra_rgb_condition = jnp.concatenate([extra_rgb_condition, mask_3d], axis=-1)
@@ -1275,6 +1300,10 @@ class NerfModel(CustomModel):
     if hyper_jacobian is not None:
       out['hyper_jacobian'] = hyper_jacobian
 
+    if self.use_predicted_mask:
+      ray_predicted_mask = (weights[..., None] * predicted_mask).sum(axis=-2)
+      out['ray_predicted_mask'] = ray_predicted_mask
+
     # Add a map containing the returned points at the median depth.
     depth_indices = model_utils.compute_depth_index(out['weights'])
     med_points = jnp.take_along_axis(
@@ -1306,6 +1335,7 @@ class NerfModel(CustomModel):
       use_predicted_norm=False,
       norm_voxel_lr=0,
       norm_voxel_ratio=1,
+      mask_ratio=1,
   ):
     """Nerf Model.
 
@@ -1377,6 +1407,7 @@ class NerfModel(CustomModel):
       use_predicted_norm=use_predicted_norm,
       norm_voxel_lr=norm_voxel_lr,
       norm_voxel_ratio=norm_voxel_ratio,
+      mask_ratio=mask_ratio
     )
     out = {'coarse': coarse_ret}
 
@@ -1409,6 +1440,7 @@ class NerfModel(CustomModel):
         use_predicted_norm=use_predicted_norm,
         norm_voxel_lr=norm_voxel_lr,
         norm_voxel_ratio=norm_voxel_ratio,
+        mask_ratio=mask_ratio
       )
 
     if not return_weights:

@@ -120,7 +120,24 @@ SpecularConfig.hyper_c_jacobian_reg_scale = 0.1
 NerfModel.use_mask_in_warp = True
 NerfModel.use_mask_in_hyper = True
 NerfModel.use_mask_in_rgb = True
-SpecularConfig.use_mask_weighted_loss = True
+SpecularConfig.use_mask_weighted_loss = False
 SpecularConfig.in_mask_consistency_loss_weight = 0.001
 SpecularConfig.out_mask_consistency_loss_weight = 1.0
 SpecularConfig.predicted_mask_loss_weight = 0.1
+
+SpecularConfig.mask_ratio_schedule = {
+  'type': 'piecewise',
+  'schedules': [
+    (10000, ('constant', 0.0)),
+    (50000, ('linear', 0.0, 1.0, 50000)),
+    (190000, ('constant', 1.0)),
+  ]
+}
+
+# SpecularConfig.mask_ratio_schedule = {
+#     'type': 'constant',
+#     'value': 1.0
+# }
+
+
+
