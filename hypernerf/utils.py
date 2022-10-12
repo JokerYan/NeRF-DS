@@ -487,3 +487,11 @@ def grid_sample(image: jnp.ndarray, coord: jnp.ndarray):
   inter_value = inter_value.reshape(batch_shape)
 
   return inter_value
+
+
+def l2_loss(loss: jnp.ndarray):
+  return loss ** 2
+
+
+def shrinkage_loss(loss: jnp.ndarray, a:float = 10.0, c:float = 1e-2):
+  return (loss ** 2) / (1 + jnp.exp(a * (c - loss)))

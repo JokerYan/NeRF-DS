@@ -128,9 +128,9 @@ SpecularConfig.predicted_mask_loss_weight = 0.1
 SpecularConfig.mask_ratio_schedule = {
   'type': 'piecewise',
   'schedules': [
-    (10000, ('constant', 0.0)),
-    (50000, ('linear', 0.0, 1.0, 50000)),
-    (190000, ('constant', 1.0)),
+    (5000, ('constant', 0.0)),
+    (30000, ('linear', 0.0, 1.0, 30000)),
+    (300000, ('constant', 1.0)),
   ]
 }
 

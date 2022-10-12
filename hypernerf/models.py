@@ -208,6 +208,7 @@ class NerfModel(CustomModel):
   use_predicted_mask: bool = False
   mask_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8))
+  use_coarse_depth_for_mask: bool = False
 
   @property
   def num_nerf_embeds(self):
@@ -370,6 +371,7 @@ class NerfModel(CustomModel):
       self.norm_voxel = modules.NormVoxels()
 
     if self.use_predicted_mask:
+      self.coarse_mask_mlp = modules.MaskMLP()  # no depth input
       self.mask_mlp = modules.MaskMLP()
 
   def get_condition_inputs(self, viewdirs, metadata, metadata_encoded=False):
@@ -844,6 +846,7 @@ class NerfModel(CustomModel):
                      metadata,
                      extra_params,
                      gt_mask,
+                     coarse_depth=None,
                      use_warp=True,
                      metadata_encoded=False,
                      return_warp_jacobian=False,
@@ -922,11 +925,25 @@ class NerfModel(CustomModel):
         shape=(*batch_shape, gt_mask.shape[-1])
       )
     if self.use_predicted_mask:
-      predicted_mask = self.mask_mlp(points, mask_embed)
+      if self.use_coarse_depth_for_mask:
+        if coarse_depth is not None:
+          depth = jnp.tile(coarse_depth[:, jnp.newaxis, jnp.newaxis], [1, mask_embed.shape[1], 1])
+          mask_embed = jnp.concatenate([depth, mask_embed], axis=-1)
+          predicted_mask = self.mask_mlp(points, mask_embed)
+        else:
+          dummy_depth = jnp.ones([*batch_shape, 1]) * -1
+          mask_embed = jnp.concatenate([dummy_depth, mask_embed], axis=-1)
+          predicted_mask = self.mask_mlp(points, mask_embed)
+          # predicted_mask = self.coarse_mask_mlp(points, mask_embed)
       out['predicted_mask'] = predicted_mask
       predicted_mask = lax.stop_gradient(predicted_mask)
 
       mask = predicted_mask * mask_ratio + gt_mask * (1 - mask_ratio)
+
+      # # in coarse depth, do not use predicted mask at all
+      # if coarse_depth is None:
+      #   mask = jnp.ones_like(mask) * -1
+      #   out['predicted_mask'] = mask
     else:
       mask = gt_mask
 
@@ -1395,6 +1412,7 @@ class NerfModel(CustomModel):
       metadata,
       extra_params,
       mask,
+      coarse_depth=None,
       use_warp=use_warp,
       metadata_encoded=metadata_encoded,
       return_warp_jacobian=return_warp_jacobian,
@@ -1418,6 +1436,7 @@ class NerfModel(CustomModel):
         self.make_rng('fine'), z_vals_mid, coarse_ret['weights'][..., 1:-1],
         origins, directions, z_vals, self.num_fine_samples,
         self.use_stratified_sampling)
+      coarse_depth = coarse_ret['depth']
       out['fine'] = self.render_samples(
         'fine',
         points,
@@ -1427,6 +1446,7 @@ class NerfModel(CustomModel):
         metadata,
         extra_params,
         mask,
+        coarse_depth=coarse_depth,
         use_warp=use_warp,
         metadata_encoded=metadata_encoded,
         return_warp_jacobian=return_warp_jacobian,

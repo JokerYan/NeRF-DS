@@ -403,6 +403,7 @@ def main(argv):
       use_mask_weighted_loss=spec_config.use_mask_weighted_loss,
       use_mask_consistency_loss=spec_config.use_mask_consistency_loss,
       canonical_camera=canonical_camera,
+      use_shrinkage_loss=spec_config.use_shrinkage_loss,
   )
   ptrain_step = jax.pmap(
       train_step,

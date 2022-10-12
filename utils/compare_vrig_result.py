@@ -21,7 +21,7 @@ save = False
 video_render_step = 9
 target_height = 360
 
-experiment_name_list = ['011_b07_nv_ms_exp01', '011_b07_nv_ref_exp01']
+experiment_name_list = ['011_b07_nv_ms_exp13', '011_b07_nv_ref_exp01', '011_b07_nv_base_exp01']
 # experiment_name_list = ['012_c01_nv_ms_exp02', '012_c01_nv_ref_exp01']
 
 video_path_list = []

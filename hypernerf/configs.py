@@ -106,6 +106,7 @@ class SpecularConfig:
   # mask related
   canonical_idx: int = 0
   use_mask_weighted_loss: bool = False
+  use_shrinkage_loss: bool = False
   mask_weight_schedule: ScheduleDef = immutabledict.immutabledict({
     'type': 'linear',
     'initial_value': 0.5,

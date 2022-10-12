@@ -33,7 +33,7 @@ from hypernerf import model_utils
 from hypernerf import models
 from hypernerf import utils
 from hypernerf import camera as cam
-from hypernerf.utils import grid_sample
+from hypernerf.utils import grid_sample, l2_loss, shrinkage_loss
 
 
 @struct.dataclass
@@ -202,6 +202,7 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_mask_weighted_loss',
                                     'use_mask_consistency_loss',
                                     'canonical_camera',
+                                    'use_shrinkage_loss',
                                     ))
 def train_step(model: models.CustomModel,
                rng_key: Callable[[int], jnp.ndarray],
@@ -228,6 +229,7 @@ def train_step(model: models.CustomModel,
                use_mask_weighted_loss: bool = False,
                use_mask_consistency_loss: bool = False,
                canonical_camera: cam.Camera = None,
+               use_shrinkage_loss: bool = False,
                ):
   """One optimization step.
 
@@ -268,12 +270,20 @@ def train_step(model: models.CustomModel,
       num_sets = int(model_out['rgb'].shape[-1] / 3)
       losses = []
       for i in range(num_sets):
-        loss = (model_out['rgb'][..., i * 3:(i + 1) * 3] - batch['rgb'])**2
+        loss = (model_out['rgb'][..., i * 3:(i + 1) * 3] - batch['rgb'])
+        if use_shrinkage_loss:
+          loss = shrinkage_loss(loss)
+        else:
+          loss = l2_loss(loss)
         loss *= (batch['metadata']['channel_set'] == i)
         losses.append(loss)
       rgb_loss = jnp.sum(jnp.asarray(losses), axis=0)
     else:
-      rgb_loss = ((model_out['rgb'][..., :3] - batch['rgb'][..., :3])**2)
+      rgb_loss = ((model_out['rgb'][..., :3] - batch['rgb'][..., :3]))
+      if use_shrinkage_loss:
+        rgb_loss = shrinkage_loss(rgb_loss)
+      else:
+        rgb_loss = l2_loss(rgb_loss)
 
     # mask weighted loss
     if use_mask_weighted_loss:
@@ -493,8 +503,27 @@ def train_step(model: models.CustomModel,
       mask_diff = jnp.abs(predicted_mask - gt_mask)
       # mask_diff = sigmoid_binary_cross_entropy(predicted_mask, gt_mask)
       predicted_mask_loss = (weights * mask_diff).sum(axis=1).mean()
-
       stats['loss/predicted_mask_loss'] = predicted_mask_loss
+
+      # penalize empty space 1
+      predicted_mask_size = jnp.minimum(jnp.maximum(predicted_mask, 0), 1)    # clip
+      # low_alpha = jnp.where(alpha < 0.2, jnp.ones_like(alpha), jnp.zeros_like(alpha))
+      low_alpha = 1 - jax.nn.sigmoid(100 * (alpha - 0.1))
+      stats['stats/alpha_min'] = jnp.min(alpha, axis=1).mean()
+      stats['stats/alpha_mean'] = jnp.mean(alpha, axis=1).mean()
+      stats['stats/alpha_max'] = jnp.max(alpha, axis=1).mean()
+
+      # stats['stats/norm_alpha_max'] = jnp.max(normalized_alpha, axis=1).mean()
+      # stats['stats/norm_alpha_min'] = jnp.min(normalized_alpha, axis=1).mean()
+      # stats['stats/norm_alpha_mean'] = jnp.mean(normalized_alpha, axis=1).mean()
+      # low_alpha = jnp.heaviside(jnp.mean(normalized_alpha) - normalized_alpha, 0)
+
+      empty_space_mask_loss = (low_alpha * predicted_mask_size).sum(axis=1).mean()
+      stats['stats/low_alpha_mean'] = jnp.mean(low_alpha)
+      stats['loss/empty_space_mask_loss'] = empty_space_mask_loss
+      predicted_mask_loss += 0.005 * empty_space_mask_loss
+      # predicted_mask_loss += 0 * empty_space_mask_loss
+
       loss += scalar_params.predicted_mask_loss_weight * predicted_mask_loss
 
       stats['stats/predicted_mask_max'] = jnp.max(predicted_mask)
