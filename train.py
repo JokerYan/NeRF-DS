@@ -344,6 +344,7 @@ def main(argv):
     out_mask_consistency_loss_weight=spec_config.out_mask_consistency_loss_weight,
     predicted_mask_loss_weight=spec_config.predicted_mask_loss_weight,
     mask_ratio=mask_ratio_sched(0),
+    mask_occlusion_reg_loss_weight=spec_config.mask_occlusion_reg_loss_weight,
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
@@ -404,6 +405,7 @@ def main(argv):
       use_mask_consistency_loss=spec_config.use_mask_consistency_loss,
       canonical_camera=canonical_camera,
       use_shrinkage_loss=spec_config.use_shrinkage_loss,
+      use_mask_occlusion_reg_loss=spec_config.use_mask_occlusion_reg_loss
   )
   ptrain_step = jax.pmap(
       train_step,

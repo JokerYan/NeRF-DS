@@ -121,6 +121,8 @@ class SpecularConfig:
     'type': 'constant',
     'value': 0.0
   })
+  use_mask_occlusion_reg_loss: bool = False
+  mask_occlusion_reg_loss_weight: float = 1.0
 
 @gin.configurable()
 @dataclasses.dataclass

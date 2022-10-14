@@ -495,3 +495,10 @@ def l2_loss(loss: jnp.ndarray):
 
 def shrinkage_loss(loss: jnp.ndarray, a:float = 10.0, c:float = 1e-2):
   return (loss ** 2) / (1 + jnp.exp(a * (c - loss)))
+
+
+def get_percentile_stats(stats, name, array: jnp.ndarray, percentile_step=10):
+  for percentile in range(0, 101, percentile_step):
+    value = jnp.percentile(array, percentile)
+    stats[f'percentile/{name}_{percentile}'] = value
+

@@ -129,10 +129,20 @@ SpecularConfig.mask_ratio_schedule = {
   'type': 'piecewise',
   'schedules': [
     (5000, ('constant', 0.0)),
-    (30000, ('linear', 0.0, 1.0, 30000)),
+    (10000, ('linear', 0.0, 0.8, 10000)),
+    (10000, ('linear', 0.8, 1.0, 10000)),
     (300000, ('constant', 1.0)),
   ]
 }
+
+# SpecularConfig.mask_ratio_schedule = {
+#   'type': 'piecewise',
+#   'schedules': [
+#     (5000, ('constant', 0.0)),
+#     (30000, ('linear', 0.0, 1.0, 30000)),
+#     (300000, ('constant', 1.0)),
+#   ]
+# }
 
 # SpecularConfig.mask_ratio_schedule = {
 #     'type': 'constant',
@@ -140,4 +150,20 @@ SpecularConfig.mask_ratio_schedule = {
 # }
 
 
+NormVoxels.voxel_shape = (1000, 50, 50, 50, 3)
+SpecularConfig.norm_voxel_lr_schedule = {
+  'type': 'exponential',
+  'initial_value': 0.1,
+  'final_value': 1e-3,
+  'num_steps': 250000,
+}
+SpecularConfig.norm_voxel_loss_weight = 1000
+SpecularConfig.norm_voxel_ratio_schedule = {
+  'type': 'piecewise',
+  'schedules': [
+    (0, ('constant', 0.0)),
+    (10000, ('linear', 0.0, 1.0, 10000)),
+    (10000, ('constant', 1.0)),
+  ],
+}
 

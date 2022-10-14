@@ -147,19 +147,20 @@ def volumetric_rendering(rgb,
       'med_depth': med_depth,
       'acc': acc,
       'weights': weights,
-      'alpha': alpha
+      'alpha': alpha,
+      'accum_prod': accum_prod
   }
   return out
 
 
-def cal_weights(sigma, z_vals, dirs, sample_at_infinity=True, eps=1e-10):
+def cal_weights(sigma, z_vals, dirs, sample_at_infinity=True, eps=1e-10, scale=1):  # scale for sigma
   last_sample_z = 1e10 if sample_at_infinity else 1e-19
   dists = jnp.concatenate([
       z_vals[..., 1:] - z_vals[..., :-1],
       jnp.broadcast_to(jnp.array([last_sample_z]), z_vals[..., :1].shape)
   ], -1)
   dists = dists * jnp.linalg.norm(dirs[..., None, :], axis=-1)
-  alpha = 1.0 - jnp.exp(-sigma * dists)
+  alpha = 1.0 - jnp.exp(-scale * sigma * dists)
   # Prepend a 1.0 to make this an 'exclusive' cumprod as in `tf.math.cumprod`.
   accum_prod = jnp.concatenate([
       jnp.ones_like(alpha[..., :1], alpha.dtype),

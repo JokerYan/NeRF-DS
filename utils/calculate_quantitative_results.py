@@ -55,9 +55,9 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
     experiment_root = '/home/zwyan/3d_cv/repos/hypernerf_barf/experiments/'
 else:
     raise NotImplemented
-dataset = '011_bell_07_novel_view'
+dataset = '014_spoon_02_novel_view'
 data_dir = os.path.join(data_root, dataset)
-experiment_name = "011_b07_nv_base_exp01"
+experiment_name = "014_s02_nv_ms_exp17"
 
 skip = True
 if skip:
@@ -133,8 +133,14 @@ for i in tqdm(range(len(gt_images))):
   ms_ssim_list.append(ms_ssim)
   lpips_list.append(lpips)
 
-print("mse: {:.5f} psnr: {:.3f} ms_ssim: {:.3f} lpips: {:.3f}".format(
-  np.mean(mse_list), np.mean(psnr_list), np.mean(ms_ssim_list), np.mean(lpips_list)))
+result_str = "mse: {:.5f} psnr: {:.3f} ms_ssim: {:.3f} lpips: {:.3f}".format(
+  np.mean(mse_list), np.mean(psnr_list), np.mean(ms_ssim_list), np.mean(lpips_list))
+print(result_str)
+
+# save results to txt
+save_path = os.path.join(experiment_dir, 'quantitative_results.txt')
+with open(save_path, 'w+') as f:
+  f.write(result_str)
 
 # base
 # mse: 0.00618 psnr: 22.507 ms_ssim: 0.936 lpips: 0.120

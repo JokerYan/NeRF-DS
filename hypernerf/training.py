@@ -33,7 +33,7 @@ from hypernerf import model_utils
 from hypernerf import models
 from hypernerf import utils
 from hypernerf import camera as cam
-from hypernerf.utils import grid_sample, l2_loss, shrinkage_loss
+from hypernerf.utils import grid_sample, l2_loss, shrinkage_loss, get_percentile_stats
 
 
 @struct.dataclass
@@ -62,6 +62,8 @@ class ScalarParams:
   out_mask_consistency_loss_weight: float = 1.0
   predicted_mask_loss_weight: float = 1.0
   mask_ratio: float = 1.0
+  mask_occlusion_reg_loss_weight: float = 1.0
+
 
 
 def save_checkpoint(path, state, keep=2):
@@ -203,6 +205,7 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_mask_consistency_loss',
                                     'canonical_camera',
                                     'use_shrinkage_loss',
+                                    'use_mask_occlusion_reg_loss',
                                     ))
 def train_step(model: models.CustomModel,
                rng_key: Callable[[int], jnp.ndarray],
@@ -230,6 +233,7 @@ def train_step(model: models.CustomModel,
                use_mask_consistency_loss: bool = False,
                canonical_camera: cam.Camera = None,
                use_shrinkage_loss: bool = False,
+               use_mask_occlusion_reg_loss: bool = False,
                ):
   """One optimization step.
 
@@ -485,50 +489,59 @@ def train_step(model: models.CustomModel,
       in_mask_delta_x = (cur_mask * delta_x_magnitude * weights).sum(axis=1).mean()
       stats['stats/in_mask_delta_x'] = in_mask_delta_x
 
+    # if 'predicted_mask' in model_out:
+    #   alpha = lax.stop_gradient(model_out['alpha'])       # R x S   1 - exp(-sigma * dist)
+    #   normalized_alpha = alpha / jnp.sum(alpha, axis=1)[:, jnp.newaxis]
+    #   weights = lax.stop_gradient(model_out['weights'])   # R x S
+    #   normalized_weights = weights / jnp.sum(weights, axis=1)[:, jnp.newaxis]
+    #
+    #   predicted_mask = model_out['predicted_mask'].squeeze(axis=-1)   # R x S
+    #   gt_mask = batch['mask']                                         # R x 1
+    #   gt_mask = jnp.broadcast_to(gt_mask, predicted_mask.shape)       # R x S
+    #
+    #   # supervise 2d mask
+    #   mask_diff = jnp.abs(predicted_mask - gt_mask)
+    #   # mask_diff = sigmoid_binary_cross_entropy(predicted_mask, gt_mask)
+    #   predicted_mask_loss = (weights * mask_diff).sum(axis=1).mean()
+    #   stats['loss/predicted_mask_loss'] = predicted_mask_loss
+    #
+    #   # penalize empty space 1
+    #   predicted_mask_size = jnp.minimum(jnp.maximum(predicted_mask, 0), 1)    # clip
+    #   low_alpha = 1 - jax.nn.sigmoid(100 * (alpha - 0.1))
+    #   get_percentile_stats(stats, "alpha", alpha)
+    #
+    #   empty_space_mask_loss = (low_alpha * predicted_mask_size).sum(axis=1).mean()
+    #   stats['stats/low_alpha_mean'] = jnp.mean(low_alpha)
+    #   stats['loss/empty_space_mask_loss'] = empty_space_mask_loss
+    #   predicted_mask_loss += 0.003 * empty_space_mask_loss
+    #
+    #   loss += scalar_params.predicted_mask_loss_weight * predicted_mask_loss
+    #   stats['stats/predicted_mask_max'] = jnp.max(predicted_mask)
+
     if 'predicted_mask' in model_out:
-      alpha = lax.stop_gradient(model_out['alpha'])       # R x S   1 - exp(-sigma * dist)
-      normalized_alpha = alpha / jnp.sum(alpha, axis=1)[:, jnp.newaxis]
       weights = lax.stop_gradient(model_out['weights'])   # R x S
-      normalized_weights = weights / jnp.sum(weights, axis=1)[:, jnp.newaxis]
+      scaled_weights = lax.stop_gradient(model_out['scaled_weights'])   # R x S
+      predicted_mask = model_out['predicted_mask'].squeeze(axis=-1)  # R x S
+      gt_mask = batch['mask']  # R x 1
+      gt_mask = gt_mask.squeeze(axis=-1)  # R
 
-      predicted_mask = model_out['predicted_mask'].squeeze(axis=-1)   # R x S
-      gt_mask = batch['mask']                                         # R x 1
-      gt_mask = jnp.broadcast_to(gt_mask, predicted_mask.shape)       # R x S
-
-      # # supervise 3d mask
-      # mask_diff = jnp.abs(predicted_mask - weights * gt_mask)  # R x S
-      # predicted_mask_loss = (normalized_alpha * mask_diff).sum(axis=1).mean()
-
-      # supervise 2d mask
-      mask_diff = jnp.abs(predicted_mask - gt_mask)
-      # mask_diff = sigmoid_binary_cross_entropy(predicted_mask, gt_mask)
-      predicted_mask_loss = (weights * mask_diff).sum(axis=1).mean()
+      # ray_predicted_mask = (weights * predicted_mask).sum(axis=1)  # R
+      ray_predicted_mask = (scaled_weights * predicted_mask).sum(axis=1)  # R
+      # supervize 3d mask
+      predicted_mask_loss = ((gt_mask - ray_predicted_mask) ** 2).mean()
       stats['loss/predicted_mask_loss'] = predicted_mask_loss
-
-      # penalize empty space 1
-      predicted_mask_size = jnp.minimum(jnp.maximum(predicted_mask, 0), 1)    # clip
-      # low_alpha = jnp.where(alpha < 0.2, jnp.ones_like(alpha), jnp.zeros_like(alpha))
-      low_alpha = 1 - jax.nn.sigmoid(100 * (alpha - 0.1))
-      stats['stats/alpha_min'] = jnp.min(alpha, axis=1).mean()
-      stats['stats/alpha_mean'] = jnp.mean(alpha, axis=1).mean()
-      stats['stats/alpha_max'] = jnp.max(alpha, axis=1).mean()
-
-      # stats['stats/norm_alpha_max'] = jnp.max(normalized_alpha, axis=1).mean()
-      # stats['stats/norm_alpha_min'] = jnp.min(normalized_alpha, axis=1).mean()
-      # stats['stats/norm_alpha_mean'] = jnp.mean(normalized_alpha, axis=1).mean()
-      # low_alpha = jnp.heaviside(jnp.mean(normalized_alpha) - normalized_alpha, 0)
-
-      empty_space_mask_loss = (low_alpha * predicted_mask_size).sum(axis=1).mean()
-      stats['stats/low_alpha_mean'] = jnp.mean(low_alpha)
-      stats['loss/empty_space_mask_loss'] = empty_space_mask_loss
-      predicted_mask_loss += 0.005 * empty_space_mask_loss
-      # predicted_mask_loss += 0 * empty_space_mask_loss
 
       loss += scalar_params.predicted_mask_loss_weight * predicted_mask_loss
 
-      stats['stats/predicted_mask_max'] = jnp.max(predicted_mask)
-      stats['stats/predicted_mask_sigmoid_max'] = jnp.max(jax.nn.sigmoid(predicted_mask))
-      stats['stats/gt_mask_max'] = jnp.max(gt_mask)
+      if use_mask_occlusion_reg_loss:
+        accum_prod = lax.stop_gradient(model_out['accum_prod'])
+        # get_percentile_stats(stats, 'accum_prod', accum_prod, percentile_step=2)
+        low_weights = jnp.maximum(0.01 - weights, 0)
+        mask_occlusion_reg_loss = jnp.sum(low_weights * jnp.abs(predicted_mask), axis=-1).mean()
+        # low_accum_prod = jnp.maximum(0.3 - accum_prod, 0)
+        # mask_occlusion_reg_loss = jnp.sum(low_accum_prod * jnp.abs(predicted_mask), axis=-1).mean()
+        stats['loss/mask_occlusion_reg_loss'] = mask_occlusion_reg_loss
+        loss += scalar_params.mask_occlusion_reg_loss_weight * mask_occlusion_reg_loss
 
     stats['loss/total'] = loss
     stats['metric/psnr'] = utils.compute_psnr(rgb_loss)

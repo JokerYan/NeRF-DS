@@ -936,7 +936,7 @@ class NerfModel(CustomModel):
           predicted_mask = self.mask_mlp(points, mask_embed)
           # predicted_mask = self.coarse_mask_mlp(points, mask_embed)
       out['predicted_mask'] = predicted_mask
-      predicted_mask = lax.stop_gradient(predicted_mask)
+      # predicted_mask = lax.stop_gradient(predicted_mask)
 
       mask = predicted_mask * mask_ratio + gt_mask * (1 - mask_ratio)
 
@@ -1146,6 +1146,7 @@ class NerfModel(CustomModel):
         use_identity=self.use_posenc_identity,
         alpha=extra_params['norm_input_alpha'])
 
+    extra_rgb_condition = None
     if self.use_hyper_c:
       if self.hyper_c_hyper_input:
         points_input = lax.stop_gradient(warped_points)
@@ -1169,15 +1170,26 @@ class NerfModel(CustomModel):
       # rgb_condition = None
       screw_input_mode = None
       norm_input_feat = None
-    elif self.use_x_in_rgb_condition:
-      extra_rgb_condition = jnp.concatenate([points, hyper_embed], axis=-1)
-      if ref_radiance_feat is not None:
+    # elif self.use_x_in_rgb_condition:
+    #   extra_rgb_condition = jnp.concatenate([points, hyper_embed], axis=-1)
+    #   if ref_radiance_feat is not None:
+    #     extra_rgb_condition = jnp.concatenate([extra_rgb_condition, ref_radiance_feat], axis=-1)
+    #   extra_rgb_condition = jnp.reshape(extra_rgb_condition, [-1, extra_rgb_condition.shape[-1]])
+    # elif ref_radiance_feat is not None:
+    #   extra_rgb_condition = ref_radiance_feat
+    # else:
+    #   extra_rgb_condition = None
+
+    if self.use_x_in_rgb_condition:
+      if extra_rgb_condition is not None:
+        extra_rgb_condition = jnp.concatenate([extra_rgb_condition, points_feat], axis=-1)
+      else:
+        extra_rgb_condition = points_feat
+    if ref_radiance_feat is not None:
+      if extra_rgb_condition is not None:
         extra_rgb_condition = jnp.concatenate([extra_rgb_condition, ref_radiance_feat], axis=-1)
-      extra_rgb_condition = jnp.reshape(extra_rgb_condition, [-1, extra_rgb_condition.shape[-1]])
-    elif ref_radiance_feat is not None:
-      extra_rgb_condition = ref_radiance_feat
-    else:
-      extra_rgb_condition = None
+      else:
+        extra_rgb_condition = ref_radiance_feat
 
     # add mask
     if self.use_mask_in_rgb:
@@ -1186,10 +1198,13 @@ class NerfModel(CustomModel):
 
       weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
       weights = lax.stop_gradient(weights)
+      scaled_weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions, scale=5)
+      out['scaled_weights'] = scaled_weights
 
       gt_mask_3d = weights[..., None] * gt_mask
       if self.use_predicted_mask:
-        predicted_mask_3d = weights[..., None] * predicted_mask
+        # predicted_mask_3d = weights[..., None] * predicted_mask
+        predicted_mask_3d = predicted_mask    # predicted mask is already 3D
         mask_3d = predicted_mask_3d * mask_ratio + gt_mask_3d * (1 - mask_ratio)
       else:
         mask_3d = gt_mask_3d
