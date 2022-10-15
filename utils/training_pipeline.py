@@ -102,12 +102,13 @@ training_schedule = [
   #                                                           "NerfModel.use_x_in_rgb_condition = True",
   #                                                           "SpecularConfig.use_mask_occlusion_reg_loss = True",
   #                                                           "SpecularConfig.mask_occlusion_reg_loss_weight = 0.01"]),
+
   ("014_spoon_02_novel_view", "014_s02_nv_ms_exp20", "ms", ["ExperimentConfig.image_scale = 1",
                                                             "NerfModel.use_predicted_mask = True",
                                                             "NerfModel.use_coarse_depth_for_mask = True",
                                                             "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
                                                             "NerfModel.use_x_in_rgb_condition = True"]),
-  # gpu 3-2
+  # # gpu 3-2
   ("014_spoon_02_novel_view", "014_s02_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1",
                                                               "NerfModel.use_x_in_rgb_condition = True"]),
 
@@ -117,15 +118,31 @@ training_schedule = [
                                                             "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
                                                             "NerfModel.use_x_in_rgb_condition = True"]),
   ("014_spoon_02_novel_view", "014_s02_nv_base_exp01", "base", ["ExperimentConfig.image_scale = 1"]),
+  #
+  # # gpu 3-3
   ("013_bowl_01_novel_view", "013_bo01_nv_base_exp01", "base", ["ExperimentConfig.image_scale = 1"]),
-
-  # gpu 3-3
   ("013_bowl_01_novel_view", "013_bo01_nv_ms_exp20", "ms", ["ExperimentConfig.image_scale = 1",
                                                             "NerfModel.use_predicted_mask = True",
                                                             "NerfModel.use_coarse_depth_for_mask = True",
                                                             "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
                                                             "NerfModel.use_x_in_rgb_condition = True"]),
-  ("012_cup_01_novel_view", "012_c01_nv_ms_exp20", "ms", ["ExperimentConfig.image_scale = 1",
+  ("011_bell_07_novel_view", "011_b07_nv_ms_exp20", "ms", ["ExperimentConfig.image_scale = 1",
+                                                            "NerfModel.use_predicted_mask = True",
+                                                            "NerfModel.use_coarse_depth_for_mask = True",
+                                                            "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
+                                                            "NerfModel.use_x_in_rgb_condition = True"]),
+
+  # new
+  # ("015_cup_02_novel_view", "015_c02_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1",
+  #                                                             "NerfModel.use_x_in_rgb_condition = True"]),
+  ("015_cup_02_novel_view", "015_c02_nv_ms_exp20", "ms", ["ExperimentConfig.image_scale = 1",
+                                                            "NerfModel.use_predicted_mask = True",
+                                                            "NerfModel.use_coarse_depth_for_mask = True",
+                                                            "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
+                                                            "NerfModel.use_x_in_rgb_condition = True"]),
+  ("016_spoon_03_novel_view", "016_s03_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1",
+                                                              "NerfModel.use_x_in_rgb_condition = True"]),
+  ("016_spoon_03_novel_view", "016_s03_nv_ms_exp20", "ms", ["ExperimentConfig.image_scale = 1",
                                                             "NerfModel.use_predicted_mask = True",
                                                             "NerfModel.use_coarse_depth_for_mask = True",
                                                             "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
