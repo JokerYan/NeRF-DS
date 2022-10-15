@@ -1194,9 +1194,9 @@ class NerfModel(CustomModel):
     # add mask
     if self.use_mask_in_rgb:
       filtered_sigma = filter_sigma(points, sigma, render_opts)
-      # sigmoid_sigma = self.sigma_activation(filtered_sigma)
+      sigmoid_sigma = self.sigma_activation(filtered_sigma)
 
-      weights = model_utils.cal_weights(filtered_sigma, z_vals, directions)
+      weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
       weights = lax.stop_gradient(weights)
 
       gt_mask_3d = weights[..., None] * gt_mask
@@ -1332,8 +1332,8 @@ class NerfModel(CustomModel):
 
     if self.use_predicted_mask:
       filtered_sigma = filter_sigma(points, sigma, render_opts)
-      # sigmoid_sigma = self.sigma_activation(filtered_sigma)
-      scaled_weights = model_utils.cal_weights(filtered_sigma, z_vals, directions, scale=5)
+      sigmoid_sigma = self.sigma_activation(filtered_sigma)
+      scaled_weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions, scale=5)
       out['scaled_weights'] = scaled_weights
       # ray_predicted_mask = (weights[..., None] * predicted_mask).sum(axis=-2)
       ray_predicted_mask = (scaled_weights[..., None] * predicted_mask).sum(axis=-2)
