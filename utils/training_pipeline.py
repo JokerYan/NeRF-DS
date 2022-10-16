@@ -153,14 +153,14 @@ training_schedule = [
                                                             "NerfModel.use_predicted_mask = True",
                                                             "NerfModel.use_coarse_depth_for_mask = True",
                                                             "NerfModel.use_x_in_rgb_condition = True"]),
-  ("014_spoon_02_novel_view", "014_s02_nv_ms_exp14", "ms", ["ExperimentConfig.image_scale = 1",
-                                                            "NerfModel.use_predicted_mask = True",
-                                                            "NerfModel.use_coarse_depth_for_mask = True",
-                                                            "NerfModel.use_x_in_rgb_condition = True"]),
-  ("016_spoon_03_novel_view", "016_s03_nv_ms_exp14", "ms", ["ExperimentConfig.image_scale = 1",
-                                                            "NerfModel.use_predicted_mask = True",
-                                                            "NerfModel.use_coarse_depth_for_mask = True",
-                                                            "NerfModel.use_x_in_rgb_condition = True"]),
+  # ("014_spoon_02_novel_view", "014_s02_nv_ms_exp14", "ms", ["ExperimentConfig.image_scale = 1",
+  #                                                           "NerfModel.use_predicted_mask = True",
+  #                                                           "NerfModel.use_coarse_depth_for_mask = True",
+  #                                                           "NerfModel.use_x_in_rgb_condition = True"]),
+  # ("016_spoon_03_novel_view", "016_s03_nv_ms_exp14", "ms", ["ExperimentConfig.image_scale = 1",
+  #                                                           "NerfModel.use_predicted_mask = True",
+  #                                                           "NerfModel.use_coarse_depth_for_mask = True",
+  #                                                           "NerfModel.use_x_in_rgb_condition = True"]),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):

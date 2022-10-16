@@ -137,9 +137,10 @@ def to_rotation_matrix(q):
   Returns:
     A (*,3,3) array containing rotation matrices.
   """
-  x, y, z, w = jnp.split(q, 4, axis=-1)
+  # x, y, z, w = jnp.split(q, 4, axis=-1)
+  x, y, z, w = (jnp.squeeze(v, axis=-1) for v in jnp.split(q, 4, axis=-1))
   s = 1.0 / jnp.sum(q ** 2, axis=-1)
-  return jnp.stack([
+  rotation = jnp.stack([
       jnp.stack([1 - 2 * s * (y ** 2 + z ** 2),
                  2 * s * (x * y - z * w),
                  2 * s * (x * z + y * w)], axis=0),
@@ -150,7 +151,8 @@ def to_rotation_matrix(q):
                  2 * s * (y * z + x * w),
                  1 - 2 * s * (x ** 2 + y ** 2)], axis=0),
   ], axis=0)
-
+  # return rotation
+  return rotation.transpose(2, 0, 1)
 
 def from_rotation_matrix(m, eps=1e-9):
   """Construct quaternion from a rotation matrix.
