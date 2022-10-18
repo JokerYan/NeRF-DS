@@ -172,13 +172,19 @@ def compute_background_loss(model, state, params, key, points, noise_std,
   metadata = random.choice(key, model.warp_embeds, shape=(points.shape[0], 1))
   point_noise = noise_std * random.normal(key, points.shape)
   points = points + point_noise
-  warp_fn = functools.partial(model.apply, method=model.apply_warp)
-  warp_fn = jax.vmap(warp_fn, in_axes=(None, 0, 0, None))
-  warp_out = warp_fn({'params': params}, points, metadata, state.extra_params)
-  warped_points = warp_out['warped_points'][..., :3]
-  sq_residual = jnp.sum((warped_points - points)**2, axis=-1)
-  loss = utils.general_loss_with_squared_residual(
-      sq_residual, alpha=alpha, scale=scale)
+  if model.use_bone:
+    warp_fn = functools.partial(model.apply, method=model.get_bone_moving_mask)
+    warp_fn = jax.vmap(warp_fn, in_axes=(None, 0, 0))
+    moving_mask = warp_fn({'params': params}, points, metadata)
+    loss = jnp.sum(jnp.abs(moving_mask))
+  else:
+    warp_fn = functools.partial(model.apply, method=model.apply_warp)
+    warp_fn = jax.vmap(warp_fn, in_axes=(None, 0, 0, None))
+    warp_out = warp_fn({'params': params}, points, metadata, state.extra_params)
+    warped_points = warp_out['warped_points'][..., :3]
+    sq_residual = jnp.sum((warped_points - points)**2, axis=-1)
+    loss = utils.general_loss_with_squared_residual(
+        sq_residual, alpha=alpha, scale=scale)
   return loss
 
 
@@ -489,7 +495,7 @@ def train_step(model: models.CustomModel,
       in_mask_delta_x = (cur_mask * delta_x_magnitude * weights).sum(axis=1).mean()
       stats['stats/in_mask_delta_x'] = in_mask_delta_x
 
-    if 'predicted_mask' in model_out:
+    if 'predicted_mask' in model_out and not model.use_3d_mask:
       alpha = lax.stop_gradient(model_out['alpha'])       # R x S   1 - exp(-sigma * dist)
       normalized_alpha = alpha / jnp.sum(alpha, axis=1)[:, jnp.newaxis]
       weights = lax.stop_gradient(model_out['weights'])   # R x S
@@ -505,7 +511,7 @@ def train_step(model: models.CustomModel,
       predicted_mask_loss = (weights * mask_diff).sum(axis=1).mean()
       stats['loss/predicted_mask_loss'] = predicted_mask_loss
 
-      # penalize empty space 1
+      # penalize empty space mask = 1
       predicted_mask_size = jnp.minimum(jnp.maximum(predicted_mask, 0), 1)    # clip
       low_alpha = 1 - jax.nn.sigmoid(100 * (alpha - 0.1))
       get_percentile_stats(stats, "alpha", alpha)
@@ -518,30 +524,39 @@ def train_step(model: models.CustomModel,
       loss += scalar_params.predicted_mask_loss_weight * predicted_mask_loss
       stats['stats/predicted_mask_max'] = jnp.max(predicted_mask)
 
-    # if 'predicted_mask' in model_out:
-    #   weights = lax.stop_gradient(model_out['weights'])   # R x S
-    #   scaled_weights = lax.stop_gradient(model_out['scaled_weights'])   # R x S
-    #   predicted_mask = model_out['predicted_mask'].squeeze(axis=-1)  # R x S
-    #   gt_mask = batch['mask']  # R x 1
-    #   gt_mask = gt_mask.squeeze(axis=-1)  # R
-    #
-    #   # ray_predicted_mask = (weights * predicted_mask).sum(axis=1)  # R
-    #   ray_predicted_mask = (scaled_weights * predicted_mask).sum(axis=1)  # R
-    #   # supervize 3d mask
-    #   predicted_mask_loss = ((gt_mask - ray_predicted_mask) ** 2).mean()
-    #   stats['loss/predicted_mask_loss'] = predicted_mask_loss
-    #
-    #   loss += scalar_params.predicted_mask_loss_weight * predicted_mask_loss
-    #
-    #   if use_mask_occlusion_reg_loss:
-    #     accum_prod = lax.stop_gradient(model_out['accum_prod'])
-    #     # get_percentile_stats(stats, 'accum_prod', accum_prod, percentile_step=2)
-    #     low_weights = jnp.maximum(0.01 - weights, 0)
-    #     mask_occlusion_reg_loss = jnp.sum(low_weights * jnp.abs(predicted_mask), axis=-1).mean()
-    #     # low_accum_prod = jnp.maximum(0.3 - accum_prod, 0)
-    #     # mask_occlusion_reg_loss = jnp.sum(low_accum_prod * jnp.abs(predicted_mask), axis=-1).mean()
-    #     stats['loss/mask_occlusion_reg_loss'] = mask_occlusion_reg_loss
-    #     loss += scalar_params.mask_occlusion_reg_loss_weight * mask_occlusion_reg_loss
+    if 'predicted_mask' in model_out and model.use_3d_mask:
+      weights = lax.stop_gradient(model_out['weights'])   # R x S
+      # scaled_weights = lax.stop_gradient(model_out['scaled_weights'])   # R x S
+      predicted_mask = model_out['predicted_mask'].squeeze(axis=-1)  # R x S
+      gt_mask = batch['mask']  # R x 1
+      gt_mask = gt_mask.squeeze(axis=-1)  # R
+
+      ray_predicted_mask = (weights * predicted_mask).sum(axis=1)  # R
+      # ray_predicted_mask = (scaled_weights * predicted_mask).sum(axis=1)  # R
+      # supervize 3d mask
+      predicted_mask_loss = ((gt_mask - ray_predicted_mask) ** 2).mean()
+      stats['loss/predicted_mask_loss'] = predicted_mask_loss
+
+      loss += scalar_params.predicted_mask_loss_weight * predicted_mask_loss
+
+      if use_mask_occlusion_reg_loss:
+        accum_prod = lax.stop_gradient(model_out['accum_prod'])
+        # get_percentile_stats(stats, 'accum_prod', accum_prod, percentile_step=2)
+        low_weights = jnp.maximum(0.01 - weights, 0)
+        mask_occlusion_reg_loss = jnp.sum(low_weights * jnp.abs(predicted_mask), axis=-1).mean()
+        # low_accum_prod = jnp.maximum(0.3 - accum_prod, 0)
+        # mask_occlusion_reg_loss = jnp.sum(low_accum_prod * jnp.abs(predicted_mask), axis=-1).mean()
+        stats['loss/mask_occlusion_reg_loss'] = mask_occlusion_reg_loss
+        loss += scalar_params.mask_occlusion_reg_loss_weight * mask_occlusion_reg_loss
+
+    if model.use_bone:
+      ray_moving_mask = model_out['ray_moving_mask']
+      stats['stats/ray_moving_mask_mean'] = jnp.mean(ray_moving_mask)
+      # bone_pos = model_out['bone_pos']
+      # stats['stats/bone_pos_x'] = bone_pos[0, 0]
+      # stats['stats/bone_pos_y'] = bone_pos[0, 1]
+      # stats['stats/bone_pos_z'] = bone_pos[0, 2]
+
 
     stats['loss/total'] = loss
     stats['metric/psnr'] = utils.compute_psnr(rgb_loss)

@@ -37,6 +37,40 @@ def get_bone_probs(points, bone_centers, bone_scales, bone_quaternions):
 
   return prob
 
+def get_bone_probs_batch(points, bone_centers, bone_scales, bone_rotations):
+  """
+  Calculate the probability of a points belonging to the bones based on Mahalanobis distance.
+  Inputs:
+    points: N x 3
+    bone_centers: (N x B) x 3
+    bone_scales: (N x B) x 3
+    bone_rotations: (N x B) x 3 x 3
+  Outputs:
+    bone_probs: N x B
+  """
+  N = points.shape[0]
+  bone_centers = bone_centers.reshape([N, -1, 3])
+  B = bone_centers.shape[1]
+  points = jnp.broadcast_to(points[:, jnp.newaxis, :], [N, B, 3])
+  delta_p = points - bone_centers     # N x B x 3
+
+  # rotate
+  bone_rotations = jnp.broadcast_to(bone_rotations[jnp.newaxis, ...], [N, B, 3, 3])   # N x B x 3 x 3
+  delta_p = (bone_rotations.transpose(0, 1, 3, 2) @ delta_p[..., jnp.newaxis]).squeeze(-1)          # N x B x 3
+
+  # Mahalanobis distance
+  eps = 1e-6
+  bone_scales = jnp.abs(bone_scales) + eps
+  bone_scales = jnp.broadcast_to(bone_scales[jnp.newaxis, ...], [N, B, 3])
+  m_dist_square = jnp.square(delta_p) * (1 / bone_scales)       # N x B x 3
+  m_dist_square = jnp.sum(m_dist_square, axis=-1)               # N x B
+
+  # prob
+  normalizer = 1 / jnp.sqrt(2 * jnp.pi * jnp.product(bone_scales, axis=-1))     # N * B
+  prob = normalizer * jnp.exp(- m_dist_square / 2)
+
+  return prob
+
 
 if __name__ == "__main__":
   points = jnp.array([[0, 0, 0],

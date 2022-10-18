@@ -278,8 +278,11 @@ class Camera:
     return points
 
   def points_to_local_points(self, points: np.ndarray):
+    batch_shape = points.shape[:-1]
+    points = points.reshape((-1, 3))
     translated_points = points - self.position
     local_points = (np.matmul(self.orientation, translated_points.T)).T
+    local_points = local_points.reshape([*batch_shape, 3])
     return local_points
 
   def points_to_local_points_jnp(self, points: jnp.ndarray):

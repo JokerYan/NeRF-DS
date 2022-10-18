@@ -218,6 +218,9 @@ def render_flow(
     out_shape = (*batch_shape, *value.shape[1:])
     logging.debug('Reshaping %s of shape %s to %s',
                   key, str(value.shape), str(out_shape))
-    out[key] = value.reshape(out_shape)
+    try:
+      out[key] = value.reshape(out_shape)
+    except:
+      logging.info(f"Output {key} cannot be reshaped to image size")
 
   return out
