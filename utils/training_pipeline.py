@@ -36,7 +36,7 @@ config_dict = {
   "bone": "test_local_spec_bone.gin"
 }
 
-silent = True
+silent = False
 data_root = ""
 if os.path.isdir("/ssd/zhiwen/data/hypernerf/raw/"):
   data_root = "/ssd/zhiwen/data/hypernerf/raw/"
@@ -58,8 +58,18 @@ training_schedule = [
                                                             "NerfModel.use_x_in_rgb_condition = True",
                                                             "MaskMLP.depth = 8",
                                                             "MaskMLP.width = 128",
-                                                            "MaskMLP.output_activation = @jax.nn.relu"
-                                                            "NerfModel.use_mask_scaled_weights = True"
+                                                            "MaskMLP.output_activation = @jax.nn.relu",
+                                                            "NerfModel.use_mask_scaled_weights = True",
+                                                           ]),
+  ("015_cup_02_novel_view", "015_c02_nv_ms_exp26", "ms", ["ExperimentConfig.image_scale = 1",
+                                                            "NerfModel.use_predicted_mask = True",
+                                                            "NerfModel.use_3d_mask = True",
+                                                            "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
+                                                            "NerfModel.use_x_in_rgb_condition = True",
+                                                            "MaskMLP.depth = 8",
+                                                            "MaskMLP.width = 128",
+                                                            "MaskMLP.output_activation = @jax.nn.relu",
+                                                            "NerfModel.use_mask_scaled_weights = True",
                                                            ]),
   #
   # ("013_bowl_01_novel_view", "013_bo01_nv_ms_exp23", "ms", ["ExperimentConfig.image_scale = 1",
