@@ -526,13 +526,17 @@ def train_step(model: models.CustomModel,
 
     if 'predicted_mask' in model_out and model.use_3d_mask:
       weights = lax.stop_gradient(model_out['weights'])   # R x S
-      # scaled_weights = lax.stop_gradient(model_out['scaled_weights'])   # R x S
+      if model.use_mask_scaled_weights:
+        scaled_weights = lax.stop_gradient(model_out['scaled_weights'])   # R x S
       predicted_mask = model_out['predicted_mask'].squeeze(axis=-1)  # R x S
+      get_percentile_stats(stats, '3d_mask', predicted_mask)
       gt_mask = batch['mask']  # R x 1
       gt_mask = gt_mask.squeeze(axis=-1)  # R
 
-      ray_predicted_mask = (weights * predicted_mask).sum(axis=1)  # R
-      # ray_predicted_mask = (scaled_weights * predicted_mask).sum(axis=1)  # R
+      if model.use_mask_scaled_weights:
+        ray_predicted_mask = (scaled_weights * predicted_mask).sum(axis=1)  # R
+      else:
+        ray_predicted_mask = (weights * predicted_mask).sum(axis=1)  # R
       # supervize 3d mask
       predicted_mask_loss = ((gt_mask - ray_predicted_mask) ** 2).mean()
       stats['loss/predicted_mask_loss'] = predicted_mask_loss

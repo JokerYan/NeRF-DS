@@ -210,6 +210,8 @@ class NerfModel(CustomModel):
   mask_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8))
   use_coarse_depth_for_mask: bool = False
+  clamp_predicted_mask: bool = False
+  use_mask_scaled_weights: bool = False
 
   # bone related
   use_bone: bool = False
@@ -968,6 +970,10 @@ class NerfModel(CustomModel):
       out['predicted_mask'] = predicted_mask
       # predicted_mask = lax.stop_gradient(predicted_mask)
 
+      if self.clamp_predicted_mask:
+        threshold = 0.2
+        predicted_mask = jnp.clip(predicted_mask, a_max=threshold) / threshold
+
       mask = predicted_mask * mask_ratio + gt_mask * (1 - mask_ratio)
 
       # # in coarse depth, do not use predicted mask at all
@@ -1230,7 +1236,10 @@ class NerfModel(CustomModel):
       filtered_sigma = filter_sigma(points, sigma, render_opts)
       sigmoid_sigma = self.sigma_activation(filtered_sigma)
 
-      weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
+      if self.use_mask_scaled_weights:
+        weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions, scale=5)
+      else:
+        weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
       weights = lax.stop_gradient(weights)
 
       gt_mask_3d = weights[..., None] * gt_mask
@@ -1376,10 +1385,13 @@ class NerfModel(CustomModel):
     if self.use_predicted_mask:
       # filtered_sigma = filter_sigma(points, sigma, render_opts)
       # sigmoid_sigma = self.sigma_activation(filtered_sigma)
-      # scaled_weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions, scale=5)
-      # out['scaled_weights'] = scaled_weights
       # ray_predicted_mask = (scaled_weights[..., None] * predicted_mask).sum(axis=-2)
-      ray_predicted_mask = (weights[..., None] * predicted_mask).sum(axis=-2)
+      if self.use_mask_scaled_weights:
+        scaled_weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions, scale=5)
+        out['scaled_weights'] = scaled_weights
+        ray_predicted_mask = (scaled_weights[..., None] * predicted_mask).sum(axis=-2)
+      else:
+        ray_predicted_mask = (weights[..., None] * predicted_mask).sum(axis=-2)
       out['ray_predicted_mask'] = ray_predicted_mask
 
     if self.use_bone:
