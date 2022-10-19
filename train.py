@@ -81,6 +81,7 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
   _log_scalar('params/elastic_loss/weight', scalar_params.elastic_loss_weight)
   _log_scalar('params/mask_weight', scalar_params.mask_weight)
   _log_scalar('params/mask_ratio', scalar_params.mask_ratio)
+  _log_scalar('params/sharp_mask_std', scalar_params.sharp_weights_std)
 
   # pmean is applied in train_step so just take the item.
   for branch in {'coarse', 'fine'}:
@@ -292,6 +293,7 @@ def main(argv):
   flow_model_light_lr_sched = schedules.from_config(flow_config.flow_model_light_learning_rate_sched)
   mask_weight_sched = schedules.from_config(spec_config.mask_weight_schedule)
   mask_ratio_sched = schedules.from_config(spec_config.mask_ratio_schedule)
+  sharp_weights_sched = schedules.from_config(spec_config.sharp_mask_std_schedule)
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
   if train_config.use_weight_norm:
@@ -345,6 +347,7 @@ def main(argv):
     predicted_mask_loss_weight=spec_config.predicted_mask_loss_weight,
     mask_ratio=mask_ratio_sched(0),
     mask_occlusion_reg_loss_weight=spec_config.mask_occlusion_reg_loss_weight,
+    sharp_weights_std=sharp_weights_sched(0),
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
@@ -458,6 +461,7 @@ def main(argv):
         flow_model_light_learning_rate=flow_model_light_lr_sched(step),
         mask_weight=mask_weight_sched(step),
         mask_ratio=mask_ratio_sched(step),
+        sharp_weights_std=sharp_weights_sched(step)
     )
     # pytype: enable=attribute-error
     nerf_alpha = jax_utils.replicate(nerf_alpha_sched(step), devices)
@@ -488,9 +492,9 @@ def main(argv):
                    warp_alpha_sched(step),
                    time_tracker.summary_str('last'))
       coarse_metrics_str = ', '.join(
-          [f'{k}={v.mean():.04f}' for k, v in stats['coarse'].items()])
+          ['' if k.startswith('percentile') else f'{k}={v.mean():.04f}' for k, v in stats['coarse'].items()])
       fine_metrics_str = ', '.join(
-          [f'{k}={v.mean():.04f}' for k, v in stats['fine'].items()])
+          ['' if k.startswith('percentile') else f'{k}={v.mean():.04f}' for k, v in stats['fine'].items()])
       logging.info('\tcoarse metrics: %s', coarse_metrics_str)
       if 'fine' in stats:
         logging.info('\tfine metrics: %s', fine_metrics_str)

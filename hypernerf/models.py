@@ -892,6 +892,7 @@ class NerfModel(CustomModel):
                      norm_voxel_lr=0,
                      norm_voxel_ratio=1,
                      mask_ratio=1,
+                     sharp_weights_std=1.0,
                      ):
     out = {'points': points}
 
@@ -1232,19 +1233,22 @@ class NerfModel(CustomModel):
       else:
         extra_rgb_condition = ref_radiance_feat
 
+    # sharp weights
+    filtered_sigma = filter_sigma(points, sigma, render_opts)
+    sigmoid_sigma = self.sigma_activation(filtered_sigma)
+
+    if self.use_mask_scaled_weights:
+      weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions, scale=5)
+    else:
+      weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
+    weights = lax.stop_gradient(weights)
+    if self.use_mask_sharp_weights:
+      sharp_weights = model_utils.sharpen_weights(weights, z_vals, std=sharp_weights_std)
+      out['sharp_weights'] = sharp_weights
+
     # add mask
     if self.use_mask_in_rgb:
-      filtered_sigma = filter_sigma(points, sigma, render_opts)
-      sigmoid_sigma = self.sigma_activation(filtered_sigma)
-
-      if self.use_mask_scaled_weights:
-        weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions, scale=5)
-      else:
-        weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
-      weights = lax.stop_gradient(weights)
       if self.use_mask_sharp_weights:
-        sharp_weights = model_utils.sharpen_weights(weights, z_vals)
-        out['sharp_weights'] = sharp_weights
         weights = sharp_weights
 
       gt_mask_3d = weights[..., None] * gt_mask
@@ -1439,6 +1443,7 @@ class NerfModel(CustomModel):
       norm_voxel_lr=0,
       norm_voxel_ratio=1,
       mask_ratio=1,
+      sharp_weights_std=1.0,
   ):
     """Nerf Model.
 
@@ -1511,7 +1516,8 @@ class NerfModel(CustomModel):
       use_predicted_norm=use_predicted_norm,
       norm_voxel_lr=norm_voxel_lr,
       norm_voxel_ratio=norm_voxel_ratio,
-      mask_ratio=mask_ratio
+      mask_ratio=mask_ratio,
+      sharp_weights_std=sharp_weights_std,
     )
     out = {'coarse': coarse_ret}
 
@@ -1546,7 +1552,8 @@ class NerfModel(CustomModel):
         use_predicted_norm=use_predicted_norm,
         norm_voxel_lr=norm_voxel_lr,
         norm_voxel_ratio=norm_voxel_ratio,
-        mask_ratio=mask_ratio
+        mask_ratio=mask_ratio,
+        sharp_weights_std=sharp_weights_std,
       )
 
     if not return_weights:

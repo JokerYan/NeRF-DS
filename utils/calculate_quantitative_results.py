@@ -57,7 +57,7 @@ else:
     raise NotImplemented
 dataset = '015_cup_02_novel_view'
 data_dir = os.path.join(data_root, dataset)
-experiment_name = "015_c02_nv_ms_exp23"
+experiment_name = "015_c02_nv_ms_exp27"
 
 skip = True
 if skip:

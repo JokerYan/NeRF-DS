@@ -63,7 +63,7 @@ class ScalarParams:
   predicted_mask_loss_weight: float = 1.0
   mask_ratio: float = 1.0
   mask_occlusion_reg_loss_weight: float = 1.0
-
+  sharp_weights_std: float = 1.0
 
 
 def save_checkpoint(path, state, keep=2):
@@ -599,7 +599,8 @@ def train_step(model: models.CustomModel,
                       use_predicted_norm=use_predicted_norm,
                       norm_voxel_lr=state.norm_voxel_lr,
                       norm_voxel_ratio=state.norm_voxel_ratio,
-                      mask_ratio=scalar_params.mask_ratio
+                      mask_ratio=scalar_params.mask_ratio,
+                      sharp_weights_std=scalar_params.sharp_weights_std,
                       )
 
     losses = {}

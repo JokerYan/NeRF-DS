@@ -161,9 +161,23 @@ SpecularConfig.norm_voxel_loss_weight = 1000
 SpecularConfig.norm_voxel_ratio_schedule = {
   'type': 'piecewise',
   'schedules': [
-    (0, ('constant', 0.0)),
+    (10000, ('constant', 0.0)),
     (10000, ('linear', 0.0, 1.0, 10000)),
     (10000, ('constant', 1.0)),
   ],
 }
 
+# SpecularConfig.sharp_mask_std_schedule = {
+#     'type': 'exponential',
+#     'initial_value': 1,
+#     'final_value': 0.001,
+#     'num_steps': 250000,
+# }
+
+SpecularConfig.sharp_mask_std_schedule = {
+    'type': 'piecewise',
+    'schedules': [
+        (80000, ('exponential', 1, 0.001, 80000)),
+        (200000, ('constant', 0.001))
+    ]
+}

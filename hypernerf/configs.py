@@ -123,6 +123,10 @@ class SpecularConfig:
   })
   use_mask_occlusion_reg_loss: bool = False
   mask_occlusion_reg_loss_weight: float = 1.0
+  sharp_mask_std_schedule: ScheduleDef = immutabledict.immutabledict({
+    'type': 'constant',
+    'value': 1,
+  })
 
 @gin.configurable()
 @dataclasses.dataclass

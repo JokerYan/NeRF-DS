@@ -174,7 +174,7 @@ def cal_weights(sigma, z_vals, dirs, sample_at_infinity=True, eps=1e-10, scale=1
 
 def sharpen_weights(weights, z_vals, std=0.01):
   max_weights_idx = jnp.argmax(weights, axis=1)
-  max_weights_z_val = z_vals[max_weights_idx]\
+  max_weights_z_val = z_vals[max_weights_idx]
 
   gaussian_filter = jscipy.stats.norm.pdf(z_vals, max_weights_z_val, std)
   sharp_weights = weights * gaussian_filter
