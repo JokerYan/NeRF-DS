@@ -73,7 +73,7 @@ training_schedule = [
                                                             "MaskMLP.output_activation = @jax.nn.relu",
                                                             "NerfModel.use_mask_sharp_weights = True",
                                                            ]),
-  ("015_cup_02_novel_view", "015_c02_nv_ms_exp23", "ms", ["ExperimentConfig.image_scale = 1",
+  ("013_bowl_01_novel_view", "013_bo01_nv_ms_exp23", "ms", ["ExperimentConfig.image_scale = 1",
                                                             "NerfModel.use_predicted_mask = True",
                                                             "NerfModel.use_3d_mask = True",
                                                             "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
