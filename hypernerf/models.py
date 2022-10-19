@@ -212,6 +212,7 @@ class NerfModel(CustomModel):
   use_coarse_depth_for_mask: bool = False
   clamp_predicted_mask: bool = False
   use_mask_scaled_weights: bool = False
+  use_mask_sharp_weights: bool = False
 
   # bone related
   use_bone: bool = False
@@ -1241,6 +1242,10 @@ class NerfModel(CustomModel):
       else:
         weights = model_utils.cal_weights(sigmoid_sigma, z_vals, directions)
       weights = lax.stop_gradient(weights)
+      if self.use_mask_sharp_weights:
+        sharp_weights = model_utils.sharpen_weights(weights, z_vals)
+        out['sharp_weights'] = sharp_weights
+        weights = sharp_weights
 
       gt_mask_3d = weights[..., None] * gt_mask
       if self.use_predicted_mask:

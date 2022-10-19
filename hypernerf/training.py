@@ -526,6 +526,8 @@ def train_step(model: models.CustomModel,
 
     if 'predicted_mask' in model_out and model.use_3d_mask:
       weights = lax.stop_gradient(model_out['weights'])   # R x S
+      if model.use_mask_sharp_weights:
+        sharp_weights = lax.stop_gradient(model_out['sharp_weights'])   # R x S
       if model.use_mask_scaled_weights:
         scaled_weights = lax.stop_gradient(model_out['scaled_weights'])   # R x S
       predicted_mask = model_out['predicted_mask'].squeeze(axis=-1)  # R x S
@@ -533,7 +535,12 @@ def train_step(model: models.CustomModel,
       gt_mask = batch['mask']  # R x 1
       gt_mask = gt_mask.squeeze(axis=-1)  # R
 
-      if model.use_mask_scaled_weights:
+      stats['stats/weights_sum'] = jnp.mean(jnp.sum(weights, axis=1))
+      if model.use_mask_sharp_weights:
+        stats['stats/sharp_weights_sum'] = jnp.mean(jnp.sum(sharp_weights, axis=1))
+        ray_predicted_mask = (sharp_weights * predicted_mask).sum(axis=1)  # R
+      elif model.use_mask_scaled_weights:
+        stats['stats/scaled_weights_sum'] = jnp.mean(jnp.sum(scaled_weights, axis=1))
         ray_predicted_mask = (scaled_weights * predicted_mask).sum(axis=1)  # R
       else:
         ray_predicted_mask = (weights * predicted_mask).sum(axis=1)  # R

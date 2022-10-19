@@ -51,7 +51,7 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
-  ("011_bell_07_novel_view", "011_b07_nv_ms_exp26", "ms", ["ExperimentConfig.image_scale = 1",
+  ("011_bell_07_novel_view", "011_b07_nv_ms_exp27", "ms", ["ExperimentConfig.image_scale = 1",
                                                             "NerfModel.use_predicted_mask = True",
                                                             "NerfModel.use_3d_mask = True",
                                                             "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
@@ -59,9 +59,11 @@ training_schedule = [
                                                             "MaskMLP.depth = 8",
                                                             "MaskMLP.width = 128",
                                                             "MaskMLP.output_activation = @jax.nn.relu",
-                                                            "NerfModel.use_mask_scaled_weights = True",
+                                                            "NerfModel.use_mask_sharp_weights = True",
                                                            ]),
-  ("015_cup_02_novel_view", "015_c02_nv_ms_exp26", "ms", ["ExperimentConfig.image_scale = 1",
+
+  # gpu server
+  ("015_cup_02_novel_view", "015_c02_nv_ms_exp27", "ms", ["ExperimentConfig.image_scale = 1",
                                                             "NerfModel.use_predicted_mask = True",
                                                             "NerfModel.use_3d_mask = True",
                                                             "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
@@ -69,8 +71,19 @@ training_schedule = [
                                                             "MaskMLP.depth = 8",
                                                             "MaskMLP.width = 128",
                                                             "MaskMLP.output_activation = @jax.nn.relu",
-                                                            "NerfModel.use_mask_scaled_weights = True",
+                                                            "NerfModel.use_mask_sharp_weights = True",
                                                            ]),
+  ("015_cup_02_novel_view", "015_c02_nv_ms_exp23", "ms", ["ExperimentConfig.image_scale = 1",
+                                                            "NerfModel.use_predicted_mask = True",
+                                                            "NerfModel.use_3d_mask = True",
+                                                            "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
+                                                            "NerfModel.use_x_in_rgb_condition = True",
+                                                            "MaskMLP.depth = 8",
+                                                            "MaskMLP.width = 128",
+                                                           ]),
+  ("015_cup_02_novel_view", "015_c02_nv_base_exp01", "base", ["ExperimentConfig.image_scale = 1"]),
+
+
   #
   # ("013_bowl_01_novel_view", "013_bo01_nv_ms_exp23", "ms", ["ExperimentConfig.image_scale = 1",
   #                                                          "NerfModel.use_predicted_mask = True",

@@ -22,6 +22,7 @@ from flax import struct
 from jax import lax
 from jax import random
 import jax.numpy as jnp
+import jax.scipy as jscipy
 
 
 @struct.dataclass
@@ -169,6 +170,19 @@ def cal_weights(sigma, z_vals, dirs, sample_at_infinity=True, eps=1e-10, scale=1
   weights = alpha * accum_prod
 
   return weights
+
+
+def sharpen_weights(weights, z_vals, std=0.01):
+  max_weights_idx = jnp.argmax(weights, axis=1)
+  max_weights_z_val = z_vals[max_weights_idx]\
+
+  gaussian_filter = jscipy.stats.norm.pdf(z_vals, max_weights_z_val, std)
+  sharp_weights = weights * gaussian_filter
+  # normalize
+  sharp_weights = sharp_weights / jnp.sum(sharp_weights, axis=1)[..., jnp.newaxis]
+
+  # dummy return
+  return sharp_weights
 
 
 def piecewise_constant_pdf(key, bins, weights, num_coarse_samples,
