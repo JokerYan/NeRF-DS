@@ -181,6 +181,7 @@ class NerfModel(CustomModel):
   norm_input_max_deg: int = 4
   use_viewdirs_in_hyper: bool = False
   use_x_in_rgb_condition: bool = False
+  use_delta_x_in_rgb_condition: bool = False
 
   # Hyper c config
   use_hyper_c: bool = False
@@ -1227,6 +1228,12 @@ class NerfModel(CustomModel):
         extra_rgb_condition = jnp.concatenate([extra_rgb_condition, points_feat], axis=-1)
       else:
         extra_rgb_condition = points_feat
+    if self.use_delta_x_in_rgb_condition:
+      delta_x = warped_points - points
+      if extra_rgb_condition is not None:
+        extra_rgb_condition = jnp.concatenate([extra_rgb_condition, delta_x], axis=-1)
+      else:
+        extra_rgb_condition = delta_x
     if ref_radiance_feat is not None:
       if extra_rgb_condition is not None:
         extra_rgb_condition = jnp.concatenate([extra_rgb_condition, ref_radiance_feat], axis=-1)
