@@ -116,6 +116,24 @@ SpecularConfig.use_hyper_c_jacobian_reg_loss = False
 SpecularConfig.hyper_c_jacobian_reg_weight = 3e-5
 SpecularConfig.hyper_c_jacobian_reg_scale = 0.1
 
+# norm voxel
+NormVoxels.voxel_shape = (1000, 50, 50, 50, 3)
+SpecularConfig.norm_voxel_lr_schedule = {
+  'type': 'exponential',
+  'initial_value': 0.1,
+  'final_value': 1e-3,
+  'num_steps': 250000,
+}
+SpecularConfig.norm_voxel_loss_weight = 1000
+SpecularConfig.norm_voxel_ratio_schedule = {
+  'type': 'piecewise',
+  'schedules': [
+    (10000, ('constant', 0.0)),
+    (10000, ('linear', 0.0, 1.0, 10000)),
+    (10000, ('constant', 1.0)),
+  ],
+}
+
 # mask related
 NerfModel.use_mask_in_warp = True
 NerfModel.use_mask_in_hyper = True
@@ -148,24 +166,6 @@ SpecularConfig.mask_ratio_schedule = {
 #     'type': 'constant',
 #     'value': 1.0
 # }
-
-
-NormVoxels.voxel_shape = (1000, 50, 50, 50, 3)
-SpecularConfig.norm_voxel_lr_schedule = {
-  'type': 'exponential',
-  'initial_value': 0.1,
-  'final_value': 1e-3,
-  'num_steps': 250000,
-}
-SpecularConfig.norm_voxel_loss_weight = 1000
-SpecularConfig.norm_voxel_ratio_schedule = {
-  'type': 'piecewise',
-  'schedules': [
-    (10000, ('constant', 0.0)),
-    (10000, ('linear', 0.0, 1.0, 10000)),
-    (10000, ('constant', 1.0)),
-  ],
-}
 
 # SpecularConfig.sharp_mask_std_schedule = {
 #     'type': 'exponential',

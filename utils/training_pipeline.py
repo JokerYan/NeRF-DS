@@ -3,6 +3,7 @@ import re
 import subprocess
 import argparse
 from tqdm import tqdm
+from pipeline_settings import pipeline_settings
 
 # os.environ["XLA_FLAGS"] = '--xla_force_host_platform_device_count=64'
 """
@@ -51,139 +52,22 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
-  # ("011_bell_07_novel_view", "011_b07_nv_ms_exp28", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                           "NerfModel.use_predicted_mask = True",
-  #                                                           "NerfModel.use_3d_mask = True",
-  #                                                           "NerfModel.use_mask_in_rgb = False",
-  #                                                           "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-  #                                                           "MaskMLP.depth = 8",
-  #                                                           "MaskMLP.width = 128",
-  #                                                           "MaskMLP.output_activation = @jax.nn.relu",
-  #                                                          ]),
-  # ("011_bell_07_novel_view", "011_b07_nv_ms_exp29", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                           "NerfModel.use_predicted_mask = True",
-  #                                                           "NerfModel.use_3d_mask = True",
-  #                                                           "NerfModel.use_mask_in_rgb = False",
-  #                                                           "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-  #                                                           "MaskMLP.depth = 8",
-  #                                                           "MaskMLP.width = 128",
-  #                                                           "MaskMLP.output_activation = @jax.nn.relu",
-  #                                                           "NerfModel.use_mask_sharp_weights = True",
-  #                                                          ]),
-  ("011_bell_07_novel_view", "011_b07_nv_ms_exp30", "ms", ["ExperimentConfig.image_scale = 1",
-                                                            "NerfModel.use_predicted_mask = True",
-                                                            "NerfModel.use_3d_mask = True",
-                                                            "NerfModel.use_mask_in_rgb = False",
-                                                            "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-                                                            "MaskMLP.depth = 8",
-                                                            "MaskMLP.width = 128",
-                                                            "MaskMLP.output_activation = @jax.nn.relu",
-                                                            "NerfModel.use_mask_sharp_weights = True",
-                                                            "NerfModel.use_x_in_rgb_condition = True",
-                                                           ]),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", 'exp28'),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", 'exp29'),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp30"),
+  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp31"),
 
-  # gpu server
-  ("015_cup_02_novel_view", "015_c02_nv_ms_exp30", "ms", ["ExperimentConfig.image_scale = 1",
-                                                            "NerfModel.use_predicted_mask = True",
-                                                            "NerfModel.use_3d_mask = True",
-                                                            "NerfModel.use_mask_in_rgb = False",
-                                                            "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-                                                            "MaskMLP.depth = 8",
-                                                            "MaskMLP.width = 128",
-                                                            "MaskMLP.output_activation = @jax.nn.relu",
-                                                            "NerfModel.use_mask_sharp_weights = True",
-                                                            "NerfModel.use_x_in_rgb_condition = True",
-                                                           ]),
-  ("014_spoon_02_novel_view", "014_s02_nv_ms_exp30", "ms", ["ExperimentConfig.image_scale = 1",
-                                                            "NerfModel.use_predicted_mask = True",
-                                                            "NerfModel.use_3d_mask = True",
-                                                            "NerfModel.use_mask_in_rgb = False",
-                                                            "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-                                                            "MaskMLP.depth = 8",
-                                                            "MaskMLP.width = 128",
-                                                            "MaskMLP.output_activation = @jax.nn.relu",
-                                                            "NerfModel.use_mask_sharp_weights = True",
-                                                            "NerfModel.use_x_in_rgb_condition = True",
-                                                           ]),
-  ("017_cup_03_novel_view", "017_c03_nv_ms_exp30", "ms", ["ExperimentConfig.image_scale = 1",
-                                                            "NerfModel.use_predicted_mask = True",
-                                                            "NerfModel.use_3d_mask = True",
-                                                            "NerfModel.use_mask_in_rgb = False",
-                                                            "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-                                                            "MaskMLP.depth = 8",
-                                                            "MaskMLP.width = 128",
-                                                            "MaskMLP.output_activation = @jax.nn.relu",
-                                                            "NerfModel.use_mask_sharp_weights = True",
-                                                            "NerfModel.use_x_in_rgb_condition = True",
-                                                           ]),
-  # ("017_cup_03_novel_view", "017_c03_nv_ref_exp01", "ref", ["ExperimentConfig.image_scale = 1"]),
-  # ("017_cup_03_novel_view", "017_c03_nv_base_exp01", "base", ["ExperimentConfig.image_scale = 1"]),
+  # # gpu server
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp30"),
 
+  # ("014_spoon_02_novel_view", "014_s02_nv", "ms", "exp30"),
+  # ("017_cup_03_novel_view", "017_c03_nv", "ms", "exp30"),
 
-  # # gpu server old
-  # ("015_cup_02_novel_view", "015_c02_nv_ms_exp28", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                           "NerfModel.use_predicted_mask = True",
-  #                                                           "NerfModel.use_3d_mask = True",
-  #                                                           "NerfModel.use_mask_in_rgb = False",
-  #                                                           "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-  #                                                           "MaskMLP.depth = 8",
-  #                                                           "MaskMLP.width = 128",
-  #                                                           "MaskMLP.output_activation = @jax.nn.relu",
-  #                                                          ]),
-  # ("015_cup_02_novel_view", "015_c02_nv_ms_exp29", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                          "NerfModel.use_predicted_mask = True",
-  #                                                          "NerfModel.use_3d_mask = True",
-  #                                                          "NerfModel.use_mask_in_rgb = False",
-  #                                                          "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-  #                                                          "MaskMLP.depth = 8",
-  #                                                          "MaskMLP.width = 128",
-  #                                                          "MaskMLP.output_activation = @jax.nn.relu",
-  #                                                          "NerfModel.use_mask_sharp_weights = True",
-  #                                                          ]),
-  #
-  # ("013_bowl_01_novel_view", "013_bo01_nv_ms_exp28", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                           "NerfModel.use_predicted_mask = True",
-  #                                                           "NerfModel.use_3d_mask = True",
-  #                                                           "NerfModel.use_mask_in_rgb = False",
-  #                                                           "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-  #                                                           "MaskMLP.depth = 8",
-  #                                                           "MaskMLP.width = 128",
-  #                                                           "MaskMLP.output_activation = @jax.nn.relu",
-  #                                                          ]),
-  # ("013_bowl_01_novel_view", "013_bo01_nv_ms_exp29", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                          "NerfModel.use_predicted_mask = True",
-  #                                                          "NerfModel.use_3d_mask = True",
-  #                                                          "NerfModel.use_mask_in_rgb = False",
-  #                                                          "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-  #                                                          "MaskMLP.depth = 8",
-  #                                                          "MaskMLP.width = 128",
-  #                                                          "MaskMLP.output_activation = @jax.nn.relu",
-  #                                                          "NerfModel.use_mask_sharp_weights = True",
-  #                                                          ]),
-  #
-  # ("017_cup_03_novel_view", "017_c03_nv_ms_exp28", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                           "NerfModel.use_predicted_mask = True",
-  #                                                           "NerfModel.use_3d_mask = True",
-  #                                                           "NerfModel.use_mask_in_rgb = False",
-  #                                                           "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-  #                                                           "MaskMLP.depth = 8",
-  #                                                           "MaskMLP.width = 128",
-  #                                                           "MaskMLP.output_activation = @jax.nn.relu",
-  #                                                          ]),
-  # ("017_cup_03_novel_view", "017_c03_nv_ms_exp29", "ms", ["ExperimentConfig.image_scale = 1",
-  #                                                          "NerfModel.use_predicted_mask = True",
-  #                                                          "NerfModel.use_3d_mask = True",
-  #                                                          "NerfModel.use_mask_in_rgb = False",
-  #                                                          "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
-  #                                                          "MaskMLP.depth = 8",
-  #                                                          "MaskMLP.width = 128",
-  #                                                          "MaskMLP.output_activation = @jax.nn.relu",
-  #                                                          "NerfModel.use_mask_sharp_weights = True",
-  #                                                          ]),
-
+  ("017_cup_03_novel_view", "017_c03_nv", "ref", "exp01"),
+  # ("017_cup_03_novel_view", "017_c03_nv", "base", "exp01"),
 
   # bone
-  # ("011_bell_07_novel_view", "011_b07_nv_bone_exp01", "bone", ["ExperimentConfig.image_scale = 1"]),
+  # ("011_bell_07_novel_view", "011_b07_nv", "bone", "exp01"),
 ]
 
 def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):
@@ -235,16 +119,18 @@ if __name__ == "__main__":
       training_schedule_selected.append(exp)
   for training_setting in training_schedule_selected:
     try:
-      gin_params = []
       flow_exp_name = ''
-      if len(training_setting) == 3:
-        dataset_name, exp_name, config_key = training_setting
-      elif len(training_setting) == 4:
-        dataset_name, exp_name, config_key, gin_params = training_setting
-      elif len(training_setting) == 5:
-        dataset_name, exp_name, config_key, gin_params, flow_exp_name = training_setting
-      else:
-        raise NotImplementedError
+      dataset_name, exp_prefix, config_key, exp_idx = training_setting
+      exp_name = f'{exp_prefix}_{config_key}_{exp_idx}'
+      gin_params = pipeline_settings[config_key][exp_idx]
+      # if len(training_setting) == 3:
+      #   dataset_name, exp_name, config_key = training_setting
+      # elif len(training_setting) == 4:
+      #   dataset_name, exp_name, config_key, gin_params = training_setting
+      # elif len(training_setting) == 5:
+      #   dataset_name, exp_name, config_key, gin_params, flow_exp_name = training_setting
+      # else:
+      #   raise NotImplementedError
       train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name)
     except:
       print("Error encountered when running {}".format(exp_name))

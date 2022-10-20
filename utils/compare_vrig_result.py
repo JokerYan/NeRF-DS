@@ -17,8 +17,8 @@ else:
 # dataset = '012_cup_01_novel_view'
 # dataset = '013_bowl_01_novel_view'
 # dataset = '014_spoon_02_novel_view'
-dataset = '015_cup_02_novel_view'
-# dataset = '017_cup_03_novel_view'
+# dataset = '015_cup_02_novel_view'
+dataset = '017_cup_03_novel_view'
 data_dir = os.path.join(data_root, dataset)
 save = False
 
@@ -29,8 +29,8 @@ target_height = 360
 # experiment_name_list = ['012_c01_nv_ms_exp28', '012_c01_nv_ref_exp01']
 # experiment_name_list = ['013_bo01_nv_ms_exp14', '013_bo01_nv_ref_exp01']
 # experiment_name_list = ['014_s02_nv_ms_exp20', '014_s02_nv_ref_exp01']
-experiment_name_list = ['015_c02_nv_ms_exp29', '015_c02_nv_ms_exp28', '015_c02_nv_ref_exp01']
-# experiment_name_list = ['017_c03_nv_ms_exp28']
+# experiment_name_list = ['015_c02_nv_ms_exp29', '015_c02_nv_ms_exp28', '015_c02_nv_ref_exp01']
+experiment_name_list = ['017_c03_nv_ms_exp28']
 
 video_path_list = []
 for experiment_name in experiment_name_list:
