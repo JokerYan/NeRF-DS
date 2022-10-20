@@ -1352,7 +1352,7 @@ class NerfModel(CustomModel):
       out['ray_rotation_field'] = ray_rotation_field
     if translation_field is not None:
       ray_translation_field = (weights[..., None] * translation_field).sum(axis=-2)
-      out['ray_translation_field'] =ray_translation_field
+      out['ray_translation_field'] = ray_translation_field
 
     # rendered delta x
     delta_x = warped_points[..., :3] - points
