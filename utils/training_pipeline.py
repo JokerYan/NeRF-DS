@@ -59,14 +59,14 @@ training_schedule = [
   ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp31"),
 
   # # gpu server
-  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp32"),
-  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp31"),
-  #
-  # ("017_cup_03_novel_view", "017_c03_nv", "ms", "exp32"),
-  # ("017_cup_03_novel_view", "017_c03_nv", "ms", "exp31"),
-  #
-  # ("017_cup_03_novel_view", "017_c03_nv", "ref", "exp01"),
-  # ("017_cup_03_novel_view", "017_c03_nv", "base", "exp01"),
+  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp32"),
+  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp31"),
+
+  ("017_cup_03_novel_view", "017_c03_nv", "ms", "exp32"),
+  ("017_cup_03_novel_view", "017_c03_nv", "ms", "exp31"),
+
+  ("017_cup_03_novel_view", "017_c03_nv", "ref", "exp01"),
+  ("017_cup_03_novel_view", "017_c03_nv", "base", "exp01"),
 
   # wait rendering
   # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp30"),
