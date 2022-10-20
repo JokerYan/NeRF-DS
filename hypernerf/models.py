@@ -1229,7 +1229,8 @@ class NerfModel(CustomModel):
       else:
         extra_rgb_condition = points_feat
     if self.use_delta_x_in_rgb_condition:
-      delta_x = warped_points - points
+      warped_points_reshaped = warped_points.reshape(points.shape)
+      delta_x = warped_points_reshaped - points
       if extra_rgb_condition is not None:
         extra_rgb_condition = jnp.concatenate([extra_rgb_condition, delta_x], axis=-1)
       else:
