@@ -471,6 +471,7 @@ def main(argv):
         hyper_sheet_alpha_sched(step), devices)
     norm_loss_weight = jax_utils.replicate(norm_loss_weight_sched(step), devices)
     norm_input_alpha = jax_utils.replicate(norm_input_alpha_sched(step), devices)
+    norm_voxel_ratio = jax_utils.replicate(norm_voxel_ratio_sched(step), devices)
     norm_voxel_lr = jax_utils.replicate(norm_voxel_lr_sched(step), devices)
     state = state.replace(nerf_alpha=nerf_alpha,
                           warp_alpha=warp_alpha,
@@ -478,6 +479,7 @@ def main(argv):
                           hyper_sheet_alpha=hyper_sheet_alpha,
                           norm_loss_weight=norm_loss_weight,
                           norm_input_alpha=norm_input_alpha,
+                          norm_voxel_ratio=norm_voxel_ratio,
                           norm_voxel_lr=norm_voxel_lr,
                           )
 

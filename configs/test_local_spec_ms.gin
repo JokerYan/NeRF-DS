@@ -167,13 +167,6 @@ SpecularConfig.mask_ratio_schedule = {
 #     'value': 1.0
 # }
 
-# SpecularConfig.sharp_mask_std_schedule = {
-#     'type': 'exponential',
-#     'initial_value': 1,
-#     'final_value': 0.001,
-#     'num_steps': 250000,
-# }
-
 SpecularConfig.sharp_mask_std_schedule = {
     'type': 'piecewise',
     'schedules': [
