@@ -294,6 +294,7 @@ def main(argv):
   mask_weight_sched = schedules.from_config(spec_config.mask_weight_schedule)
   mask_ratio_sched = schedules.from_config(spec_config.mask_ratio_schedule)
   sharp_weights_sched = schedules.from_config(spec_config.sharp_mask_std_schedule)
+  x_for_rgb_alpha_sched = schedules.from_config(spec_config.x_for_rgb_alpha_schedule)
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
   if train_config.use_weight_norm:
@@ -348,6 +349,7 @@ def main(argv):
     mask_ratio=mask_ratio_sched(0),
     mask_occlusion_reg_loss_weight=spec_config.mask_occlusion_reg_loss_weight,
     sharp_weights_std=sharp_weights_sched(0),
+    x_for_rgb_alpha=x_for_rgb_alpha_sched(0),
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
@@ -461,7 +463,8 @@ def main(argv):
         flow_model_light_learning_rate=flow_model_light_lr_sched(step),
         mask_weight=mask_weight_sched(step),
         mask_ratio=mask_ratio_sched(step),
-        sharp_weights_std=sharp_weights_sched(step)
+        sharp_weights_std=sharp_weights_sched(step),
+        x_for_rgb_alpha=x_for_rgb_alpha_sched(step)
     )
     # pytype: enable=attribute-error
     nerf_alpha = jax_utils.replicate(nerf_alpha_sched(step), devices)

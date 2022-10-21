@@ -52,12 +52,19 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
-  # ("011_bell_07_novel_view", "011_b07_nv", "ms", 'exp28'),
-  # ("011_bell_07_novel_view", "011_b07_nv", "ms", 'exp29'),
-  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp30"),
-  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp32"),
-  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp31"),
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp33"),
+  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp34"),
+  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp35"),
+  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp31"),
+
+  # gpu server new
+  ('018_as_01_novel_view', '018_a01_nv', "base", "exp01"),
+  ('018_as_01_novel_view', '018_a01_nv', "ref", "exp01"),
+
+  ('019_plate_01_novel_view', '019_p01_nv', "base", "exp01"),
+  ('019_plate_01_novel_view', '019_p01_nv', "ref", "exp01"),
+
+  ('018_as_01_novel_view', '018_a01_nv', "ms", "exp29"),
+  ('019_plate_01_novel_view', '019_p01_nv', "ms", "exp29"),
 
   # # gpu server
   # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp32"),
@@ -68,7 +75,7 @@ training_schedule = [
   #
   # ("017_cup_03_novel_view", "017_c03_nv", "ref", "exp01"),
   # ("017_cup_03_novel_view", "017_c03_nv", "base", "exp01"),
-  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp33"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp33"),
 
   # wait rendering
   # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp30"),

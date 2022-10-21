@@ -174,3 +174,13 @@ SpecularConfig.sharp_mask_std_schedule = {
         (200000, ('constant', 0.001))
     ]
 }
+
+# x for rgb
+SpecularConfig.x_for_rgb_alpha_schedule = {
+    'type': 'piecewise',
+    'schedules': [
+        (50000, ('constant', 0)),
+        (50000, ('linear', 0, 4.0, 50000)),
+        (150000, ('constant', 4.0))
+    ]
+}

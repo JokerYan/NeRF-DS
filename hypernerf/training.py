@@ -64,6 +64,7 @@ class ScalarParams:
   mask_ratio: float = 1.0
   mask_occlusion_reg_loss_weight: float = 1.0
   sharp_weights_std: float = 1.0
+  x_for_rgb_alpha: float = 4.0
 
 
 def save_checkpoint(path, state, keep=2):

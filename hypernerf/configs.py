@@ -128,6 +128,12 @@ class SpecularConfig:
     'value': 1,
   })
 
+  # x for rgb
+  x_for_rgb_alpha_schedule: ScheduleDef = immutabledict.immutabledict({
+    'type': 'constant',
+    'value': 4.0,
+  })
+
 @gin.configurable()
 @dataclasses.dataclass
 class FlowConfig:

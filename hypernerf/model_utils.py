@@ -98,7 +98,9 @@ def volumetric_rendering(rgb,
                          dirs,
                          use_white_background,
                          sample_at_infinity=True,
-                         eps=1e-10):
+                         eps=1e-10,
+                         use_sharp_weights=False,
+                         sharp_weights_std=1.0):
   """Volumetric Rendering Function.
 
   Args:
@@ -131,6 +133,9 @@ def volumetric_rendering(rgb,
       jnp.cumprod(1.0 - alpha[..., :-1] + eps, axis=-1),
   ], axis=-1)
   weights = alpha * accum_prod
+
+  if use_sharp_weights:
+    weights = sharpen_weights(weights, z_vals, std=sharp_weights_std)
 
   rgb = (weights[..., None] * rgb).sum(axis=-2)
   exp_depth = (weights * z_vals).sum(axis=-1)

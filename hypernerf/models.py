@@ -181,6 +181,7 @@ class NerfModel(CustomModel):
   norm_input_max_deg: int = 4
   use_viewdirs_in_hyper: bool = False
   use_x_in_rgb_condition: bool = False
+  window_x_in_rgb_condition: bool = False
   use_delta_x_in_rgb_condition: bool = False
 
   # Hyper c config
@@ -214,10 +215,15 @@ class NerfModel(CustomModel):
   clamp_predicted_mask: bool = False
   use_mask_scaled_weights: bool = False
   use_mask_sharp_weights: bool = False
+  use_rgb_sharp_weights: bool = False
 
   # hyper usage
   use_hyper_for_sigma: bool = True
   use_hyper_for_rgb: bool = False
+
+  # x for rgb
+  x_for_rgb_min_deg: int = 0
+  x_for_rgb_max_deg: int = 4
 
   # bone related
   use_bone: bool = False
@@ -869,7 +875,8 @@ class NerfModel(CustomModel):
       z_vals,
       directions,
       use_white_background=self.use_white_background,
-      sample_at_infinity=use_sample_at_infinity))
+      sample_at_infinity=use_sample_at_infinity
+    ))
 
     return out
 
@@ -898,6 +905,7 @@ class NerfModel(CustomModel):
                      norm_voxel_ratio=1,
                      mask_ratio=1,
                      sharp_weights_std=1.0,
+                     x_for_rgb_alpha=4.0,
                      ):
     out = {'points': points}
 
@@ -1230,14 +1238,22 @@ class NerfModel(CustomModel):
     #   extra_rgb_condition = None
 
     if self.use_x_in_rgb_condition:
-      if extra_rgb_condition is not None:
-        extra_rgb_condition = jnp.concatenate([extra_rgb_condition, points_feat], axis=-1)
+      if self.window_x_in_rgb_condition:
+        x_for_rgb = model_utils.posenc(points,
+                                       min_deg=self.x_for_rgb_min_deg,
+                                       max_deg=self.x_for_rgb_max_deg,
+                                       alpha=x_for_rgb_alpha)
       else:
-        extra_rgb_condition = points_feat
+        x_for_rgb = points_feat
+      x_for_rgb = x_for_rgb.reshape([-1, x_for_rgb.shape[-1]])
+      if extra_rgb_condition is not None:
+        extra_rgb_condition = jnp.concatenate([extra_rgb_condition, x_for_rgb], axis=-1)
+      else:
+        extra_rgb_condition = x_for_rgb
     if self.use_delta_x_in_rgb_condition:
       warped_points_reshaped = warped_points[..., :3]
       points_reshaped = points.reshape(warped_points_reshaped.shape)
-      delta_x = warped_points_reshaped - points_reshaped
+      delta_x = lax.stop_gradient(warped_points_reshaped - points_reshaped)
       if extra_rgb_condition is not None:
         extra_rgb_condition = jnp.concatenate([extra_rgb_condition, delta_x], axis=-1)
       else:
@@ -1337,7 +1353,10 @@ class NerfModel(CustomModel):
       z_vals,
       directions,
       use_white_background=self.use_white_background,
-      sample_at_infinity=use_sample_at_infinity))
+      sample_at_infinity=use_sample_at_infinity,
+      use_sharp_weights=self.use_rgb_sharp_weights,
+      sharp_weights_std=sharp_weights_std
+    ))
 
     # calculate surface norm consistency
     if self.predict_norm:
@@ -1466,6 +1485,7 @@ class NerfModel(CustomModel):
       norm_voxel_ratio=1,
       mask_ratio=1,
       sharp_weights_std=1.0,
+      x_for_rgb_alpha=4.0
   ):
     """Nerf Model.
 
@@ -1540,6 +1560,7 @@ class NerfModel(CustomModel):
       norm_voxel_ratio=norm_voxel_ratio,
       mask_ratio=mask_ratio,
       sharp_weights_std=sharp_weights_std,
+      x_for_rgb_alpha=x_for_rgb_alpha
     )
     out = {'coarse': coarse_ret}
 
@@ -1576,6 +1597,7 @@ class NerfModel(CustomModel):
         norm_voxel_ratio=norm_voxel_ratio,
         mask_ratio=mask_ratio,
         sharp_weights_std=sharp_weights_std,
+        x_for_rgb_alpha=x_for_rgb_alpha
       )
 
     if not return_weights:
