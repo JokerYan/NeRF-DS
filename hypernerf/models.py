@@ -215,6 +215,10 @@ class NerfModel(CustomModel):
   use_mask_scaled_weights: bool = False
   use_mask_sharp_weights: bool = False
 
+  # hyper usage
+  use_hyper_for_sigma: bool = True
+  use_hyper_for_rgb: bool = False
+
   # bone related
   use_bone: bool = False
   bone_warp_field_cls: Callable[..., nn.Module] = warping.BoneSE3Field
@@ -766,12 +770,12 @@ class NerfModel(CustomModel):
       hyper_points = None
       hyper_jacobian = None
 
-    if hyper_points is not None:
+    if hyper_points is not None and self.use_hyper_for_sigma:
       warped_points = jnp.concatenate([spatial_points, hyper_points], axis=-1)
     else:
       warped_points = spatial_points
 
-    return warped_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask
+    return warped_points, hyper_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask
 
   def apply_warp(self, points, warp_embed, extra_params):
     warp_embed = self.warp_embed(warp_embed)
@@ -835,7 +839,7 @@ class NerfModel(CustomModel):
         shape=(*batch_shape, hyper_embed.shape[-1]))
 
     # Map input points to warped spatial and hyper points.
-    warped_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask = self.map_points(
+    warped_points, hyper_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask = self.map_points(
       points, warp_embed, hyper_embed, viewdirs, extra_params, mask, use_warp=use_warp,
       return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
       # Override hyper points if present in metadata dict.
@@ -1014,7 +1018,7 @@ class NerfModel(CustomModel):
 
     if self.predict_norm and self.norm_supervision_type == 'canonical':
       # Map input points to warped spatial and hyper points.
-      warped_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask = self.map_points(
+      warped_points, hyper_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask = self.map_points(
         points, warp_embed, hyper_embed, viewdirs, extra_params, mask, use_warp=use_warp,
         return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=False,
         # Override hyper points if present in metadata dict.
@@ -1039,7 +1043,7 @@ class NerfModel(CustomModel):
 
     def cal_single_pt_sigma(points, warp_embed, hyper_embed, viewdirs, mask):
       # Map input points to warped spatial and hyper points.
-      warped_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask = self.map_points(
+      warped_points, hyper_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask = self.map_points(
         points, warp_embed, hyper_embed, viewdirs, extra_params, mask, use_warp=use_warp,
         return_warp_jacobian=return_warp_jacobian, return_hyper_jacobian=return_hyper_jacobian,
         # Override hyper points if present in metadata dict.
@@ -1053,6 +1057,7 @@ class NerfModel(CustomModel):
       aux_output = {
         'norm': norm,
         'warped_points': warped_points,
+        'hyper_points': hyper_points,
         'warp_jacobian': warp_jacobian,
         'hyper_jacobian': hyper_jacobian,
         'screw_axis': screw_axis,
@@ -1093,6 +1098,7 @@ class NerfModel(CustomModel):
     # unpack aux_output
     norm = aux_output['norm']
     warped_points = aux_output['warped_points']
+    hyper_points = aux_output['hyper_points']
     warp_jacobian = aux_output['warp_jacobian']
     hyper_jacobian = aux_output['hyper_jacobian']
     screw_axis = aux_output['screw_axis']
@@ -1236,6 +1242,13 @@ class NerfModel(CustomModel):
         extra_rgb_condition = jnp.concatenate([extra_rgb_condition, delta_x], axis=-1)
       else:
         extra_rgb_condition = delta_x
+    if self.use_hyper_for_rgb:
+      hyper_points_reshaped = hyper_points.reshape([-1, hyper_points.shape[-1]])
+      if extra_rgb_condition is not None:
+        extra_rgb_condition = jnp.concatenate([extra_rgb_condition, hyper_points_reshaped], axis=-1)
+      else:
+        extra_rgb_condition = hyper_points_reshaped
+
     if ref_radiance_feat is not None:
       if extra_rgb_condition is not None:
         extra_rgb_condition = jnp.concatenate([extra_rgb_condition, ref_radiance_feat], axis=-1)

@@ -61,5 +61,16 @@ pipeline_settings = {
               "NerfModel.use_mask_sharp_weights = True",
               "NerfModel.use_delta_x_in_rgb_condition = True",
              ],
+    'exp33': ["ExperimentConfig.image_scale = 1",
+              "NerfModel.use_predicted_mask = True",
+              "NerfModel.use_3d_mask = True",
+              "NerfModel.use_mask_in_rgb = False",
+              "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
+              "MaskMLP.depth = 8",
+              "MaskMLP.width = 128",
+              "MaskMLP.output_activation = @jax.nn.relu",
+              "NerfModel.use_hyper_for_sigma = False",
+              "NerfModel.use_hyper_for_rgb = True"
+             ],
   }
 }
