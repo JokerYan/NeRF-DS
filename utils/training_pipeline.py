@@ -37,7 +37,7 @@ config_dict = {
   "bone": "test_local_spec_bone.gin"
 }
 
-silent = False
+silent = True
 data_root = ""
 if os.path.isdir("/ssd/zhiwen/data/hypernerf/raw/"):
   data_root = "/ssd/zhiwen/data/hypernerf/raw/"
@@ -52,19 +52,39 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
 training_schedule = [
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp34"),
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp35"),
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp31"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp34"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp35"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp31"),
 
-  # gpu server new
-  ('018_as_01_novel_view', '018_a01_nv', "base", "exp01"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp34"),
+  # ("017_cup_03_novel_view", "017_c03_nv", "ms", "exp34"),
+
+  # ("014_spoon_02_novel_view", "014_s02_nv", "base", "exp01"),
+  # ("014_spoon_02_novel_view", "014_s02_nv", "ref", "exp01"),
+
+  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp36"),
+  ("014_spoon_02_novel_view", "014_s02_nv", "ms", "exp36"),
+
+  # gpu server
   ('018_as_01_novel_view', '018_a01_nv', "ref", "exp01"),
+  ('018_as_01_novel_view', '018_a01_nv', "ms", "exp36"),
 
-  ('019_plate_01_novel_view', '019_p01_nv', "base", "exp01"),
   ('019_plate_01_novel_view', '019_p01_nv', "ref", "exp01"),
+  ('019_plate_01_novel_view', '019_p01_nv', "ms", "exp36"),
 
-  ('018_as_01_novel_view', '018_a01_nv', "ms", "exp29"),
-  ('019_plate_01_novel_view', '019_p01_nv', "ms", "exp29"),
+
+  # gpu server
+  # ('018_as_01_novel_view', '018_a01_nv', "ms", "exp35"),
+  # ('019_plate_01_novel_view', '019_p01_nv', "ms", "exp35"),
+
+  # ('018_as_01_novel_view', '018_a01_nv', "base", "exp01"),
+  # ('018_as_01_novel_view', '018_a01_nv', "ref", "exp01"),
+  #
+  # ('019_plate_01_novel_view', '019_p01_nv', "base", "exp01"),
+  # ('019_plate_01_novel_view', '019_p01_nv', "ref", "exp01"),
+  #
+  # ('018_as_01_novel_view', '018_a01_nv', "ms", "exp29"),
+  # ('019_plate_01_novel_view', '019_p01_nv', "ms", "exp29"),
 
   # # gpu server
   # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp32"),
