@@ -56,23 +56,23 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 
-# dataset = '011_bell_07_novel_view'
+dataset = '011_bell_07_novel_view'
 # dataset = '012_cup_01_novel_view'
 # dataset = '013_bowl_01_novel_view'
 # dataset = '014_spoon_02_novel_view'
 # dataset = '015_cup_02_novel_view'
 # dataset = '017_cup_03_novel_view'
-dataset = '018_as_01_novel_view'
+# dataset = '018_as_01_novel_view'
 # dataset = '019_plate_01_novel_view'
 
 data_dir = os.path.join(data_root, dataset)
 
-# experiment_name = "011_b07_nv_ms_exp35"
+experiment_name = "011_b07_nv_ms_exp36"
 # experiment_name = "013_bo01_nv_base_exp01"
 # experiment_name = "014_s02_nv_base_exp01"
 # experiment_name = "015_c02_nv_ms_exp32"
 # experiment_name = "017_c03_nv_ref_exp01"
-experiment_name = "018_a01_nv_ref_exp01"
+# experiment_name = "018_a01_nv_ref_exp01"
 # experiment_name = "019_p01_nv_base_exp01"
 
 skip = True
