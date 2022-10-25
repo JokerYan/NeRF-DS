@@ -34,7 +34,8 @@ config_dict = {
 
   "hsf": "test_local_spec_hsf.gin",
   "ms": "test_local_spec_ms.gin",
-  "bone": "test_local_spec_bone.gin"
+  "bone": "test_local_spec_bone.gin",
+  "nerfies": "test_local_spec_nerfies.gin",
 }
 
 silent = True
@@ -65,8 +66,12 @@ training_schedule = [
   ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp36"),
 
   # gpu server
-  ("014_spoon_02_novel_view", "014_s02_nv", "ms", "exp36"),
-  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp36"),
+  ("011_bell_07_novel_view", "011_b07_nv", "nerfies", "exp01"),
+  ("015_cup_02_novel_view", "015_c02_nv", "nerfies", "exp01"),
+
+  # gpu server
+  # ("014_spoon_02_novel_view", "014_s02_nv", "ms", "exp36"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp36"),
 
   # gpu server
   # ('018_as_01_novel_view', '018_a01_nv', "ref", "exp01"),
