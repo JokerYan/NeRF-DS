@@ -66,6 +66,13 @@ training_schedule = [
   ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp36"),
 
   # gpu server
+  ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp36"),
+  ("020_sieve_01_novel_view", "020_sv01_nv", "ref", "exp01"),
+
+  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp36"),
+  ("021_basin_01_novel_view", "021_bs01_nv", "ref", "exp01"),
+
+  # gpu server
   ("011_bell_07_novel_view", "011_b07_nv", "nerfies", "exp01"),
   ("015_cup_02_novel_view", "015_c02_nv", "nerfies", "exp01"),
 

@@ -18,19 +18,21 @@ else:
 # dataset = '013_bowl_01_novel_view'
 # dataset = '014_spoon_02_novel_view'
 # dataset = '015_cup_02_novel_view'
-dataset = '017_cup_03_novel_view'
+# dataset = '017_cup_03_novel_view'
+dataset = '018_as_01_novel_view'
 data_dir = os.path.join(data_root, dataset)
 save = False
 
 video_render_step = 9
 target_height = 360
 
-# experiment_name_list = ['011_b07_nv_ms_exp29', '011_b07_nv_ref_exp01', '011_b07_nv_base_exp01']
+# experiment_name_list = ['011_b07_nv_ms_exp29', '011_b07_nv_ms_exp35', '011_b07_nv_ref_exp01']
 # experiment_name_list = ['012_c01_nv_ms_exp28', '012_c01_nv_ref_exp01']
 # experiment_name_list = ['013_bo01_nv_ms_exp14', '013_bo01_nv_ref_exp01']
 # experiment_name_list = ['014_s02_nv_ms_exp20', '014_s02_nv_ref_exp01']
-# experiment_name_list = ['015_c02_nv_ms_exp29', '015_c02_nv_ms_exp28', '015_c02_nv_ref_exp01']
-experiment_name_list = ['017_c03_nv_ms_exp28']
+# experiment_name_list = ['015_c02_nv_ms_exp29', '015_c02_nv_ref_exp01']
+# experiment_name_list = ['017_c03_nv_ms_exp28']
+experiment_name_list = ['018_a01_nv_ms_exp36', '018_a01_nv_ref_exp01', '018_a01_nv_base_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:

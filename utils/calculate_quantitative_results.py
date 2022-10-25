@@ -56,24 +56,24 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 
-dataset = '011_bell_07_novel_view'
+# dataset = '011_bell_07_novel_view'
 # dataset = '012_cup_01_novel_view'
 # dataset = '013_bowl_01_novel_view'
 # dataset = '014_spoon_02_novel_view'
 # dataset = '015_cup_02_novel_view'
 # dataset = '017_cup_03_novel_view'
 # dataset = '018_as_01_novel_view'
-# dataset = '019_plate_01_novel_view'
+dataset = '019_plate_01_novel_view'
 
 data_dir = os.path.join(data_root, dataset)
 
-experiment_name = "011_b07_nv_ms_exp36"
+# experiment_name = "011_b07_nv_ms_exp36"
 # experiment_name = "013_bo01_nv_base_exp01"
-# experiment_name = "014_s02_nv_base_exp01"
-# experiment_name = "015_c02_nv_ms_exp32"
+# experiment_name = "014_s02_nv_ms_exp36"
+# experiment_name = "015_c02_nv_ms_exp36"
 # experiment_name = "017_c03_nv_ref_exp01"
 # experiment_name = "018_a01_nv_ref_exp01"
-# experiment_name = "019_p01_nv_base_exp01"
+experiment_name = "019_p01_nv_ref_exp01"
 
 skip = True
 if skip:
@@ -157,17 +157,3 @@ print(result_str)
 save_path = os.path.join(experiment_dir, 'quantitative_results.txt')
 with open(save_path, 'w+') as f:
   f.write(result_str)
-
-# base
-# mse: 0.00618 psnr: 22.507 ms_ssim: 0.936 lpips: 0.120
-# mse: 0.00314 psnr: 25.175 ms_ssim: 0.952 lpips: 0.099   # trim 0.1
-# mse: 0.00613 psnr: 22.527 ms_ssim: 0.938 lpips: 0.122   # full
-
-# ref
-# mse: 0.00615 psnr: 22.513 ms_ssim: 0.934 lpips: 0.126
-# mse: 0.00328 psnr: 25.002 ms_ssim: 0.950 lpips: 0.105   # trim 0.1
-
-# hsf
-# mse: 0.00559 psnr: 22.887 ms_ssim: 0.936 lpips: 0.112
-# mse: 0.00290 psnr: 25.514 ms_ssim: 0.953 lpips: 0.091   # trim 0.1
-# mse: 0.00553 psnr: 22.913 ms_ssim: 0.938 lpips: 0.115   # full
