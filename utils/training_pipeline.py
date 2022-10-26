@@ -63,9 +63,14 @@ training_schedule = [
   # ("014_spoon_02_novel_view", "014_s02_nv", "base", "exp01"),
   # ("014_spoon_02_novel_view", "014_s02_nv", "ref", "exp01"),
 
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp36"),
+
+  # gpu server
   ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp39"),
   ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp38"),
-  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp36"),
+
+  ("020_sieve_01_novel_view", "020_sv01_nv", "base", "exp01"),
+  ("021_basin_01_novel_view", "021_bs01_nv", "base", "exp01"),
   #
   # # gpu server
   # ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp36"),
