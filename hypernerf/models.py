@@ -208,6 +208,7 @@ class NerfModel(CustomModel):
   use_mask_in_hyper: bool = False
   use_mask_in_rgb: bool = False
   use_predicted_mask: bool = False
+  use_mask_embed: bool = True
   use_3d_mask: bool = False
   mask_embed_cls: Callable[..., nn.Module] = (
     functools.partial(modules.GLOEmbed, num_dims=8))
@@ -974,14 +975,14 @@ class NerfModel(CustomModel):
         if coarse_depth is not None:
           depth = jnp.tile(coarse_depth[:, jnp.newaxis, jnp.newaxis], [1, mask_embed.shape[1], 1])
           mask_embed = jnp.concatenate([depth, mask_embed], axis=-1)
-          predicted_mask = self.mask_mlp(points, mask_embed, alpha=extra_params['warp_alpha'])
+          predicted_mask = self.mask_mlp(points, mask_embed, alpha=extra_params['warp_alpha'], use_embed=self.use_mask_embed)
         else:
           dummy_depth = jnp.ones([*batch_shape, 1]) * -1
           mask_embed = jnp.concatenate([dummy_depth, mask_embed], axis=-1)
-          predicted_mask = self.mask_mlp(points, mask_embed, alpha=extra_params['warp_alpha'])
+          predicted_mask = self.mask_mlp(points, mask_embed, alpha=extra_params['warp_alpha'], use_embed=self.use_mask_embed)
           # predicted_mask = self.coarse_mask_mlp(points, mask_embed)
       else:
-        predicted_mask = self.mask_mlp(points, mask_embed, alpha=extra_params['warp_alpha'])
+        predicted_mask = self.mask_mlp(points, mask_embed, alpha=extra_params['warp_alpha'], use_embed=self.use_mask_embed)
       out['predicted_mask'] = predicted_mask
       # predicted_mask = lax.stop_gradient(predicted_mask)
 
