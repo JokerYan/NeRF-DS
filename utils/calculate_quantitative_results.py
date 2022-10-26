@@ -64,8 +64,8 @@ else:
 # dataset = '017_cup_03_novel_view'
 # dataset = '018_as_01_novel_view'
 # dataset = '019_plate_01_novel_view'
-# dataset = '020_sieve_01_novel_view'
-dataset = '021_basin_01_novel_view'
+dataset = '020_sieve_01_novel_view'
+# dataset = '021_basin_01_novel_view'
 
 data_dir = os.path.join(data_root, dataset)
 
@@ -76,8 +76,8 @@ data_dir = os.path.join(data_root, dataset)
 # experiment_name = "017_c03_nv_ref_exp01"
 # experiment_name = "018_a01_nv_ref_exp01"
 # experiment_name = "019_p01_nv_ref_exp01"
-# experiment_name = "020_sv01_nv_ref_exp01"
-experiment_name = "021_bs01_nv_ms_exp36"
+experiment_name = "020_sv01_nv_ref_exp01"
+# experiment_name = "021_bs01_nv_ref_exp01"
 
 skip = True
 if skip:
@@ -119,6 +119,8 @@ while(cap.isOpened()):
   if frame.shape == target_shape:
     pass
   elif frame.shape == tuple(target_shape * np.array([2, 4, 1])):
+    frame = frame[:target_shape[0], :target_shape[1], :]
+  elif frame.shape == tuple(target_shape * np.array([2, 3, 1])):
     frame = frame[:target_shape[0], :target_shape[1], :]
   else:
     raise Exception

@@ -32,35 +32,38 @@ from hypernerf import utils
 
 ######## parameter settings #########
 
-dataset_name = 'vrig-cup-3_qualitative/'
-exp_name = 'vc3_q_hsf_exp06'
+dataset_name = '015_cup_02_novel_view'
+exp_name = '015_c02_nv_ms_exp36'
 camera_path_name = 'vrig_camera'
-interval = 1
+interval = 100
 chunk_size = 2048
 
 #####################################
 
 
-def render_scene(dataset_name, exp_name, camera_path_name):
-  print('Detected Devices:', jax.devices())
+def render_scene(dataset_name, exp_name, camera_path_name, interval):
+  # print('Detected Devices:', jax.devices())
 
   # @title Define imports and utility functions.
   # Monkey patch logging.
   def myprint(msg, *args, **kwargs):
-    print(msg % args)
+    pass
+    # print(msg % args)
 
   logging.info = myprint
   logging.warn = myprint
   logging.error = myprint
   # @title Model and dataset configuration
   # @markdown Change the directories to where you saved your capture and experiment.
-  project_root = './'
   if os.path.exists('/ssd/zhiwen/data/hypernerf/raw/'):
     data_root = '/ssd/zhiwen/data/hypernerf/raw/'
+    project_root = '/data/zwyan/hypernerf-barf'
   elif os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
     data_root = '/hdd/zhiwen/data/hypernerf/raw/'
+    project_root = '/data/zwyan/hypernerf-barf'
   elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
     data_root = '/home/zwyan/3d_cv/data/hypernerf/raw/'
+    project_root = '/home/zwyan/3d_cv/repos/hypernerf_barf'
   else:
     raise NotImplemented
 
@@ -181,14 +184,15 @@ def render_scene(dataset_name, exp_name, camera_path_name):
 
   # @title Define pmapped render function.
   devices = jax.devices()
+
   def _model_fn(key_0, key_1, key_2, params, rays_dict, extra_params):
     out = model.apply({'params': params},
                       rays_dict,
                       extra_params=extra_params,
                       rngs={
-                          'coarse': key_0,
-                          'fine': key_1,
-                          'voxel': key_2
+                        'coarse': key_0,
+                        'fine': key_1,
+                        'voxel': key_2
                       },
                       mutable=False,
                       screw_input_mode=spec_config.screw_input_mode,
@@ -196,8 +200,10 @@ def render_scene(dataset_name, exp_name, camera_path_name):
                       use_predicted_norm=spec_config.use_predicted_norm,
                       return_points=False,
                       return_nv_details=False,
-                      norm_voxel_ratio=1, # inference ratio is always 1
-                     )
+                      norm_voxel_ratio=1,  # inference ratio is always 1
+                      mask_ratio=1,  # inference ratio is always 1
+                      sharp_weights_std=0.1
+                      )
     return jax.lax.all_gather(out, axis_name='batch')
 
   pmodel_fn = jax.pmap(
@@ -218,20 +224,22 @@ def render_scene(dataset_name, exp_name, camera_path_name):
   test_camera_paths = datasource.glob_cameras(camera_dir)
   test_cameras = utils.parallel_map(datasource.load_camera, test_camera_paths, show_pbar=True)
 
+  mask_dir = Path(data_dir, 'mask', f"{int(exp_config.image_scale)}x")
+  print(f"Loading masks from {mask_dir}")
+  mask_list = datasets.load_camera_masks(mask_dir, test_camera_paths, exp_config.image_scale)
+
   # @title Render video frames.
   rng = rng + jax.process_index()  # Make random seed separate across hosts.
   keys = random.split(rng, len(devices))
 
   results = []
-  relevant_keys = ['med_depth', 'ray_color_delta_x', 'ray_delta_x', 'ray_hyper_c', 'ray_hyper_points',
-                   'ray_norm', 'ray_inter_norm', 'ray_rotation_field', 'ray_translation_field',
-                   'rgb', 'sigma']
+  relevant_keys = ['rgb', 'med_depth', 'ray_norm', 'ray_delta_x', 'med_points', 'ray_predicted_mask']
   raw_result_list = []
   if interval == 1:
     camera_path_name += "_full"
 
   for i in tqdm(range(0, len(test_cameras), interval)):
-    print(f'Rendering frame {i + 1}/{len(test_cameras)}')
+    # print(f'Rendering frame {i + 1}/{len(test_cameras)}')
     camera = test_cameras[i]
     batch = datasets.camera_to_rays(camera)
     if not camera_path_name.startswith('vrig'):
@@ -247,19 +255,21 @@ def render_scene(dataset_name, exp_name, camera_path_name):
         'warp': jnp.ones_like(batch['origins'][..., 0, jnp.newaxis], jnp.uint32) * i,
         'camera': jnp.ones_like(batch['origins'][..., 0, jnp.newaxis], jnp.uint32) * ((i + 1) % 2 + 1)
       }
+    mask = mask_list[i]
+    batch['mask'] = mask
 
     render = render_fn(state, batch, rng=rng)
 
-    # # save raw results for future use
-    # raw_result = {}
+    # save raw results for future use
+    raw_result = {}
     # value_size = 0
-    # for key in render:
-    #   if not key in relevant_keys:
-    #     continue
-    #   raw_result[key] = np.array(render[key])
-    #   # print(key, raw_result[key].size * raw_result[key].itemsize)
-    #   value_size += raw_result[key].size * raw_result[key].itemsize
-    # raw_result_list.append(raw_result)
+    for key in render:
+      if not key in relevant_keys:
+        continue
+      raw_result[key] = np.array(render[key])
+      # print(key, raw_result[key].size * raw_result[key].itemsize)
+      # value_size += raw_result[key].size * raw_result[key].itemsize
+    raw_result_list.append(raw_result)
 
     rgb = np.array(render['rgb'])
     depth_med = np.array(render['med_depth'])
@@ -270,53 +280,36 @@ def render_scene(dataset_name, exp_name, camera_path_name):
     ray_norm = model_utils.normalize_vector(ray_norm)
     ray_norm = ray_norm / 2.0 + 0.5
 
-    if 'ray_inter_norm' in render:
-      ray_inter_norm = np.array(render['ray_inter_norm'])
-      ray_inter_norm = ray_inter_norm / 2.0 + 0.5
-    else:
-      ray_inter_norm = np.zeros_like(ray_norm)
-
     ray_delta_x = np.array(render['ray_delta_x'])
     ray_delta_x = np.abs(ray_delta_x)
+    ray_delta_x = ray_delta_x * 10
 
-    ray_hyper_points = np.array(render['ray_hyper_points'])
-    ray_hyper_points = np.abs(ray_hyper_points)
-    if ray_hyper_points.shape[-1] > 0:
-      ray_hyper_points = ray_hyper_points / np.max(ray_hyper_points)
-      dummy_hyper = np.ones([ray_hyper_points.shape[0], ray_hyper_points.shape[1], 1]) * 0
-      ray_hyper_points = np.concatenate([ray_hyper_points, dummy_hyper], axis=-1)
+    med_points = np.array(render['med_points'])
+    med_points = (med_points + 1.5) / 3     # -1.5 ~ 1.5 --> 0 ~ 1
+
+    if 'ray_predicted_mask' in render:
+      ray_predicted_mask = np.array(render['ray_predicted_mask'])
+      ray_predicted_mask = np.broadcast_to(ray_predicted_mask, dummy_image.shape)  # grayscale to color
     else:
-      ray_hyper_points = dummy_image
+      ray_predicted_mask = dummy_image
 
-    ray_hyper_c = np.array(render['ray_hyper_c'])
-    ray_hyper_c = np.abs(ray_hyper_c)
-    ray_hyper_c = ray_hyper_c / np.max(ray_hyper_c)
-    if ray_hyper_c.shape[-1] == 2:
-      dummy_hyper = np.ones([ray_hyper_c.shape[0], ray_hyper_points.shape[1], 1]) * 0
-      ray_hyper_c = np.concatenate([ray_hyper_c, dummy_hyper], axis=-1)
-    else:
-      ray_hyper_c = ray_hyper_c[..., :3]
+    results.append((rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image))
 
-    if 'ray_color_delta_x' in render:
-      ray_color_delta_x = np.array(render['ray_color_delta_x'])
-      ray_color_delta_x = (ray_color_delta_x - np.min(ray_color_delta_x)) * 100
-    else:
-      ray_color_delta_x = dummy_image
-
-    depth_viz = viz.colorize(depth_med.squeeze(), cmin=datasource.near, cmax=datasource.far, invert=True)
-
-    results.append((rgb, depth_viz, ray_norm, ray_inter_norm,
-                    ray_color_delta_x, ray_delta_x, ray_hyper_points, ray_hyper_c, dummy_image))
-    # mediapy.show_images([rgb, depth_viz, sigma_gradient, ray_inter_norm,
-    #                      ray_color_delta_x, ray_translation_field, ray_hyper_points, ray_hyper_c], columns=4)
+  # save raw render results
+  raw_result_save_path = os.path.join(train_dir, "render_result_{}".format(camera_path_name))
+  with open(raw_result_save_path, "wb+") as f:
+    np.save(f, raw_result_list)
 
   # @title Show rendered video.
   fps = 30  # @param {type:'number'}
   rgb_frames = []
   debug_frames = []
-  for rgb, depth_viz, sigma_gradient, sigma_gradient_r, ray_rotation_field, ray_translation_field, ray_hyper_points, ray_hyper_c, dummy_image in results:
-    row1 = np.concatenate([rgb, depth_viz, sigma_gradient, sigma_gradient_r], axis=1)
-    row2 = np.concatenate([ray_rotation_field, ray_translation_field, ray_hyper_points, ray_hyper_c], axis=1)
+  for rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image in results:
+    depth_viz = viz.colorize(depth_med.squeeze(), cmin=datasource.near, cmax=datasource.far, invert=True)
+    med_points = med_points[..., :3].squeeze()
+
+    row1 = np.concatenate([rgb, depth_viz, ray_norm], axis=1)
+    row2 = np.concatenate([ray_predicted_mask, ray_delta_x, med_points], axis=1)
     debug_frame = np.concatenate([row1, row2], axis=0)
     debug_frames.append(image_utils.image_to_uint8(debug_frame))
     rgb_frames.append(image_utils.image_to_uint8(rgb))
@@ -331,7 +324,7 @@ def render_scene(dataset_name, exp_name, camera_path_name):
 
 
 if __name__ == "__main__":
-  render_scene(dataset_name, exp_name, camera_path_name)
+  render_scene(dataset_name, exp_name, camera_path_name, interval)
 
 
 

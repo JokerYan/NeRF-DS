@@ -51,7 +51,7 @@ exp_root = "./experiments/"
 # if os.path.isdir('/ssd/zhiwen/exp/hypernerf'):
 #   exp_root = '/ssd/zhiwen/exp/hypernerf'
 
-# training schedule in the tuple of dataset_name, exp_name, config_key, gin_bindings
+# training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp34"),
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp35"),
@@ -66,11 +66,15 @@ training_schedule = [
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp36"),
 
   # gpu server
-  ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp39"),
-  ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp38"),
+  # ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp39"),
+  # ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp38"),
+  #
+  # ("020_sieve_01_novel_view", "020_sv01_nv", "base", "exp01"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "base", "exp01"),
 
-  ("020_sieve_01_novel_view", "020_sv01_nv", "base", "exp01"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "base", "exp01"),
+  ('017_cup_03_novel_view', '017_c03_nv', "ms", "exp39"),
+  ('019_plate_01_novel_view', '019_p01_nv', "ms", "exp39"),
+
   #
   # # gpu server
   # ("020_sieve_01_novel_view", "020_sv01_nv", "ms", "exp36"),
