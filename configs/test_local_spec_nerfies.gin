@@ -60,7 +60,7 @@ TrainConfig.warp_alpha_schedule = {
 }
 
 TrainConfig.use_weight_norm = False
-TrainConfig.use_elastic_loss = True
+TrainConfig.use_elastic_loss = False
 TrainConfig.use_background_loss = True
 TrainConfig.background_loss_weight = 1.0
 

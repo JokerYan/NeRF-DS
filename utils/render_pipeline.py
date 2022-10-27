@@ -5,20 +5,20 @@ camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp36"),
-  ("011_bell_07_novel_view", "011_b07_nv", "ref", "exp01"),
-  ("011_bell_07_novel_view", "011_b07_nv", "base", "exp01"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp36"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ref", "exp01"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "base", "exp01"),
+  #
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp36"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "ref", "exp01"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "base", "exp01"),
+  #
+  # ('018_as_01_novel_view', '018_a01_nv', "ms", "exp36"),
+  # ('018_as_01_novel_view', '018_a01_nv', "ref", "exp01"),
+  # ('018_as_01_novel_view', '018_a01_nv', "base", "exp01"),
 
-  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp36"),
-  ("015_cup_02_novel_view", "015_c02_nv", "ref", "exp01"),
-  ("015_cup_02_novel_view", "015_c02_nv", "base", "exp01"),
-
-  ('018_as_01_novel_view', '018_a01_nv', "ms", "exp36"),
-  ('018_as_01_novel_view', '018_a01_nv', "ref", "exp01"),
-  ('018_as_01_novel_view', '018_a01_nv', "base", "exp01"),
-
-  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp36"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "ref", "exp01"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp36"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ref", "exp01"),
   ("021_basin_01_novel_view", "021_bs01_nv", "base", "exp01"),
 ]
 
