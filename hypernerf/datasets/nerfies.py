@@ -116,7 +116,8 @@ class NerfiesDataSource(core.DataSource):
 
     self.rgb_dir = gpath.GPath(data_dir, 'rgb', f'{image_scale}x')
     self.depth_dir = gpath.GPath(data_dir, 'depth', f'{image_scale}x')
-    self.mask_dir = gpath.GPath(data_dir, 'mask', f'{image_scale}x')
+    # self.mask_dir = gpath.GPath(data_dir, 'mask', f'{image_scale}x')
+    self.mask_dir = gpath.GPath(data_dir, 'resized_mask', f'{image_scale}x')
     if camera_type not in ['json']:
       raise ValueError('The camera type needs to be json.')
     self.camera_type = camera_type

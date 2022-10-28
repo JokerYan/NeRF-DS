@@ -112,7 +112,7 @@ def load_camera_pairs_with_masks(datasource, config_dict):
 
 def load_camera_masks(camera_paths, config_dict):
   exp_config = config_dict['exp_config']
-  mask_dir = Path(data_dir, 'mask', f"{int(exp_config.image_scale)}x")
+  mask_dir = Path(data_dir, 'resized_mask', f"{int(exp_config.image_scale)}x")
   print(f"Loading masks from {mask_dir}")
   mask_list = datasets.load_camera_masks(mask_dir, camera_paths, exp_config.image_scale)
   return mask_list

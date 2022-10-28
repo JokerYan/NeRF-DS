@@ -224,7 +224,7 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
   test_camera_paths = datasource.glob_cameras(camera_dir)
   test_cameras = utils.parallel_map(datasource.load_camera, test_camera_paths, show_pbar=True)
 
-  mask_dir = Path(data_dir, 'mask', f"{int(exp_config.image_scale)}x")
+  mask_dir = Path(data_dir, 'resized_mask', f"{int(exp_config.image_scale)}x")
   print(f"Loading masks from {mask_dir}")
   mask_list = datasets.load_camera_masks(mask_dir, test_camera_paths, exp_config.image_scale)
 
