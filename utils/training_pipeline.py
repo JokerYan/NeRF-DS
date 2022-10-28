@@ -53,16 +53,19 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
-  ('018_as_01_novel_view', '018_a01_nv', "nerfies", "exp01"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "nerfies", "exp01"),
+  ('022_sieve_02_novel_view', '022_sv02_nv', 'ms', 'exp39')
 
-  # gpu server
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp39"),
-  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp39"),
-  ('018_as_01_novel_view', '018_a01_nv', "ms", "exp39"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp39"),
+  # finished
+  # ('018_as_01_novel_view', '018_a01_nv', "nerfies", "exp01"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "nerfies", "exp01"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp39"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp39"),
 
+  # not finished
+  # ('018_as_01_novel_view', '018_a01_nv', "ms", "exp39"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp39"),
 
+  # finished
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp34"),
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp35"),
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp31"),
