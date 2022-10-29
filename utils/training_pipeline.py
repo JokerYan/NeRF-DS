@@ -53,12 +53,22 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp40"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp40"),
+
+  # ("022_sieve_02_novel_view", "022_sv02_nv", "ms", "exp40"),
+  # ("022_sieve_02_novel_view", "022_sv02_nv", "ref", "exp01"),
+
+  ("023_tray_01_novel_view", "023_tr01_nv", "ref", "exp01"),
+  ("023_tray_01_novel_view", "023_tr01_nv", "ms", "exp40"),
 
   # gpu server
-  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp40"),
-  ('018_as_01_novel_view', '018_a01_nv', "ms", "exp40"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp40"),
+  ("025_press_01_novel_view", "025_ps01_nv", "ms", "exp40"),
+  ("025_press_01_novel_view", "025_ps01_nv", "ref", "exp01"),
+
+  # gpu server
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp40"),
+  # ('018_as_01_novel_view', '018_a01_nv', "ms", "exp40"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp40"),
 
 
   # ('022_sieve_02_novel_view', '022_sv02_nv', 'ms', 'exp39')
