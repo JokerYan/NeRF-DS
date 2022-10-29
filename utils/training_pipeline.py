@@ -58,15 +58,19 @@ training_schedule = [
   # ("022_sieve_02_novel_view", "022_sv02_nv", "ms", "exp40"),
   # ("022_sieve_02_novel_view", "022_sv02_nv", "ref", "exp01"),
 
-  ("023_tray_01_novel_view", "023_tr01_nv", "ref", "exp01"),
-  ("023_tray_01_novel_view", "023_tr01_nv", "ms", "exp40"),
+  ("025_press_01_novel_view", "025_ps01_nv", "base", "exp01"),
+  # ("023_tray_01_novel_view", "023_tr01_nv", "ref", "exp01"),
+  # ("023_tray_01_novel_view", "023_tr01_nv", "ms", "exp40"),
 
   # gpu server
-  ("025_press_01_novel_view", "025_ps01_nv", "ms", "exp40"),
-  ("025_press_01_novel_view", "025_ps01_nv", "ref", "exp01"),
+  ("026_bowl_02_novel_view", "026_bo02_nv", "ms", "exp40"),
+  ("026_bowl_02_novel_view", "026_bo02_nv", "ref", "exp01"),
 
-  ("024_box_01_novel_view", "024_bx01_nv", "ms", "exp40"),
-  ("024_box_01_novel_view", "024_bx01_nv", "ref", "exp01"),
+  # ("025_press_01_novel_view", "025_ps01_nv", "ms", "exp40"),
+  # ("025_press_01_novel_view", "025_ps01_nv", "ref", "exp01"),
+  #
+  # ("024_box_01_novel_view", "024_bx01_nv", "ms", "exp40"),
+  # ("024_box_01_novel_view", "024_bx01_nv", "ref", "exp01"),
 
   # gpu server
   # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp40"),

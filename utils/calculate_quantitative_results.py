@@ -66,7 +66,8 @@ else:
 # dataset = '019_plate_01_novel_view'
 # dataset = '020_sieve_01_novel_view'
 # dataset = '021_basin_01_novel_view'
-dataset = '022_sieve_02_novel_view'
+# dataset = '022_sieve_02_novel_view'
+dataset = '025_press_01_novel_view'
 
 data_dir = os.path.join(data_root, dataset)
 
@@ -79,7 +80,8 @@ data_dir = os.path.join(data_root, dataset)
 # experiment_name = "019_p01_nv_ms_exp39"
 # experiment_name = "020_sv01_nv_base_exp01"
 # experiment_name = "021_bs01_nv_base_exp01"
-experiment_name = "022_sv02_nv_ms_exp40"
+# experiment_name = "022_sv02_nv_ms_exp40"
+experiment_name = "025_ps01_nv_ms_exp40"
 
 skip = True
 if skip:
