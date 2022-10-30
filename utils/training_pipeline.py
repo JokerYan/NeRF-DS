@@ -53,9 +53,12 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
+  # ("022_sieve_02_novel_view", "022_sv02_nv", "nerfies", "exp01"),
+  ("025_press_01_novel_view", "025_ps01_nv", "nerfies", "exp01"),
+
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp40"),
-  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp40"),
-  ("026_bowl_02_novel_view", "026_bo02_nv", "base", "exp01"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp40"),
+  # ("026_bowl_02_novel_view", "026_bo02_nv", "base", "exp01"),
 
   # ("022_sieve_02_novel_view", "022_sv02_nv", "ms", "exp40"),
   # ("022_sieve_02_novel_view", "022_sv02_nv", "ref", "exp01"),
@@ -71,6 +74,9 @@ training_schedule = [
 
   ('027_dryer_01_novel_view', '027_dr01_nv', "ms", "exp40"),
   ('027_dryer_01_novel_view', '027_dr01_nv', "ref", "exp01"),
+
+  ('028_plate_03_novel_view', '028_p03_nv', 'ms', "exp40"),
+  ('028_plate_03_novel_view', '028_p03_nv', 'ref', "exp01"),
 
   # gpu server
   # ("026_bowl_02_novel_view", "026_bo02_nv", "ms", "exp40"),
