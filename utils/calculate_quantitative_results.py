@@ -56,7 +56,7 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
 else:
     raise NotImplemented
 
-# dataset = '011_bell_07_novel_view'
+dataset = '011_bell_07_novel_view'
 # dataset = '012_cup_01_novel_view'
 # dataset = '013_bowl_01_novel_view'
 # dataset = '014_spoon_02_novel_view'
@@ -65,13 +65,14 @@ else:
 # dataset = '018_as_01_novel_view'
 # dataset = '019_plate_01_novel_view'
 # dataset = '020_sieve_01_novel_view'
-dataset = '021_basin_01_novel_view'
+# dataset = '021_basin_01_novel_view'
 # dataset = '022_sieve_02_novel_view'
 # dataset = '025_press_01_novel_view'
+# dataset = '026_bowl_02_novel_view'
 
 data_dir = os.path.join(data_root, dataset)
 
-# experiment_name = "011_b07_nv_nerfies_exp01"
+experiment_name = "011_b07_nv_ms_exp40"
 # experiment_name = "013_bo01_nv_base_exp01"
 # experiment_name = "014_s02_nv_ms_exp36"
 # experiment_name = "015_c02_nv_nerfies_exp01"
@@ -79,9 +80,10 @@ data_dir = os.path.join(data_root, dataset)
 # experiment_name = "018_a01_nv_nerfies_exp01"
 # experiment_name = "019_p01_nv_ms_exp39"
 # experiment_name = "020_sv01_nv_base_exp01"
-experiment_name = "021_bs01_nv_nerfies_exp01"
+# experiment_name = "021_bs01_nv_nerfies_exp01"
 # experiment_name = "022_sv02_nv_ms_exp40"
 # experiment_name = "025_ps01_nv_ref_exp01"
+# experiment_name = "026_bo02_nv_ref_exp01"
 
 skip = True
 if skip:
