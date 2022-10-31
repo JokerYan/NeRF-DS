@@ -317,11 +317,6 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
   mediapy.show_video(rgb_frames, fps=fps, title="result_{}_rgb".format(camera_path_name))
   mediapy.show_video(debug_frames, fps=fps, title="result_{}".format(camera_path_name))
 
-  # save raw render results
-  raw_result_save_path = os.path.join(train_dir, "render_result_{}".format(camera_path_name))
-  with open(raw_result_save_path, "wb+") as f:
-    np.save(f, raw_result_list)
-
 
 if __name__ == "__main__":
   render_scene(dataset_name, exp_name, camera_path_name, interval)
