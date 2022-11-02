@@ -268,5 +268,6 @@ if __name__ == "__main__":
       # else:
       #   raise NotImplementedError
       train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name)
-    except:
+    except Exception as e:
+      print(e)
       print("Error encountered when running {}".format(exp_name))

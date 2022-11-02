@@ -185,6 +185,7 @@ pipeline_settings = {
                   ]
               }"""
              ],
+    },
     'mso': {
       'exp01': ["ExperimentConfig.image_scale = 1",
               "NerfModel.use_predicted_mask = True",
@@ -203,6 +204,5 @@ pipeline_settings = {
                   ]
               }"""
              ],
-    }
   },
 }
