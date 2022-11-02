@@ -6,6 +6,7 @@ import lpips
 import torch
 import tensorflow as tf
 from tqdm import tqdm
+from glob import glob
 
 from hypernerf import image_utils
 from hypernerf import utils
@@ -55,6 +56,8 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
     experiment_root = '/home/zwyan/3d_cv/repos/hypernerf_barf/experiments/'
 else:
     raise NotImplemented
+refnerf_root = '/home/zwyan/3d_cv/repos/multinerf/experiments/spec/'
+
 
 # dataset = '011_bell_07_novel_view'
 # dataset = '012_cup_01_novel_view'
@@ -63,7 +66,7 @@ else:
 # dataset = '015_cup_02_novel_view'
 # dataset = '016_spoon_03_novel_view'
 # dataset = '017_cup_03_novel_view'
-# dataset = '018_as_01_novel_view'
+dataset = '018_as_01_novel_view'
 # dataset = '019_plate_01_novel_view'
 # dataset = '020_sieve_01_novel_view'
 # dataset = '021_basin_01_novel_view'
@@ -71,11 +74,12 @@ else:
 # dataset = '025_press_01_novel_view'
 # dataset = '026_bowl_02_novel_view'
 # dataset = '027_dryer_01_novel_view'
-dataset = '028_plate_03_novel_view'
+# dataset = '028_plate_03_novel_view'
 # dataset = '029_2cup_01_novel_view'
 
 data_dir = os.path.join(data_root, dataset)
 
+experiment_name = 'refnerf'
 # experiment_name = "011_b07_nv_ms_exp40"
 # experiment_name = "013_bo01_nv_base_exp01"
 # experiment_name = "014_s02_nv_ms_exp36"
@@ -90,8 +94,8 @@ data_dir = os.path.join(data_root, dataset)
 # experiment_name = "025_ps01_nv_base_exp01"
 # experiment_name = "026_bo02_nv_base_exp01"
 # experiment_name = "027_dr01_nv_ref_exp01"
-experiment_name = "028_p03_nv_base_exp01"
-# experiment_name = "029_2c01_nv_ms_exp40"
+# experiment_name = "028_p03_nv_base_exp01"
+# experiment_name = "029_2c01_nv_base_exp01"
 
 skip = True
 if skip:
@@ -117,28 +121,45 @@ for i in range(0, len(val_ids), video_render_step):
 target_shape = gt_images[0].shape
 
 # load rendered video
-experiment_dir = os.path.join(experiment_root, experiment_name)
-if skip:
-  video_name = 'result_vrig_camera.mp4'
-else:
-  video_name = 'result_vrig_camera_full.mp4'
-video_path = os.path.join(experiment_dir, video_name)
-
-cap = cv2.VideoCapture(video_path)
 frame_list = []
-while(cap.isOpened()):
-  ret, frame = cap.read()
-  if frame is None:
-    break
-  if frame.shape == target_shape:
-    pass
-  elif frame.shape == tuple(target_shape * np.array([2, 4, 1])):
-    frame = frame[:target_shape[0], :target_shape[1], :]
-  elif frame.shape == tuple(target_shape * np.array([2, 3, 1])):
-    frame = frame[:target_shape[0], :target_shape[1], :]
+if experiment_name == 'refnerf':
+  assert dataset.endswith('_novel_view')
+  dataset = dataset[:-11]
+  experiment_name = f'{dataset}_refnerf'
+  experiment_dir = os.path.join(refnerf_root, experiment_name)
+  render_dir = os.path.join(refnerf_root, experiment_name, 'render', 'test_preds_step_250000', 'color_*.png')
+  filepath_list = []
+  for filepath in glob(render_dir):
+    filepath_list.append(filepath)
+  filepath_list = sorted(filepath_list)
+
+  for filepath in filepath_list:
+    frame = cv2.imread(filepath)
+    frame_list.append(frame)
+
+else:
+  experiment_dir = os.path.join(experiment_root, experiment_name)
+  if skip:
+    video_name = 'result_vrig_camera.mp4'
   else:
-    raise Exception
-  frame_list.append(frame)
+    video_name = 'result_vrig_camera_full.mp4'
+  video_path = os.path.join(experiment_dir, video_name)
+
+  cap = cv2.VideoCapture(video_path)
+  frame_list = []
+  while(cap.isOpened()):
+    ret, frame = cap.read()
+    if frame is None:
+      break
+    if frame.shape == target_shape:
+      pass
+    elif frame.shape == tuple(target_shape * np.array([2, 4, 1])):
+      frame = frame[:target_shape[0], :target_shape[1], :]
+    elif frame.shape == tuple(target_shape * np.array([2, 3, 1])):
+      frame = frame[:target_shape[0], :target_shape[1], :]
+    else:
+      raise Exception
+    frame_list.append(frame)
 
 assert len(gt_images) == len(frame_list), (len(gt_images), len(frame_list))
 assert gt_images[0].shape == frame_list[0].shape, (gt_images[0].shape, frame_list[0].shape)

@@ -185,5 +185,24 @@ pipeline_settings = {
                   ]
               }"""
              ],
-  }
+    'mso': {
+      'exp01': ["ExperimentConfig.image_scale = 1",
+              "NerfModel.use_predicted_mask = True",
+              "NerfModel.use_3d_mask = True",
+              "NerfModel.use_mask_in_rgb = False",
+              "SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}",
+              "MaskMLP.depth = 8",
+              "MaskMLP.width = 128",
+              "MaskMLP.output_activation = @jax.nn.relu",
+              "NerfModel.use_mask_sharp_weights = True",
+              """SpecularConfig.sharp_mask_std_schedule = {
+                  'type': 'piecewise',
+                  'schedules': [
+                      (30000, ('exponential', 1, 0.1, 30000)),
+                      (220000, ('constant', 0.1))
+                  ]
+              }"""
+             ],
+    }
+  },
 }

@@ -24,15 +24,17 @@ else:
 # dataset = '020_sieve_01_novel_view'
 # dataset = '021_basin_01_novel_view'
 # dataset = '022_sieve_02_novel_view'
-dataset = '025_press_01_novel_view'
+# dataset = '025_press_01_novel_view'
 # dataset = '026_bowl_02_novel_view'
+# dataset = '028_plate_03_novel_view'
+dataset = '029_2cup_01_novel_view'
 data_dir = os.path.join(data_root, dataset)
 save = False
 
 video_render_step = 9
 target_height = 360
 
-# experiment_name_list = ['011_b07_nv_ms_exp36', '011_b07_nv_ms_exp28', '011_b07_nv_ref_exp01']
+# experiment_name_list = ['011_b07_nv_ms_exp40', '011_b07_nv_ms_exp28', '011_b07_nv_ref_exp01']
 # experiment_name_list = ['012_c01_nv_ms_exp28', '012_c01_nv_ref_exp01']
 # experiment_name_list = ['013_bo01_nv_ms_exp14', '013_bo01_nv_ref_exp01']
 # experiment_name_list = ['014_s02_nv_ms_exp20', '014_s02_nv_ref_exp01']
@@ -43,8 +45,10 @@ target_height = 360
 # experiment_name_list = ['020_sv01_nv_ms_exp36', '020_sv01_nv_ref_exp01']
 # experiment_name_list = ['021_bs01_nv_ms_exp36', '021_bs01_nv_ref_exp01']
 # experiment_name_list = ['022_sv02_nv_ms_exp40', '022_sv02_nv_ref_exp01']
-experiment_name_list = ['025_ps01_nv_ms_exp40', '025_ps01_nv_ref_exp01']
+# experiment_name_list = ['025_ps01_nv_ms_exp40', '025_ps01_nv_ref_exp01']
 # experiment_name_list = ['026_bo02_nv_ms_exp40', '026_bo02_nv_ref_exp01', '026_bo02_nv_base_exp01']
+# experiment_name_list = ['028_p03_nv_ms_exp40', '028_p03_nv_base_exp01']
+experiment_name_list = ['029_2c01_nv_ms_exp40', '029_2c01_nv_base_exp01']
 
 video_path_list = []
 for experiment_name in experiment_name_list:
