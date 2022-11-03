@@ -54,15 +54,19 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
-  ("011_bell_07_novel_view", "011_b07_nv", "mso", "exp01"),
-  ("015_cup_02_novel_view", "015_c02_nv", "mso", "exp01"),
-  ("018_as_01_novel_view", "018_a01_nv", "mso", "exp01"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "mso", "exp01"),
-  ("022_sieve_02_novel_view", "022_sv02_nv", "mso", "exp01"),
-  ("025_press_01_novel_view", "025_ps01_nv", "mso", "exp01"),
-  ("026_bowl_02_novel_view", "026_bo02_nv", "mso", "exp01"),
-  ('028_plate_03_novel_view', '028_p03_nv', 'mso', "exp01"),
-  ("029_2cup_01_novel_view", "029_2c01_nv", "mso", "exp01"),
+  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp40"),
+  ("026_bowl_02_novel_view", "026_bo02_nv", "nerfies", "exp01"),
+  ('028_plate_03_novel_view', '028_p03_nv', 'nerfies', "exp01"),
+  #
+  # ("011_bell_07_novel_view", "011_b07_nv", "mso", "exp01"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "mso", "exp01"),
+  # ("018_as_01_novel_view", "018_a01_nv", "mso", "exp01"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "mso", "exp01"),
+  # ("022_sieve_02_novel_view", "022_sv02_nv", "mso", "exp01"),
+  # ("025_press_01_novel_view", "025_ps01_nv", "mso", "exp01"),
+  # ("026_bowl_02_novel_view", "026_bo02_nv", "mso", "exp01"),
+  # ('028_plate_03_novel_view', '028_p03_nv', 'mso', "exp01"),
+  # ("029_2cup_01_novel_view", "029_2c01_nv", "mso", "exp01"),
 
   # ("022_sieve_02_novel_view", "022_sv02_nv", "nerfies", "exp01"),
   # ("025_press_01_novel_view", "025_ps01_nv", "nerfies", "exp01"),
