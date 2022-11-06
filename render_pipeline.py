@@ -3,10 +3,13 @@ from render import render_scene
 
 interval = 1
 # camera_path_name = 'fix_camera_93'
-camera_path_name = 'vrig_camera'
+default_camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
+  ("americano_masked", "am", "ms", "exp42", "fix_camera_1"),
+  ("americano_masked", "am", "base", "exp02", "fix_camera_1"),
+
   ("011_bell_07_novel_view", "011_b07_nv", "base", "exp01"),
   ("015_cup_02_novel_view", "015_c02_nv", "base", "exp01"),
   ("018_as_01_novel_view", "018_a01_nv", "base", "exp01"),
@@ -72,7 +75,14 @@ if __name__ == "__main__":
       continue
     if args.exp_end is not None and not i < args.exp_end:
       continue
-    dataset_name, exp_prefix, config_key, exp_idx = scene
+
+    if len(scene) == 4:
+      dataset_name, exp_prefix, config_key, exp_idx = scene
+      camera_path_name = default_camera_path_name
+    elif len(scene) == 5:
+      dataset_name, exp_prefix, config_key, exp_idx, camera_path_name = scene
+    else:
+      raise Exception
     exp_name = f'{exp_prefix}_{config_key}_{exp_idx}'
     print(f"rendering {dataset_name} {exp_name}")
     try:
