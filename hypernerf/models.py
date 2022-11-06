@@ -786,6 +786,10 @@ class NerfModel(CustomModel):
 
   def apply_warp(self, points, warp_embed, extra_params):
     warp_embed = self.warp_embed(warp_embed)
+
+    # assume background has 0 mask
+    mask = jnp.zeros([*warp_embed.shape[:-1], 1])
+    warp_embed = jnp.concatenate([warp_embed, mask], axis=-1)
     return self.warp_field(points, warp_embed, extra_params)
 
   def get_bone_moving_mask(self, points, warp_embed):

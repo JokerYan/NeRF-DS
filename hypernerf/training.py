@@ -173,6 +173,7 @@ def compute_background_loss(model, state, params, key, points, noise_std,
   metadata = random.choice(key, model.warp_embeds, shape=(points.shape[0], 1))
   point_noise = noise_std * random.normal(key, points.shape)
   points = points + point_noise
+
   if model.use_bone:
     warp_fn = functools.partial(model.apply, method=model.get_bone_moving_mask)
     warp_fn = jax.vmap(warp_fn, in_axes=(None, 0, 0))
