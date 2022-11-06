@@ -221,7 +221,7 @@ def main(argv):
 
   # load canonical space camera
   canonical_camera = datasource.load_camera(datasource.train_ids[spec_config.canonical_idx], exp_config.image_scale)
-  mask_dir = gpath.GPath(datasource.data_dir) / 'mask' / f"{int(exp_config.image_scale)}x"
+  mask_dir = gpath.GPath(datasource.data_dir) / 'resized_mask' / f"{int(exp_config.image_scale)}x"
   canonical_mask_path = mask_dir / (datasource.train_ids[spec_config.canonical_idx] + ".png.png")
   canonical_mask = datasets.load_mask_from_path(canonical_mask_path, exp_config.image_scale)
   canonical_mask = cv2.blur(canonical_mask, ksize=(3, 3))[..., np.newaxis]

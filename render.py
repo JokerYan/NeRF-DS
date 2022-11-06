@@ -226,7 +226,7 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
 
   mask_dir = Path(data_dir, 'resized_mask', f"{int(exp_config.image_scale)}x")
   print(f"Loading masks from {mask_dir}")
-  mask_list = datasets.load_camera_masks(mask_dir, test_camera_paths, exp_config.image_scale)
+  mask_list = datasets.load_camera_masks(mask_dir, test_camera_paths, 1)  # already resized
 
   # @title Render video frames.
   rng = rng + jax.process_index()  # Make random seed separate across hosts.
