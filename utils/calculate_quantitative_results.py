@@ -48,6 +48,38 @@ def compute_lpips(image1: np.ndarray, image2: np.ndarray):
   return float(lpips)
 
 
+def calculate(gt_images, frame_list, trim_ratio=0):
+  assert len(gt_images) == len(frame_list), (len(gt_images), len(frame_list))
+  assert gt_images[0].shape == frame_list[0].shape, (gt_images[0].shape, frame_list[0].shape)
+
+  mse_list = []
+  psnr_list = []
+  ms_ssim_list = []
+  lpips_list = []
+  for i in tqdm(range(len(gt_images))):
+    gt_image = gt_images[i]
+    rendered_image = frame_list[i]
+
+    # normalize to 1
+    gt_image = gt_image / 255.0
+    rendered_image = rendered_image / 255.0
+
+    if trim_ratio > 0:
+      gt_image = trim_image(gt_image, trim_ratio)
+      rendered_image = trim_image(rendered_image, trim_ratio)
+
+    mse = ((rendered_image - gt_image) ** 2).mean()
+    psnr = utils.compute_psnr(mse)
+    ms_ssim = compute_multiscale_ssim(gt_image, rendered_image)
+    lpips = compute_lpips(gt_image, rendered_image)
+
+    mse_list.append(mse)
+    psnr_list.append(psnr)
+    ms_ssim_list.append(ms_ssim)
+    lpips_list.append(lpips)
+  return mse_list, psnr_list, ms_ssim_list, lpips_list
+
+
 if os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
     data_root = '/hdd/zhiwen/data/hypernerf/raw/'
     experiment_root = '/hdd/zhiwen/hypernerf_barf/experiments/'
@@ -97,104 +129,79 @@ data_dir = os.path.join(data_root, dataset)
 # experiment_name = "028_p03_nv_mso_exp01"
 experiment_name = "029_2c01_nv_mso_exp01"
 
-skip = True
-if skip:
-  video_render_step = 9
-else:
-  video_render_step = 1
-image_scale = 1
-trim_ratio = 0
 
-# load gt
-dataset_info_dir = os.path.join(data_dir, 'dataset.json')
-rgb_dir = os.path.join(data_dir, 'rgb', '{}x'.format(image_scale))
-
-with open(dataset_info_dir, 'r') as f:
-  dataset_info = json.load(f)
-val_ids = dataset_info['val_ids']
-gt_images = []
-for i in range(0, len(val_ids), video_render_step):
-  eval_id = val_ids[i]
-  gt_path = os.path.join(rgb_dir, eval_id + ".png")
-  gt_image = cv2.imread(gt_path)
-  gt_images.append(gt_image)
-target_shape = gt_images[0].shape
-
-# load rendered video
-frame_list = []
-if experiment_name == 'refnerf':
-  assert dataset.endswith('_novel_view')
-  dataset = dataset[:-11]
-  experiment_name = f'{dataset}_refnerf'
-  experiment_dir = os.path.join(refnerf_root, experiment_name)
-  render_dir = os.path.join(refnerf_root, experiment_name, 'render', 'test_preds_step_250000', 'color_*.png')
-  filepath_list = []
-  for filepath in glob(render_dir):
-    filepath_list.append(filepath)
-  filepath_list = sorted(filepath_list)
-
-  for filepath in filepath_list:
-    frame = cv2.imread(filepath)
-    frame_list.append(frame)
-
-else:
-  experiment_dir = os.path.join(experiment_root, experiment_name)
+if __name__ == "__main__":
+  skip = True
   if skip:
-    video_name = 'result_vrig_camera.mp4'
+    video_render_step = 9
   else:
-    video_name = 'result_vrig_camera_full.mp4'
-  video_path = os.path.join(experiment_dir, video_name)
+    video_render_step = 1
+  image_scale = 1
+  trim_ratio = 0
 
-  cap = cv2.VideoCapture(video_path)
+  # load gt
+  dataset_info_dir = os.path.join(data_dir, 'dataset.json')
+  rgb_dir = os.path.join(data_dir, 'rgb', '{}x'.format(image_scale))
+
+  with open(dataset_info_dir, 'r') as f:
+    dataset_info = json.load(f)
+  val_ids = dataset_info['val_ids']
+  gt_images = []
+  for i in range(0, len(val_ids), video_render_step):
+    eval_id = val_ids[i]
+    gt_path = os.path.join(rgb_dir, eval_id + ".png")
+    gt_image = cv2.imread(gt_path)
+    gt_images.append(gt_image)
+  target_shape = gt_images[0].shape
+
+  # load rendered video
   frame_list = []
-  while(cap.isOpened()):
-    ret, frame = cap.read()
-    if frame is None:
-      break
-    if frame.shape == target_shape:
-      pass
-    elif frame.shape == tuple(target_shape * np.array([2, 4, 1])):
-      frame = frame[:target_shape[0], :target_shape[1], :]
-    elif frame.shape == tuple(target_shape * np.array([2, 3, 1])):
-      frame = frame[:target_shape[0], :target_shape[1], :]
+  if experiment_name == 'refnerf':
+    assert dataset.endswith('_novel_view')
+    dataset = dataset[:-11]
+    experiment_name = f'{dataset}_refnerf'
+    experiment_dir = os.path.join(refnerf_root, experiment_name)
+    render_dir = os.path.join(refnerf_root, experiment_name, 'render', 'test_preds_step_250000', 'color_*.png')
+    filepath_list = []
+    for filepath in glob(render_dir):
+      filepath_list.append(filepath)
+    filepath_list = sorted(filepath_list)
+
+    for filepath in filepath_list:
+      frame = cv2.imread(filepath)
+      frame_list.append(frame)
+
+  else:
+    experiment_dir = os.path.join(experiment_root, experiment_name)
+    if skip:
+      video_name = 'result_vrig_camera.mp4'
     else:
-      raise Exception
-    frame_list.append(frame)
+      video_name = 'result_vrig_camera_full.mp4'
+    video_path = os.path.join(experiment_dir, video_name)
 
-assert len(gt_images) == len(frame_list), (len(gt_images), len(frame_list))
-assert gt_images[0].shape == frame_list[0].shape, (gt_images[0].shape, frame_list[0].shape)
+    cap = cv2.VideoCapture(video_path)
+    frame_list = []
+    while(cap.isOpened()):
+      ret, frame = cap.read()
+      if frame is None:
+        break
+      if frame.shape == target_shape:
+        pass
+      elif frame.shape == tuple(target_shape * np.array([2, 4, 1])):
+        frame = frame[:target_shape[0], :target_shape[1], :]
+      elif frame.shape == tuple(target_shape * np.array([2, 3, 1])):
+        frame = frame[:target_shape[0], :target_shape[1], :]
+      else:
+        raise Exception
+      frame_list.append(frame)
 
-mse_list = []
-psnr_list = []
-ms_ssim_list = []
-lpips_list = []
-for i in tqdm(range(len(gt_images))):
-  gt_image = gt_images[i]
-  rendered_image = frame_list[i]
+  mse_list, psnr_list, ms_ssim_list, lpips_list = calculate(gt_images, frame_list, trim_ratio)
 
-  # normalize to 1
-  gt_image = gt_image / 255.0
-  rendered_image = rendered_image / 255.0
+  result_str = "mse: {:.5f} psnr: {:.3f} ms_ssim: {:.3f} lpips: {:.3f}".format(
+    np.mean(mse_list), np.mean(psnr_list), np.mean(ms_ssim_list), np.mean(lpips_list))
+  print(result_str)
 
-  if trim_ratio > 0:
-    gt_image = trim_image(gt_image, trim_ratio)
-    rendered_image = trim_image(rendered_image, trim_ratio)
-
-  mse = ((rendered_image - gt_image)**2).mean()
-  psnr = utils.compute_psnr(mse)
-  ms_ssim = compute_multiscale_ssim(gt_image, rendered_image)
-  lpips = compute_lpips(gt_image, rendered_image)
-
-  mse_list.append(mse)
-  psnr_list.append(psnr)
-  ms_ssim_list.append(ms_ssim)
-  lpips_list.append(lpips)
-
-result_str = "mse: {:.5f} psnr: {:.3f} ms_ssim: {:.3f} lpips: {:.3f}".format(
-  np.mean(mse_list), np.mean(psnr_list), np.mean(ms_ssim_list), np.mean(lpips_list))
-print(result_str)
-
-# save results to txt
-save_path = os.path.join(experiment_dir, 'quantitative_results.txt')
-with open(save_path, 'w+') as f:
-  f.write(result_str)
+  # save results to txt
+  save_path = os.path.join(experiment_dir, 'quantitative_results.txt')
+  with open(save_path, 'w+') as f:
+    f.write(result_str)

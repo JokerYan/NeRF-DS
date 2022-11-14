@@ -76,3 +76,7 @@ dataset/
 
 # slurm
 log_slurm/
+
+# experiments and evaluations
+experiments/
+evaluations/

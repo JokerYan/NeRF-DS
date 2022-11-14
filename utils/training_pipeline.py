@@ -54,10 +54,18 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp50"),
-  ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp50"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp50"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp51"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp52"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp53"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp54"),
 
-  ("025_press_01_novel_view", "025_ps01_nv", "ms", "exp41"),
+  # ("americano_masked", "am", "base", "exp03"),
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp50"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp50"),
+  #
+  # ("025_press_01_novel_view", "025_ps01_nv", "ms", "exp41"),
+
   # ("americano_masked", "am", "ms", "exp42"),
   # ("americano_masked", "am", "base", "exp02"),
 
