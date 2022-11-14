@@ -24,7 +24,7 @@ exp_configs = [
   ("nerfies", "exp01"),
   ("refnerf", ""),
 ]
-out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/images'
+out_dir_default = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/images'
 
 def concat_images(images, gap=0):
   height, width, channel = images[0].shape
@@ -47,7 +47,7 @@ def add_text_to_image(image, text):
   return image
 
 
-def select_rgb_for_dataset(dataset, selected_exp_configs):
+def select_rgb_for_dataset(dataset, selected_exp_configs, name_prefix=None):
   dataset_nv = f'{dataset}_novel_view'
   images_list = []
   name_list = []
@@ -84,14 +84,26 @@ def select_rgb_for_dataset(dataset, selected_exp_configs):
     elif key == ord('s'):
       full_image = concat_images(cur_image_list, gap=10)
       image_name = f'{dataset}_{idx}.png'
+      if name_prefix is not None:
+        out_dir = os.path.join(out_dir_default, name_prefix)
+        os.makedirs(out_dir, exist_ok=True)
+      else:
+        out_dir = out_dir_default
       image_path = os.path.join(out_dir, image_name)
       cv2.imwrite(image_path, full_image)
   cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-  dataset_idx = 2
-  exp_idx_list = [0, 3, 4, 5]   # vs baseline
-  # exp_idx_list = [0, 2, 1]   # vs ablation
+  dataset_idx = 0
+  # exp_idx_list = [0, 3, 4, 5]   # vs baseline
+  # name_prefix = None
+
+  # exp_idx_list = [0, 1]   # vs ablation
+  # name_prefix = 'ablation_ref'
+
+  exp_idx_list = [0, 2]   # vs ablation
+  name_prefix = 'ablation_mso'
+
   selected_exp_configs = [exp_configs[i] for i in exp_idx_list]
-  select_rgb_for_dataset(dataset_list[dataset_idx], selected_exp_configs)
+  select_rgb_for_dataset(dataset_list[dataset_idx], selected_exp_configs, name_prefix)

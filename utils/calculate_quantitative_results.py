@@ -91,7 +91,7 @@ else:
 refnerf_root = '/home/zwyan/3d_cv/repos/multinerf/experiments/spec/'
 
 
-# dataset = '011_bell_07_novel_view'
+dataset = '011_bell_07_novel_view'
 # dataset = '012_cup_01_novel_view'
 # dataset = '013_bowl_01_novel_view'
 # dataset = '014_spoon_02_novel_view'
@@ -107,12 +107,12 @@ refnerf_root = '/home/zwyan/3d_cv/repos/multinerf/experiments/spec/'
 # dataset = '026_bowl_02_novel_view'
 # dataset = '027_dryer_01_novel_view'
 # dataset = '028_plate_03_novel_view'
-dataset = '029_2cup_01_novel_view'
+# dataset = '029_2cup_01_novel_view'
 
 data_dir = os.path.join(data_root, dataset)
 
 # experiment_name = 'refnerf'
-# experiment_name = "011_b07_nv_mso_exp01"
+experiment_name = "011_b07_nv_ms_exp50"
 # experiment_name = "013_bo01_nv_base_exp01"
 # experiment_name = "014_s02_nv_ms_exp36"
 # experiment_name = "015_c02_nv_ref_exp01"
@@ -127,7 +127,7 @@ data_dir = os.path.join(data_root, dataset)
 # experiment_name = "026_bo02_nv_mso_exp01"
 # experiment_name = "027_dr01_nv_ref_exp01"
 # experiment_name = "028_p03_nv_mso_exp01"
-experiment_name = "029_2c01_nv_mso_exp01"
+# experiment_name = "029_2c01_nv_mso_exp01"
 
 
 if __name__ == "__main__":

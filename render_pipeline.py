@@ -1,19 +1,22 @@
 import argparse
 from render import render_scene
 
-interval = 1
+interval = 9
 # camera_path_name = 'fix_camera_93'
 default_camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
+  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp50"),
+  # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp50"),
+
   # ("americano_masked", "am", "ms", "exp42", "fix_camera_1"),
   # ("americano_masked", "am", "base", "exp02", "fix_camera_1"),
   # ("americano_masked", "am", "ms", "exp42", "fix_camera_322"),
   # ("americano_masked", "am", "base", "exp02", "fix_camera_322"),
   # ("americano_masked", "am", "ms", "exp42", "fix_camera_93"),
   # ("americano_masked", "am", "base", "exp03", "fix_camera_93"),
-  ("025_press_01_novel_view", "025_ps01_nv", "ms", "exp41"),
+  # ("025_press_01_novel_view", "025_ps01_nv", "ms", "exp41"),
 
   # ("011_bell_07_novel_view", "011_b07_nv", "base", "exp01"),
   # ("015_cup_02_novel_view", "015_c02_nv", "base", "exp01"),
