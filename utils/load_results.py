@@ -28,10 +28,11 @@ def image_np_to_cv2(image, norm_vector=False, norm_to_one=False, absolute=False,
   return image
 
 
-def load_gt(dataset_name, scale=1):
+def load_gt(dataset_name, scale=1, train=False):
   data_dir = os.path.join(raw_data_root, dataset_name)
   rgb_dir = os.path.join(data_dir, 'rgb', f'{scale}x')
-  rgb_glob = os.path.join(rgb_dir, '*_right.png')
+  camera_name = 'left' if train else 'right'
+  rgb_glob = os.path.join(rgb_dir, f'*_{camera_name}.png')
   image_list = []
   for image_path in sorted(glob(rgb_glob)):
     image = cv2.imread(image_path)
@@ -45,10 +46,11 @@ def load_gt(dataset_name, scale=1):
   return image_list
 
 
-def load_hypernerf(exp_prefix, config_key, exp_idx, output_type='rgb'):
+def load_hypernerf(exp_prefix, config_key, exp_idx, output_type='rgb', skip=False):
   exp_name = f'{exp_prefix}_{config_key}_{exp_idx}'
   exp_dir = os.path.join(exp_root, exp_name)
-  exp_result_path = os.path.join(exp_dir, 'render_result_vrig_camera_full')
+  result_name = 'render_result_vrig_camera_full' if not skip else 'render_result_vrig_camera'
+  exp_result_path = os.path.join(exp_dir, result_name)
   exp_result = np.load(exp_result_path, allow_pickle=True)
 
   # load output

@@ -54,17 +54,22 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp60"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp61"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp62"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp63"),
+
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp50"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp51"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp52"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp53"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp54"),
 
-  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp50"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp51"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp52"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp53"),
-  ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp54"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp50"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp51"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp52"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp53"),
+  # ("021_basin_01_novel_view", "021_bs01_nv", "ms", "exp54"),
 
   # ("americano_masked", "am", "base", "exp03"),
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp50"),

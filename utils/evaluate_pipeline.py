@@ -7,6 +7,7 @@ from data_abbreviations import data_abbr
 from load_results import load_gt, load_hypernerf, load_refnerf
 from calculate_quantitative_results import calculate as calculate_quantitative
 
+interval = 9
 
 def evaluate_single(dataset_name, config_key, exp_idx=''):
   print(f"==> Evaluating {dataset_name} {config_key} {exp_idx}")
@@ -14,11 +15,18 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
   dataset_name_nv = f'{dataset_name}_novel_view'
 
   gt_images = load_gt(dataset_name_nv)
+  if interval > 1:
+    skip_gt_images = []
+    for i in range(len(gt_images)):
+      if i % interval == 0:
+        skip_gt_images.append(gt_images[i])
+    gt_images = skip_gt_images
+
   if is_refnerf:
     out_images = load_refnerf(dataset_name)
   else:
     exp_prefix = data_abbr[dataset_name] + '_nv'
-    out_images = load_hypernerf(exp_prefix, config_key, exp_idx)
+    out_images = load_hypernerf(exp_prefix, config_key, exp_idx, skip=interval > 1)
 
   mse_list, psnr_list, ms_ssim_list, lpips_list = calculate_quantitative(gt_images, out_images)
   mse = np.mean(mse_list)
@@ -32,23 +40,29 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
 
 
 dataset_pipeline = [
-  "011_bell_07",
-  "015_cup_02",
+  # "011_bell_07",
+  # "015_cup_02",
   "018_as_01",
-  "021_basin_01",
-  "022_sieve_02",
-  "025_press_01",
-  "026_bowl_02",
-  "028_plate_03",
-  "029_2cup_01",
+  # "021_basin_01",
+  # "022_sieve_02",
+  # "025_press_01",
+  # "026_bowl_02",
+  # "028_plate_03",
+  # "029_2cup_01",
 ]
 exp_pipeline = [
-  ("ms", "exp40"),
-  ("ref", "exp01"),
-  ("mso", "exp01"),
-  ("base", "exp01"),
-  ("nerfies", "exp01"),
-  ("refnerf", ""),
+  # ("ms", "exp40"),
+  # ("ref", "exp01"),
+  # ("mso", "exp01"),
+  # ("base", "exp01"),
+  # ("nerfies", "exp01"),
+  # ("refnerf", ""),
+  ("ms", "exp50"),
+  ("ms", "exp51"),
+  ("ms", "exp52"),
+  # ("ms", "exp40"),
+  ("ms", "exp53"),
+  ("ms", "exp54"),
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/'
 def evaluate_pipeline():
@@ -116,4 +130,4 @@ if __name__ == "__main__":
   # evaluate_single("011_bell_07", "base", "exp01")
   # evaluate_single("011_bell_07", "refnerf")
   # evaluate_pipeline()
-  save_npy_to_csv("evaluation_1667801066.6375782.pkl")
+  save_npy_to_csv("evaluation_1668494707.6867478.pkl")

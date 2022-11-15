@@ -7,7 +7,13 @@ default_camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
-  ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp50"),
+  # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp50"),
+  # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp51"),
+  # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp52"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp53"),
+  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp54"),
+
+  # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp50"),
   # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp50"),
 
   # ("americano_masked", "am", "ms", "exp42", "fix_camera_1"),
