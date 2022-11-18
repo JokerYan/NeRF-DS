@@ -175,7 +175,7 @@ class NerfModel(CustomModel):
 
   # Spec config
   predict_norm: bool = False
-  norm_supervision_type: str = 'warped'   # warped, canonical direct
+  norm_supervision_type: str = 'warped'   # warped, canonical, direct, canonical_unwarped
   stop_norm_gradient: bool = True
   norm_input_min_deg: int = 0
   norm_input_max_deg: int = 4
@@ -1029,7 +1029,7 @@ class NerfModel(CustomModel):
     # rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
     #
 
-    if self.predict_norm and self.norm_supervision_type == 'canonical':
+    if self.predict_norm and (self.norm_supervision_type == 'canonical' or self.norm_supervision_type == 'canonical_unwarped'):
       # Map input points to warped spatial and hyper points.
       warped_points, hyper_points, warp_jacobian, hyper_jacobian, screw_axis, bone_weights, moving_mask = self.map_points(
         points, warp_embed, hyper_embed, viewdirs, extra_params, mask, use_warp=use_warp,
@@ -1175,7 +1175,7 @@ class NerfModel(CustomModel):
       if self.norm_supervision_type == 'warped' or self.norm_supervision_type == 'canonical':
         inverse_norm, _, _ = self.map_vectors(points, normalized_norm, warp_embed, extra_params, mask, inverse=True)
         norm_input = inverse_norm
-      elif self.norm_supervision_type == 'direct':
+      elif self.norm_supervision_type == 'direct' or self.norm_supervision_type == 'canonical_unwarped':
         norm_input = norm
       else:
         raise NotImplementedError
@@ -1314,7 +1314,8 @@ class NerfModel(CustomModel):
     rgb, sigma = self.post_process_query(level, rgb, sigma, num_samples)
     out['sigma'] = sigma
 
-    if self.predict_norm and self.norm_supervision_type != 'direct':
+    if self.predict_norm and self.norm_supervision_type != 'direct' \
+            and self.norm_supervision_type != 'canonical_unwarped':
       # transform norm from observation to canonical
       sigma_gradient_r, _, _ = self.map_vectors(points, sigma_gradient, warp_embed, extra_params, mask)
       sigma_gradient_r = model_utils.normalize_vector(sigma_gradient_r)

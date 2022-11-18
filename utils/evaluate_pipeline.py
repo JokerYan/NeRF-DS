@@ -57,12 +57,17 @@ exp_pipeline = [
   # ("base", "exp01"),
   # ("nerfies", "exp01"),
   # ("refnerf", ""),
-  ("ms", "exp50"),
-  ("ms", "exp51"),
-  ("ms", "exp52"),
-  # ("ms", "exp40"),
-  ("ms", "exp53"),
-  ("ms", "exp54"),
+
+  # ("ms", "exp50"),
+  # ("ms", "exp51"),
+  # ("ms", "exp52"),
+  # ("ms", "exp53"),
+  # ("ms", "exp54"),
+
+  # ("ms", "exp60"),
+  # ("ms", "exp61"),
+  ("ms", "exp62"),
+  # ("ms", "exp63"),
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/'
 def evaluate_pipeline():
@@ -127,7 +132,5 @@ def save_npy_to_csv(pickle_name):
 
 
 if __name__ == "__main__":
-  # evaluate_single("011_bell_07", "base", "exp01")
-  # evaluate_single("011_bell_07", "refnerf")
-  # evaluate_pipeline()
-  save_npy_to_csv("evaluation_1668494707.6867478.pkl")
+  evaluate_pipeline()
+  # save_npy_to_csv("evaluation_1668662347.1035461.pkl")

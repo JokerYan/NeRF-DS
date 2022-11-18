@@ -24,7 +24,15 @@ exp_configs = [
   ("nerfies", "exp01"),
   ("refnerf", ""),
 ]
-out_dir_default = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/images'
+exp_name_list = [
+  "NeRF-DS (Ours)",
+  "NeRF-DS w/o Mask",
+  "NeRF-DS w/o Surface",
+  "HyperNeRF",
+  "Nerfies",
+  "Ref-NeRF"
+]
+out_dir_default = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/videos'
 
 def concat_images(images, gap=0):
   height, width, channel = images[0].shape
@@ -43,14 +51,15 @@ def concat_images(images, gap=0):
 def add_text_to_image(image, text):
   height, width, channel = image.shape
   image = np.copy(image)
-  image = cv2.putText(image, text, (10, height - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+  image = cv2.putText(image, text, (10, height - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
   return image
 
 
-def select_rgb_for_dataset(dataset, selected_exp_configs, name_prefix=None):
+def select_rgb_for_dataset(dataset, selected_exp_configs, selected_exp_names, name_prefix=None):
   dataset_nv = f'{dataset}_novel_view'
   images_list = []
   name_list = []
+  selected_exp_names = ['Novel View (GT)'] + selected_exp_names
 
   gt_images = load_gt(dataset_nv)
   images_list.append(gt_images)
@@ -61,15 +70,22 @@ def select_rgb_for_dataset(dataset, selected_exp_configs, name_prefix=None):
     images_list.append(out_images)
     name_list.append(f"{config_key}_{exp_idx}")
 
+  for i in range(len(images_list)):
+    images = images_list[i]
+    for j in range(len(images)):
+      image_with_text = add_text_to_image(images[j], selected_exp_names[i])
+      images[j] = image_with_text
+
+  full_image_list = []
+  for i in range(len(images_list[0])):
+    exp_images = [images[i] for images in images_list]
+    full_image = concat_images(exp_images, gap=10)
+    full_image_list.append(full_image)
+
   # display
   idx = 0
   while True:
-    cur_image_list = [images[idx] for images in images_list]
-    cur_image_list_with_text = [
-      add_text_to_image(images[idx], name_list[i] + " " + str(idx)) for i, images in enumerate(images_list)
-    ]
-    full_image_with_text = concat_images(cur_image_list_with_text, gap=10)
-    cv2.imshow('', full_image_with_text)
+    cv2.imshow('', full_image_list[idx])
     key = cv2.waitKey()
     if key == ord('q'):
       break
@@ -82,20 +98,23 @@ def select_rgb_for_dataset(dataset, selected_exp_configs, name_prefix=None):
     elif key == ord('6'):
       idx = min(len(images_list[0]) - 1, idx + 10)
     elif key == ord('s'):
-      full_image = concat_images(cur_image_list, gap=10)
-      image_name = f'{dataset}_{idx}.png'
-      if name_prefix is not None:
-        out_dir = os.path.join(out_dir_default, name_prefix)
-        os.makedirs(out_dir, exist_ok=True)
-      else:
-        out_dir = out_dir_default
-      image_path = os.path.join(out_dir, image_name)
-      cv2.imwrite(image_path, full_image)
+      video_name = f'{dataset}_qualitative.mp4'
+      os.makedirs(out_dir_default, exist_ok=True)
+      video_path = os.path.join(out_dir_default, video_name)
+      frames = full_image_list
+      _fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+      height, width = frames[0].shape[:2]
+      video_writer = cv2.VideoWriter(video_path, _fourcc, 30.0, (width, height))
+      for frame in frames:
+        video_writer.write(frame)
+      video_writer.release()
+      print("Video saved to {}".format(video_path))
+      break
   cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-  dataset_idx = 8
+  dataset_idx = 7
   exp_idx_list = [0, 3, 4, 5]   # vs baseline
   name_prefix = None
 
@@ -106,4 +125,5 @@ if __name__ == "__main__":
   # name_prefix = 'ablation_mso'
 
   selected_exp_configs = [exp_configs[i] for i in exp_idx_list]
-  select_rgb_for_dataset(dataset_list[dataset_idx], selected_exp_configs, name_prefix)
+  selected_exp_names = [exp_name_list[i] for i in exp_idx_list]
+  select_rgb_for_dataset(dataset_list[dataset_idx], selected_exp_configs, selected_exp_names, name_prefix)
