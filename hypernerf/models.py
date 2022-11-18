@@ -1374,6 +1374,8 @@ class NerfModel(CustomModel):
         target_norm = sigma_gradient_w
       elif self.norm_supervision_type == 'direct':
         target_norm = sigma_gradient
+      elif self.norm_supervision_type == 'canonical_unwarped':
+        target_norm = sigma_gradient
       else:
         raise NotImplementedError
       target_norm = jnp.reshape(target_norm, (-1, num_samples, norm.shape[-1]))
