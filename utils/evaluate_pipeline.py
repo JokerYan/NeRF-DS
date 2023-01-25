@@ -64,7 +64,10 @@ dataset_pipeline = [
   # "026_bowl_02",
   # "028_plate_03",
   # "029_2cup_01",
-  "z-vrig-3dprinter"
+  "z-vrig-3dprinter",
+  # "z-vrig-broom",
+  # "z-vrig-chicken",
+  # "z-vrig-peel-banana",
 ]
 exp_pipeline = [
   # ("ms", "exp40"),
