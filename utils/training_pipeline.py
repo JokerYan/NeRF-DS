@@ -54,8 +54,10 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
-  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp70"),
-  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp71"),
+  ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp42")
+
+  # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp70"),
+  # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp71"),
 
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp60"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp61"),

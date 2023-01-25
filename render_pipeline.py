@@ -7,9 +7,14 @@ default_camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
+  ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp42"),
+
+  # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp70"),
+  # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp71"),
+
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp60"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp61"),
-  ("018_as_01_novel_view", "018_a01_nv", "ms", "exp62"),
+  # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp62"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp63"),
 
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp50"),

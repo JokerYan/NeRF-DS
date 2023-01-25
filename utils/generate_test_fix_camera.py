@@ -2,7 +2,7 @@ import os
 import shutil
 from glob import glob
 
-camera_idx = 1
+camera_idx = 93
 
 if os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
     data_root = '/hdd/zhiwen/data/hypernerf/raw/'
@@ -10,7 +10,7 @@ elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
     data_root = '/home/zwyan/3d_cv/data/hypernerf/raw/'
 else:
     raise NotImplemented
-dataset = 'americano_masked'
+dataset = 'z-vrig-3dprinter'
 data_dir = os.path.join(data_root, dataset)
 
 train_camera_folder = os.path.join(data_dir, "camera")

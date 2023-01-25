@@ -1,3 +1,4 @@
+import json
 import os
 import cv2
 import numpy as np
@@ -32,7 +33,8 @@ def load_gt(dataset_name, scale=1, train=False):
   data_dir = os.path.join(raw_data_root, dataset_name)
   rgb_dir = os.path.join(data_dir, 'rgb', f'{scale}x')
   camera_name = 'left' if train else 'right'
-  rgb_glob = os.path.join(rgb_dir, f'*_{camera_name}.png')
+  filename_format = f'*_{camera_name}.png'
+  rgb_glob = os.path.join(rgb_dir, filename_format)
   image_list = []
   for image_path in sorted(glob(rgb_glob)):
     image = cv2.imread(image_path)
@@ -45,6 +47,24 @@ def load_gt(dataset_name, scale=1, train=False):
     #   break
   return image_list
 
+
+def load_hypernerf_gt(daset_name, scale=4, train=False):
+  data_dir = os.path.join(raw_data_root, daset_name)
+  rgb_dir = os.path.join(data_dir, 'rgb', f'{scale}x')
+  info_json_path = os.path.join(data_dir, 'dataset.json')
+  with open(info_json_path, 'r') as f:
+    info_json = json.load(f)
+  if train:
+    ids = info_json['train_ids']
+  else:
+    ids = info_json['val_ids']
+
+  image_list = []
+  for id in ids:
+    image_path = os.path.join(rgb_dir, f'{id}.png')
+    image = cv2.imread(image_path)
+    image_list.append(image)
+  return image_list
 
 def load_hypernerf(exp_prefix, config_key, exp_idx, output_type='rgb', skip=False):
   exp_name = f'{exp_prefix}_{config_key}_{exp_idx}'

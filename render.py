@@ -222,6 +222,7 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
   camera_dir = Path(data_dir, camera_path_name)
   print(f'Loading cameras from {camera_dir}')
   test_camera_paths = datasource.glob_cameras(camera_dir)
+  test_camera_paths = sort_camera_paths(test_camera_paths)
   test_cameras = utils.parallel_map(datasource.load_camera, test_camera_paths, show_pbar=True)
 
   mask_dir = Path(data_dir, 'resized_mask', f"{int(exp_config.image_scale)}x")
@@ -316,6 +317,24 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
   mediapy.set_show_save_dir(train_dir)
   mediapy.show_video(rgb_frames, fps=fps, title="result_{}_rgb".format(camera_path_name))
   mediapy.show_video(debug_frames, fps=fps, title="result_{}".format(camera_path_name))
+
+
+def sort_camera_paths(camera_paths):
+  camera_names = [path.stem for path in camera_paths]
+  id_path_pairs = []
+  for i in range(len(camera_names)):
+    camera_name = camera_names[i]
+    camera_path = camera_paths[i]
+    try:
+      camera_id = camera_name.split('_')[1]
+      int(camera_id)
+    except:
+      camera_id = camera_name.split('_')[0]
+      int(camera_id)
+    id_path_pairs.append((camera_id, camera_path))
+  id_path_pairs = sorted(id_path_pairs)
+  camera_paths = [path for id, path in id_path_pairs]
+  return camera_paths
 
 
 if __name__ == "__main__":

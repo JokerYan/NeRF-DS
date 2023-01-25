@@ -1,10 +1,11 @@
 import os
 import time
+import cv2
 import numpy as np
 import pickle
 
 from data_abbreviations import data_abbr
-from load_results import load_gt, load_hypernerf, load_refnerf
+from load_results import load_gt, load_hypernerf, load_refnerf, load_hypernerf_gt
 from calculate_quantitative_results import calculate as calculate_quantitative
 
 interval = 9
@@ -12,9 +13,15 @@ interval = 9
 def evaluate_single(dataset_name, config_key, exp_idx=''):
   print(f"==> Evaluating {dataset_name} {config_key} {exp_idx}")
   is_refnerf = config_key == 'refnerf'
-  dataset_name_nv = f'{dataset_name}_novel_view'
+  if dataset_name.startswith('z-vrig'):
+    dataset_name_nv = dataset_name
+  else:
+    dataset_name_nv = f'{dataset_name}_novel_view'
 
-  gt_images = load_gt(dataset_name_nv)
+  if dataset_name.startswith('z-vrig'):
+    gt_images = load_hypernerf_gt(dataset_name_nv)
+  else:
+    gt_images = load_gt(dataset_name_nv)
   if interval > 1:
     skip_gt_images = []
     for i in range(len(gt_images)):
@@ -25,9 +32,17 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
   if is_refnerf:
     out_images = load_refnerf(dataset_name)
   else:
-    exp_prefix = data_abbr[dataset_name] + '_nv'
+    if dataset_name.startswith('z-vrig'):
+      exp_prefix = dataset_name
+    else:
+      exp_prefix = data_abbr[dataset_name] + '_nv'
     out_images = load_hypernerf(exp_prefix, config_key, exp_idx, skip=interval > 1)
 
+  # for i in range(len(gt_images)):
+  #   gt_image = gt_images[i]
+  #   out_image = out_images[i]
+  #   cv2.imshow('', np.concatenate([gt_image, out_image], axis=1))
+  #   cv2.waitKey(-1)
   mse_list, psnr_list, ms_ssim_list, lpips_list = calculate_quantitative(gt_images, out_images)
   mse = np.mean(mse_list)
   psnr = np.mean(psnr_list)
@@ -42,13 +57,14 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
 dataset_pipeline = [
   # "011_bell_07",
   # "015_cup_02",
-  "018_as_01",
+  # "018_as_01",
   # "021_basin_01",
   # "022_sieve_02",
   # "025_press_01",
   # "026_bowl_02",
   # "028_plate_03",
   # "029_2cup_01",
+  "z-vrig-3dprinter"
 ]
 exp_pipeline = [
   # ("ms", "exp40"),
@@ -66,8 +82,13 @@ exp_pipeline = [
 
   # ("ms", "exp60"),
   # ("ms", "exp61"),
-  ("ms", "exp62"),
+  # ("ms", "exp62"),
   # ("ms", "exp63"),
+
+  # ("ms", "exp70"),
+  # ("ms", "exp71"),
+
+  ('ms', "exp42")
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/'
 def evaluate_pipeline():
@@ -96,6 +117,7 @@ def evaluate_pipeline():
   with open(out_path, 'wb') as f:
     pickle.dump(evaluate_result_dict, f)
   print(f"result saved to :{out_path}")
+  return out_name
 
 
 selected_eval_methods = ['ms_ssim', "psnr", "lpips"]
@@ -132,5 +154,5 @@ def save_npy_to_csv(pickle_name):
 
 
 if __name__ == "__main__":
-  evaluate_pipeline()
-  # save_npy_to_csv("evaluation_1668662347.1035461.pkl")
+  pkl_name = evaluate_pipeline()
+  save_npy_to_csv(pkl_name)
