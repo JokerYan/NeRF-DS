@@ -57,7 +57,8 @@ def render_image(
     device_count,
     rng,
     chunk=8192,
-    default_ret_key=None):
+    default_ret_key=None,
+):
   """Render all the pixels of an image (in test mode).
 
   Args:

@@ -393,7 +393,6 @@ class HyperSheetMLP(nn.Module):
 
 @gin.configurable(denylist=['name'])
 class MaskMLP(nn.Module):
-  """An MLP that defines a bendy slicing surface through hyper space."""
   output_channels: int = 1
   min_deg: int = 0
   max_deg: int = 6
