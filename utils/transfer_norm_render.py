@@ -1,7 +1,10 @@
+import glob
 import os
+import cv2
 
 import jax
 import jax.numpy as jnp
+import torch
 from jax import random
 
 import flax
@@ -34,7 +37,7 @@ from hypernerf import utils
 
 
 chunk_size = 2048
-def render_scene(dataset_name, exp_name, camera_path_name, interval):
+def render_scene(dataset_name, exp_name, camera_path_name, interval, norm_override=None):
   # print('Detected Devices:', jax.devices())
 
   # @title Define imports and utility functions.
@@ -178,7 +181,7 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
   # @title Define pmapped render function.
   devices = jax.devices()
 
-  def _model_fn(key_0, key_1, key_2, params, rays_dict, extra_params):
+  def _model_fn(key_0, key_1, key_2, params, rays_dict, extra_params, norm_override):
     out = model.apply({'params': params},
                       rays_dict,
                       extra_params=extra_params,
@@ -195,21 +198,23 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
                       return_nv_details=False,
                       norm_voxel_ratio=1,  # inference ratio is always 1
                       mask_ratio=1,  # inference ratio is always 1
-                      sharp_weights_std=0.1
+                      sharp_weights_std=0.1,
+                      norm_override=norm_override
                       )
     return jax.lax.all_gather(out, axis_name='batch')
 
   pmodel_fn = jax.pmap(
       # Note rng_keys are useless in eval mode since there's no randomness.
       _model_fn,
-      in_axes=(0, 0, 0, 0, 0, 0),  # Only distribute the data input.
+      in_axes=(0, 0, 0, 0, 0, 0, None),  # Only distribute the data input.
       devices=devices_to_use,
       axis_name='batch',
   )
-  render_fn = functools.partial(evaluation.render_image,
+  render_fn = functools.partial(render_image,
                                 model_fn=pmodel_fn,
                                 device_count=len(devices),
-                                chunk=chunk_size)
+                                chunk=chunk_size,
+                                norm_override=norm_override)
 
   # @title Load cameras.
   camera_dir = Path(data_dir, camera_path_name)
@@ -233,6 +238,7 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     camera_path_name += "_full"
 
   for i in tqdm(range(0, len(test_cameras), interval)):
+  # for i in tqdm(range(0, 10, interval)):
     # print(f'Rendering frame {i + 1}/{len(test_cameras)}')
     camera = test_cameras[i]
     batch = datasets.camera_to_rays(camera)
@@ -290,7 +296,7 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     results.append((rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image))
 
   # save raw render results
-  raw_result_save_path = os.path.join(train_dir, "render_result_{}".format(camera_path_name))
+  raw_result_save_path = os.path.join(train_dir, "transfer_render_result_{}".format(camera_path_name))
   with open(raw_result_save_path, "wb+") as f:
     np.save(f, raw_result_list)
 
@@ -308,8 +314,8 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     debug_frames.append(image_utils.image_to_uint8(debug_frame))
     rgb_frames.append(image_utils.image_to_uint8(rgb))
   mediapy.set_show_save_dir(train_dir)
-  mediapy.show_video(rgb_frames, fps=fps, title="result_{}_rgb".format(camera_path_name))
-  mediapy.show_video(debug_frames, fps=fps, title="result_{}".format(camera_path_name))
+  mediapy.show_video(rgb_frames, fps=fps, title="transfer_result_{}_rgb".format(camera_path_name))
+  mediapy.show_video(debug_frames, fps=fps, title="transfer_result_{}".format(camera_path_name))
 
 
 def render_image(
@@ -320,6 +326,7 @@ def render_image(
     rng,
     chunk=8192,
     default_ret_key=None,
+    norm_override=None,
 ):
   """Render all the pixels of an image (in test mode).
 
@@ -379,7 +386,7 @@ def render_image(
         chunk_rays_dict)
     chunk_rays_dict = utils.shard(chunk_rays_dict, device_count)
     model_out = model_fn(key_0, key_1, key_2, state.optimizer.target['model'],
-                         chunk_rays_dict, state.extra_params)
+                         chunk_rays_dict, state.extra_params, norm_override)
     if not default_ret_key:
       ret_key = 'fine' if 'fine' in model_out else 'coarse'
     else:
@@ -416,17 +423,117 @@ def sort_camera_paths(camera_paths):
   camera_paths = [path for id, path in id_path_pairs]
   return camera_paths
 
+def normalize_vector(vector):
+  eps = torch.Tensor([1e-6])
+  # eps = 1e-5
+  # eps = jnp.ones_like(vector[..., None, 0]) * eps
+  vector = vector / torch.sqrt(torch.max(torch.sum(vector**2, dim=-1, keepdim=True), eps))
+  return vector
+
+def visualize_norm(norm_image, title):
+  norm_image = normalize_vector(norm_image)
+
+  norm_image = norm_image / 2.0 + 0.5
+  norm_image = norm_image.numpy()
+  norm_image = cv2.cvtColor(norm_image, cv2.COLOR_BGR2RGB)
+  cv2.imshow(title, norm_image)
+  cv2.waitKey(-1)
+
+def load_video(video_path):
+  cap = cv2.VideoCapture(str(video_path))
+  frame_list = []
+  while (cap.isOpened()):
+    ret, frame = cap.read()
+    if not ret:
+      break
+    frame_list.append(frame)
+  cap.release()
+  return frame_list
 
 exp_root = Path("/home/zwyan/3d_cv/repos/hypernerf_barf/experiments")
-dataset_name = "021_basin_01_novel_view"
-exp_name = Path("021_bs01_nv_ms_exp36")
+# dataset_name = "021_basin_01_novel_view"
+# dataset_raw_name = "021_basin_01"
+# # exp_name = Path("021_bs01_nv_ms_exp36")
+# exp_name = Path("021_bs01_nv_ref_exp01")
+dataset_name = "028_plate_03_novel_view"
+dataset_raw_name = "028_plate_03"
+# exp_name = Path("028_p03_nv_ms_exp40")
+# exp_name = Path("028_p03_nv_ref_exp01")
+exp_name = Path("028_p03_nv_ref_exp02")
 exp_dir = exp_root / exp_name
-render_result_path = exp_dir / "render_result_fix_camera_93"
+render_result_path = exp_dir / "render_result_vrig_camera"
 
-interval = 9
-source_idx = 0
-render_result = np.load(render_result_path, allow_pickle=True)
-print(list(render_result)[0].keys())
+data_collect_root = Path('/home/zwyan/3d_cv/data/hypernerf/collect')
+data_collect_dir = data_collect_root / dataset_raw_name
 
-print(render_result[source_idx]['ray_norm'].shape)          # H x W x 3
-render_scene(dataset_name, exp_name, 'fix_camera_93', interval)
+interval = 100
+source_idx = 0    # index after the skipping
+use_val = True
+suffix = 'right' if use_val else 'left'
+
+# # load mask
+# mask_list = []
+# mask_dir = data_collect_dir / 'resized_mask' / (suffix + "_part")
+# for mask_path in sorted(glob.glob(str(mask_dir / '*.png'))):
+#   mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)      # 0 is background, 255 is foreground
+#   mask_list.append(mask)
+#
+# # skip mask
+# selected_mask_list = []
+# for i in range(0, len(mask_list), interval):
+#   selected_mask_list.append(mask_list[i])
+
+# # load render result
+# render_result = np.load(render_result_path, allow_pickle=True)
+# ray_norm_list = []
+# for result in render_result:
+#   ray_norm = result['ray_norm']                   # H x W x 3
+#   ray_norm_list.append(ray_norm)
+# ray_norm_override = ray_norm_list[source_idx]     # H x W x 3
+#
+# # mask the ray_norm
+# # source_mask = selected_mask_list[source_idx]
+# source_mask = np.zeros([ray_norm_list[0].shape[0], ray_norm_list[0].shape[1]])
+# source_mask = torch.from_numpy(source_mask)
+# source_mask = source_mask == 0                    # foreground is True, background is False
+# source_mask = source_mask.float()                 # foreground is 1, background is 0
+#
+# ray_norm_override = torch.from_numpy(ray_norm_override)
+# # visualize_norm(ray_norm_override, 'full')
+# ray_norm_override = ray_norm_override * source_mask[..., None]
+# # visualize_norm(ray_norm_override, 'masked')
+#
+# # take the masked average of the ray norm
+# ray_norm_override = ray_norm_override.reshape([-1, 3])
+# ray_norm_override = torch.sum(ray_norm_override, dim=0)
+# source_mask_sum = torch.sum(source_mask)
+# ray_norm_override = ray_norm_override / source_mask_sum       # 3
+# # ray_norm_average = torch.ones_like(torch.Tensor(ray_norm_list[0])) * ray_norm_override
+# # visualize_norm(ray_norm_average, 'average')
+# ray_norm_override = jnp.array(ray_norm_override.numpy())      # torch to jax
+
+ray_norm_override = jnp.array([1, 2, 3])
+
+# render override norm
+render_scene(dataset_name, exp_name, 'vrig_camera', interval, ray_norm_override)
+
+# # load and compare the results
+# rgb_video_name_original = 'result_vrig_camera_rgb.mp4'
+# rgb_video_name_override = 'transfer_result_vrig_camera_rgb.mp4'
+# rgb_video_path_original = exp_dir / rgb_video_name_original
+# rgb_video_path_override = exp_dir / rgb_video_name_override
+#
+# rgb_list_original = load_video(rgb_video_path_original)
+# rgb_list_override = load_video(rgb_video_path_override)
+#
+# # assert len(rgb_list_original) == len(rgb_list_override)
+# for i in range(len(rgb_list_original)):
+#   rgb_original = rgb_list_original[i] / 255.0
+#   rgb_override = rgb_list_override[i] / 255.0
+#   rgb_diff = np.abs(rgb_override - rgb_original)
+#   rgb_concat = np.concatenate([rgb_override, rgb_original, rgb_diff], axis=0)
+#   cv2.imshow('rgb_concat', rgb_concat)
+#   key = cv2.waitKey(-1)
+#   if key == 'q':
+#     exit()
+

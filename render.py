@@ -36,7 +36,7 @@ dataset_name = '015_cup_02_novel_view'
 exp_name = '015_c02_nv_ms_exp36'
 camera_path_name = 'vrig_camera'
 interval = 100
-chunk_size = 2048
+chunk_size = 1024
 
 #####################################
 

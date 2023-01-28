@@ -177,6 +177,7 @@ class NerfModel(CustomModel):
   predict_norm: bool = False
   norm_supervision_type: str = 'warped'   # warped, canonical, direct, canonical_unwarped
   stop_norm_gradient: bool = True
+  norm_input_posenc: bool = True
   norm_input_min_deg: int = 0
   norm_input_max_deg: int = 4
   use_viewdirs_in_hyper: bool = False
@@ -787,9 +788,10 @@ class NerfModel(CustomModel):
   def apply_warp(self, points, warp_embed, extra_params):
     warp_embed = self.warp_embed(warp_embed)
 
-    # assume background has 0 mask
-    mask = jnp.zeros([*warp_embed.shape[:-1], 1])
-    warp_embed = jnp.concatenate([warp_embed, mask], axis=-1)
+    if self.use_mask_in_warp:
+      # assume background has 0 mask
+      mask = jnp.zeros([*warp_embed.shape[:-1], 1])
+      warp_embed = jnp.concatenate([warp_embed, mask], axis=-1)
     return self.warp_field(points, warp_embed, extra_params)
 
   def get_bone_moving_mask(self, points, warp_embed):
@@ -911,6 +913,7 @@ class NerfModel(CustomModel):
                      mask_ratio=1,
                      sharp_weights_std=1.0,
                      x_for_rgb_alpha=4.0,
+                     norm_override=None
                      ):
     out = {'points': points}
 
@@ -1170,6 +1173,14 @@ class NerfModel(CustomModel):
         norm_input = sigma_gradient
     elif use_predicted_norm:
       assert not use_sigma_gradient
+
+      # handle norm override
+      if norm_override is not None:  # shape 3
+        # norm = jnp.ones_like(norm) * norm_override[None, None, :]
+        # norm = jnp.zeros_like(norm)
+        # norm = - norm
+        pass
+
       # transform from canonical space to observation space
       normalized_norm = model_utils.normalize_vector(norm)
       if self.norm_supervision_type == 'warped' or self.norm_supervision_type == 'canonical':
@@ -1186,12 +1197,18 @@ class NerfModel(CustomModel):
 
     if norm_input is not None:
       norm_input = model_utils.normalize_vector(norm_input)
-      norm_input_feat = model_utils.posenc(
-        norm_input,
-        min_deg=self.norm_input_min_deg,
-        max_deg=self.norm_input_max_deg,
-        use_identity=self.use_posenc_identity,
-        alpha=extra_params['norm_input_alpha'])
+      if norm_override is not None:
+        norm_input = norm_input * -2
+      if self.norm_input_posenc:
+        norm_input_feat = model_utils.posenc(
+          norm_input,
+          min_deg=self.norm_input_min_deg,
+          max_deg=self.norm_input_max_deg,
+          use_identity=self.use_posenc_identity,
+          alpha=extra_params['norm_input_alpha']
+        )
+      else:
+        norm_input_feat = norm_input
     else:
       norm_input_feat = None
 
@@ -1493,7 +1510,8 @@ class NerfModel(CustomModel):
       norm_voxel_ratio=1,
       mask_ratio=1,
       sharp_weights_std=1.0,
-      x_for_rgb_alpha=4.0
+      x_for_rgb_alpha=4.0,
+      norm_override=None,
   ):
     """Nerf Model.
 
@@ -1568,7 +1586,8 @@ class NerfModel(CustomModel):
       norm_voxel_ratio=norm_voxel_ratio,
       mask_ratio=mask_ratio,
       sharp_weights_std=sharp_weights_std,
-      x_for_rgb_alpha=x_for_rgb_alpha
+      x_for_rgb_alpha=x_for_rgb_alpha,
+      norm_override=norm_override,
     )
     out = {'coarse': coarse_ret}
 
@@ -1605,7 +1624,8 @@ class NerfModel(CustomModel):
         norm_voxel_ratio=norm_voxel_ratio,
         mask_ratio=mask_ratio,
         sharp_weights_std=sharp_weights_std,
-        x_for_rgb_alpha=x_for_rgb_alpha
+        x_for_rgb_alpha=x_for_rgb_alpha,
+        norm_override=norm_override
       )
 
     if not return_weights:

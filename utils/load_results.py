@@ -48,7 +48,7 @@ def load_gt(dataset_name, scale=1, train=False):
   return image_list
 
 
-def load_hypernerf_gt(daset_name, scale=4, train=False):
+def load_hypernerf_gt(daset_name, scale=2, train=False):
   data_dir = os.path.join(raw_data_root, daset_name)
   rgb_dir = os.path.join(data_dir, 'rgb', f'{scale}x')
   info_json_path = os.path.join(data_dir, 'dataset.json')

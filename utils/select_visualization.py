@@ -29,7 +29,8 @@ exp_configs = [
 output_types = [
   # 'med_depth', 'med_points', 'ray_delta_x', 'ray_norm', 'ray_predicted_mask', 'rgb'
   # 'rgb', 'ray_norm', 'ray_predicted_mask'
-  'ray_delta_x'
+  # 'ray_delta_x'
+  "ray_norm"
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/images'
 
@@ -103,8 +104,8 @@ def select_visualization_for_dataset(dataset, selected_exp_config):
 
 
 if __name__ == "__main__":
-  dataset_idx = 5
+  dataset_idx = 3
   # exp_idx = 3
-  exp_idx = 6
+  exp_idx = 0
   selected_exp_config = exp_configs[exp_idx]
   select_visualization_for_dataset(dataset_list[dataset_idx], selected_exp_config)
