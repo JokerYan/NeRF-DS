@@ -54,6 +54,12 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
+  # ("021_basin_01_um_novel_view", "021_bs01_um_nv", "ms", "exp40"),
+  # ("021_basin_01_um_novel_view", "021_bs01_um_nv", "base", "exp01"),
+  #
+  # ("011_bell_07_um_novel_view", "011_b07_um_nv", "ms", "exp40"),
+  ("011_bell_07_um_novel_view", "011_b07_um_nv", "base", "exp01"),
+
   # ('028_plate_03_novel_view', '028_p03_nv', 'ref', "exp02"),
   # ('028_plate_03_novel_view', '028_p03_nv', 'ref', "exp03"),
 
@@ -62,15 +68,15 @@ training_schedule = [
   # ("z-vrig-chicken", "z-vrig-chicken", "ms", "exp43"),
   # ("z-vrig-peel-banana", "z-vrig-peel-banana", "ms", "exp43"),
 
-  ("z-vrig-3dprinter", "z-vrig-3dprinter", "mso", "exp05"),
-  ("z-vrig-broom", "z-vrig-broom", "mso", "exp05"),
-  ("z-vrig-chicken", "z-vrig-chicken", "mso", "exp05"),
-  ("z-vrig-peel-banana", "z-vrig-peel-banana", "mso", "exp05"),
-
-  ("z-vrig-3dprinter", "z-vrig-3dprinter", "ref", "exp05"),
-  ("z-vrig-broom", "z-vrig-broom", "ref", "exp05"),
-  ("z-vrig-chicken", "z-vrig-chicken", "ref", "exp05"),
-  ("z-vrig-peel-banana", "z-vrig-peel-banana", "ref", "exp05"),
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "mso", "exp05"),
+  # ("z-vrig-broom", "z-vrig-broom", "mso", "exp05"),
+  # ("z-vrig-chicken", "z-vrig-chicken", "mso", "exp05"),
+  # ("z-vrig-peel-banana", "z-vrig-peel-banana", "mso", "exp05"),
+  #
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "ref", "exp05"),
+  # ("z-vrig-broom", "z-vrig-broom", "ref", "exp05"),
+  # ("z-vrig-chicken", "z-vrig-chicken", "ref", "exp05"),
+  # ("z-vrig-peel-banana", "z-vrig-peel-banana", "ref", "exp05"),
 
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp70"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp71"),
