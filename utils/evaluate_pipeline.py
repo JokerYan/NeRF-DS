@@ -8,7 +8,7 @@ from data_abbreviations import data_abbr
 from load_results import load_gt, load_hypernerf, load_refnerf, load_hypernerf_gt
 from calculate_quantitative_results import calculate as calculate_quantitative
 
-interval = 1
+interval = 9
 
 def evaluate_single(dataset_name, config_key, exp_idx=''):
   print(f"==> Evaluating {dataset_name} {config_key} {exp_idx}")
@@ -19,7 +19,11 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
     dataset_name_nv = f'{dataset_name}_novel_view'
 
   if dataset_name.startswith('z-vrig'):
-    gt_images = load_hypernerf_gt(dataset_name_nv)
+    gt_images = load_hypernerf_gt(dataset_name_nv, scale=2)
+    # out_shape = (gt_images[0].shape[1] // 2, gt_images[0].shape[0] // 2)
+    # gt_images = [
+    #   cv2.resize(gt_image, out_shape) for gt_image in gt_images
+    # ]
   else:
     gt_images = load_gt(dataset_name_nv)
   if interval > 1:
@@ -37,6 +41,10 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
     else:
       exp_prefix = data_abbr[dataset_name] + '_nv'
     out_images = load_hypernerf(exp_prefix, config_key, exp_idx, skip=interval > 1)
+    gt_shape = (gt_images[0].shape[1], gt_images[0].shape[0])
+    out_images = [
+      cv2.resize(out_image, gt_shape) for out_image in out_images
+    ]
 
   # for i in range(len(gt_images)):
   #   gt_image = gt_images[i]
@@ -65,19 +73,19 @@ dataset_pipeline = [
   # "028_plate_03",
   # "029_2cup_01",
 
-  # "z-vrig-3dprinter",
-  # "z-vrig-broom",
-  # "z-vrig-chicken",
-  # "z-vrig-peel-banana",
+  "z-vrig-3dprinter",
+  "z-vrig-broom",
+  "z-vrig-chicken",
+  "z-vrig-peel-banana",
 
-  "021_basin_01_um",
-  "011_bell_07_um",
+  # "021_basin_01_um",
+  # "011_bell_07_um",
 ]
 exp_pipeline = [
-  ("ms", "exp40"),
+  # ("ms", "exp40"),
   # ("ref", "exp01"),
   # ("mso", "exp01"),
-  ("base", "exp01"),
+  # ("base", "exp01"),
   # ("nerfies", "exp01"),
   # ("refnerf", ""),
 
@@ -95,9 +103,10 @@ exp_pipeline = [
   # ("ms", "exp70"),
   # ("ms", "exp71"),
 
-  # ('ms', "exp42"),
+  ('ms', "exp42"),
   # ('ms', "exp43"),
-
+  ("ref", "exp05"),
+  ("mso", "exp05"),
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/'
 def evaluate_pipeline():

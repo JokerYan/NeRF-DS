@@ -1,9 +1,9 @@
 import argparse
 from render import render_scene
 
-interval = 9
-# camera_path_name = 'fix_camera_93'
-default_camera_path_name = 'vrig_camera'
+interval = 100
+camera_path_name = 'fix_camera_93'
+# default_camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
@@ -16,20 +16,25 @@ render_schedule = [
   # ('028_plate_03_novel_view', '028_p03_nv', 'ref', "exp02"),
   # ('028_plate_03_novel_view', '028_p03_nv', 'ref', "exp03"),
 
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp42"),
+  # ("z-vrig-broom", "z-vrig-broom", "ms", "exp42"),
+  # ("z-vrig-chicken", "z-vrig-chicken", "ms", "exp42"),
+  # ("z-vrig-peel-banana", "z-vrig-peel-banana", "ms", "exp42"),
+
   # ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp43"),
   # ("z-vrig-broom", "z-vrig-broom", "ms", "exp43"),
   # ("z-vrig-chicken", "z-vrig-chicken", "ms", "exp43"),
   # ("z-vrig-peel-banana", "z-vrig-peel-banana", "ms", "exp43"),
 
-  ("z-vrig-3dprinter", "z-vrig-3dprinter", "mso", "exp05"),
-  ("z-vrig-broom", "z-vrig-broom", "mso", "exp05"),
-  ("z-vrig-chicken", "z-vrig-chicken", "mso", "exp05"),
-  ("z-vrig-peel-banana", "z-vrig-peel-banana", "mso", "exp05"),
-
-  ("z-vrig-3dprinter", "z-vrig-3dprinter", "ref", "exp05"),
-  ("z-vrig-broom", "z-vrig-broom", "ref", "exp05"),
-  ("z-vrig-chicken", "z-vrig-chicken", "ref", "exp05"),
-  ("z-vrig-peel-banana", "z-vrig-peel-banana", "ref", "exp05"),
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "mso", "exp05"),
+  # ("z-vrig-broom", "z-vrig-broom", "mso", "exp05"),
+  # ("z-vrig-chicken", "z-vrig-chicken", "mso", "exp05"),
+  # ("z-vrig-peel-banana", "z-vrig-peel-banana", "mso", "exp05"),
+  #
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "ref", "exp05"),
+  # ("z-vrig-broom", "z-vrig-broom", "ref", "exp05"),
+  # ("z-vrig-chicken", "z-vrig-chicken", "ref", "exp05"),
+  # ("z-vrig-peel-banana", "z-vrig-peel-banana", "ref", "exp05"),
 
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp70"),
   # ("018_as_01_novel_view", "018_a01_nv", "ms", "exp71"),
@@ -48,7 +53,7 @@ render_schedule = [
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp50"),
   # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp50"),
 
-  # ("americano_masked", "am", "ms", "exp42", "fix_camera_1"),
+  ("americano_masked", "am", "ms", "exp42", "fix_camera_93"),
   # ("americano_masked", "am", "base", "exp02", "fix_camera_1"),
   # ("americano_masked", "am", "ms", "exp42", "fix_camera_322"),
   # ("americano_masked", "am", "base", "exp02", "fix_camera_322"),

@@ -180,6 +180,9 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   step = state.optimizer.state.step + 1
   state = jax_utils.replicate(state, devices=devices_to_use)
+
+  param_count = sum(x.size for x in jax.tree_leaves(params))
+  print("Total number of params:", param_count)
   del params
 
   # @title Define pmapped render function.
@@ -234,7 +237,8 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
   keys = random.split(rng, len(devices))
 
   results = []
-  relevant_keys = ['rgb', 'med_depth', 'ray_norm', 'ray_delta_x', 'med_points', 'ray_predicted_mask']
+  relevant_keys = ['rgb', 'med_depth', 'ray_norm', 'ray_delta_x', 'med_points',
+                   'ray_predicted_mask', 'ray_rotation_field']
   raw_result_list = []
   if interval == 1:
     camera_path_name += "_full"

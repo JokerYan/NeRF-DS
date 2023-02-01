@@ -11,4 +11,6 @@ data_abbr = {
 
   "011_bell_07_um": "011_b07_um",
   "021_basin_01_um": "021_bs01_um",
+
+  "americano_masked": "am",
 }

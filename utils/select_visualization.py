@@ -5,6 +5,7 @@ import numpy as np
 from load_results import load_gt, load_output
 
 
+interval = 100
 dataset_list = [
   "011_bell_07",
   "015_cup_02",
@@ -15,22 +16,27 @@ dataset_list = [
   "026_bowl_02",
   "028_plate_03",
   "029_2cup_01",
+  "americano_masked"
 ]
 exp_configs = [
-  ("ms", "exp40"),
-  ("ref", "exp01"),
-  ("mso", "exp01"),
-  ("base", "exp01"),
-  ("nerfies", "exp01"),
-  ("refnerf", ""),
-  ("ms", "exp41"),
+  # ("ms", "exp40"),
+  # ("ref", "exp01"),
+  # ("mso", "exp01"),
+  # ("base", "exp01"),
+  # ("nerfies", "exp01"),
+  # ("refnerf", ""),
+  # ("ms", "exp41"),
+
+  # ("ref", "exp03"),
+  ("ms", "exp42")
 ]
 
 output_types = [
   # 'med_depth', 'med_points', 'ray_delta_x', 'ray_norm', 'ray_predicted_mask', 'rgb'
   # 'rgb', 'ray_norm', 'ray_predicted_mask'
   # 'ray_delta_x'
-  "ray_norm"
+  'rgb', "ray_rotation_field"
+  # 'rgb', "ray_norm", "ray_rotation_field"
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/images'
 
@@ -60,13 +66,18 @@ def select_visualization_for_dataset(dataset, selected_exp_config):
   images_list = []
   name_list = []
 
-  gt_images = load_gt(dataset_nv)
-  images_list.append(gt_images)
-  name_list.append('gt')
+  # gt_images = load_gt(dataset_nv)
+  # if interval > 0:
+  #   gt_images_selected = []
+  #   for i in range(0, len(gt_images), interval):
+  #     gt_images_selected.append(gt_images[i])
+  #   gt_images = gt_images_selected
+  # images_list.append(gt_images)
+  # name_list.append('gt')
 
   config_key, exp_idx = selected_exp_config
   for output_type in output_types:
-    out_images = load_output(dataset, config_key, exp_idx, output_type)
+    out_images = load_output(dataset, config_key, exp_idx, output_type, skip=interval > 1, vrig=dataset.startswith('0'))
     name_list.append(f"{config_key}_{exp_idx}_{output_type}")
     images_list.append(out_images)
 
@@ -104,8 +115,9 @@ def select_visualization_for_dataset(dataset, selected_exp_config):
 
 
 if __name__ == "__main__":
-  dataset_idx = 3
+  dataset_idx = 9
   # exp_idx = 3
   exp_idx = 0
   selected_exp_config = exp_configs[exp_idx]
   select_visualization_for_dataset(dataset_list[dataset_idx], selected_exp_config)
+  print(f"Visualizations saved to: {out_dir}")

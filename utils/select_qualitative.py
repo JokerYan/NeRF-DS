@@ -96,14 +96,17 @@ def select_rgb_for_dataset(dataset, selected_exp_configs, name_prefix=None):
 
 if __name__ == "__main__":
   dataset_idx = 8
-  exp_idx_list = [0, 3, 4, 5]   # vs baseline
-  name_prefix = None
+  # exp_idx_list = [0, 3, 4, 5]   # vs baseline
+  # name_prefix = None
 
   # exp_idx_list = [0, 1]   # vs ablation
   # name_prefix = 'ablation_ref'
 
   # exp_idx_list = [0, 2]   # vs ablation
   # name_prefix = 'ablation_mso'
+
+  exp_idx_list = [0, 2]   # vs ablation
+  name_prefix = 'ablation_mso'
 
   selected_exp_configs = [exp_configs[i] for i in exp_idx_list]
   select_rgb_for_dataset(dataset_list[dataset_idx], selected_exp_configs, name_prefix)
