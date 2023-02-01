@@ -9,7 +9,11 @@ pipeline_settings = {
               ],
     'exp44': [
         "ExperimentConfig.image_scale = 2",
-        "batch_size=6144",
+        "batch_size=512",
+        "max_steps=2500000",
+        "lr_decay_steps=2500000",
+        "init_lr = 0.001",
+        "final_lr = 0.0001",
         "NerfModel.num_coarse_samples = 128",
         "NerfModel.num_coarse_samples = 128",
     ]
@@ -26,7 +30,11 @@ pipeline_settings = {
     'exp05': ["ExperimentConfig.image_scale = 2"],
     'exp44': [
         "ExperimentConfig.image_scale = 2",
-        "batch_size=6144",
+        "batch_size=512",
+        "max_steps=2500000",
+        "lr_decay_steps=2500000",
+        "init_lr = 0.001",
+        "final_lr = 0.0001",
         "NerfModel.num_coarse_samples = 128",
         "NerfModel.num_coarse_samples = 128",
     ]
@@ -270,7 +278,11 @@ pipeline_settings = {
               }"""
              ],
     'exp44': ["ExperimentConfig.image_scale = 2",
-              "batch_size=6144",
+              "batch_size=512",
+              "max_steps=2500000",
+              "lr_decay_steps=2500000",
+              "init_lr = 0.001",
+              "final_lr = 0.0001",
               "NerfModel.num_coarse_samples = 128",
               "NerfModel.num_coarse_samples = 128",
               "NerfModel.use_predicted_mask = True",
@@ -566,7 +578,11 @@ pipeline_settings = {
              ],
       'exp44': [
           "ExperimentConfig.image_scale = 2",
-          "batch_size=6144",
+          "batch_size=512",
+          "max_steps=2500000",
+          "lr_decay_steps=2500000",
+          "init_lr = 0.001",
+          "final_lr = 0.0001",
           "NerfModel.num_coarse_samples = 128",
           "NerfModel.num_coarse_samples = 128",
           "NerfModel.use_predicted_mask = True",
