@@ -1,12 +1,17 @@
 import argparse
 from render import render_scene
 
-interval = 100
-camera_path_name = 'fix_camera_93'
-# default_camera_path_name = 'vrig_camera'
+interval = 9
+# camera_path_name = 'fix_camera_93'
+default_camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp44"),
+  ("z-vrig-broom", "z-vrig-broom", "ms", "exp44"),
+  # ("z-vrig-chicken", "z-vrig-chicken", "ms", "exp44"),
+  # ("z-vrig-peel-banana", "z-vrig-peel-banana", "ms", "exp44"),
+
   # ("011_bell_07_um_novel_view", "011_b07_um_nv", "ms", "exp40"),
   # ("011_bell_07_um_novel_view", "011_b07_um_nv", "base", "exp01"),
   #
@@ -53,7 +58,7 @@ render_schedule = [
   # ("011_bell_07_novel_view", "011_b07_nv", "ms", "exp50"),
   # ("015_cup_02_novel_view", "015_c02_nv", "ms", "exp50"),
 
-  ("americano_masked", "am", "ms", "exp42", "fix_camera_93"),
+  # ("americano_masked", "am", "ms", "exp42", "fix_camera_93"),
   # ("americano_masked", "am", "base", "exp02", "fix_camera_1"),
   # ("americano_masked", "am", "ms", "exp42", "fix_camera_322"),
   # ("americano_masked", "am", "base", "exp02", "fix_camera_322"),

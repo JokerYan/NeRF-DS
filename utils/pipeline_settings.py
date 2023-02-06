@@ -302,7 +302,7 @@ pipeline_settings = {
                       (30000, ('exponential', 1, 0.1, 30000)),
                       (220000, ('constant', 0.1))
                   ]
-              }"""
+              }""",
     ],
     'exp50': ["ExperimentConfig.image_scale = 1",
               "NerfModel.use_predicted_mask = True",

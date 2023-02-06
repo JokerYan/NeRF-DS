@@ -499,15 +499,21 @@ class DataSource(abc.ABC):
         x = np.expand_dims(x, -1)
       if flatten:
         x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
+      logging.info(x.shape)
       if shuffle:
+        logging.info(len(shuffled_inds))
         x = x[shuffled_inds]
       return x
 
     out_dict = {}
+    logging.info(data_dict.keys())
     for key, value in data_dict.items():
-      out_dict[key] = jax.tree_map(_prepare_array, value)
+      logging.info(key)
+      out_dict[key] = jax.tree_util.tree_map(_prepare_array, value)
 
-    return tf.data.Dataset.from_tensor_slices(out_dict)
+    dataset = tf.data.Dataset.from_tensor_slices(out_dict)
+
+    return dataset
 
   def _create_lazy_dataset(self,
                            item_ids,

@@ -124,16 +124,25 @@ def render_image(
       ret_key = default_ret_key
     ret_map = jax_utils.unreplicate(model_out[ret_key])
     # assert ret_map.keys() == 0, ret_map.keys()
-    ret_map = jax.tree_map(lambda x: utils.unshard(x, padding), ret_map)
+    ret_map = jax.tree_util.tree_map(lambda x: utils.unshard(x, padding), ret_map)
     ret_maps.append(ret_map)
-  ret_map = jax.tree_multimap(lambda *x: jnp.concatenate(x, axis=0), *ret_maps)
-  logging.info('Rendering took %.04s', time.time() - start_time)
+  # ret_map = jax.tree_util.tree_multimap(lambda *x: jnp.concatenate(x, axis=0), *ret_maps)
+  # logging.info('Rendering took %.04s', time.time() - start_time)
+  # out = {}
+  # for key, value in ret_map.items():
+  #   out_shape = (*batch_shape, *value.shape[1:])
+  #   logging.debug('Reshaping %s of shape %s to %s',
+  #                 key, str(value.shape), str(out_shape))
+  #   out[key] = value.reshape(out_shape)
+
+  # A more memory efficient version for collecting all the results
+  # Values of each key is concatenated separately to save memory
   out = {}
-  for key, value in ret_map.items():
+  for key, value in ret_maps[0].items():
     out_shape = (*batch_shape, *value.shape[1:])
-    logging.debug('Reshaping %s of shape %s to %s',
-                  key, str(value.shape), str(out_shape))
-    out[key] = value.reshape(out_shape)
+    values = [ret_map[key] for ret_map in ret_maps]
+    values = jax.tree_util.tree_multimap(lambda *x: jnp.concatenate(x, axis=0), *values)
+    out[key] = values.reshape(out_shape)
 
   return out
 

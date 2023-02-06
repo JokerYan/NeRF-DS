@@ -54,10 +54,10 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
-  ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp44"),
-  ("z-vrig-broom", "z-vrig-broom", "ms", "exp44"),        # gpu0
-  ("z-vrig-chicken", "z-vrig-chicken", "ms", "exp44"),    # gpu0
-  ("z-vrig-peel-banana", "z-vrig-peel-banana", "ms", "exp44"),
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp44"),
+  ("z-vrig-broom", "z-vrig-broom", "ms", "exp44"),            # gpu3
+  # ("z-vrig-chicken", "z-vrig-chicken", "ms", "exp44"),
+  ("z-vrig-peel-banana", "z-vrig-peel-banana", "ms", "exp44"),  # gpu3
 
   # ("021_basin_01_um_novel_view", "021_bs01_um_nv", "ms", "exp40"),
   # ("021_basin_01_um_novel_view", "021_bs01_um_nv", "base", "exp01"),
@@ -287,7 +287,8 @@ def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):
   for gin_param in gin_params:
     process_str += ["--gin_bindings", gin_param]
 
-  pbar = tqdm(total=250000)
+  total_steps = 2500000 if exp_name.endswith('exp44') else 250000
+  pbar = tqdm(total=total_steps)
   with subprocess.Popen(process_str,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
