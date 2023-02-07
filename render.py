@@ -271,63 +271,63 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     batch['mask'] = mask
 
     render = render_fn(state, batch, rng=rng)
-  #
-  #   # save raw results for future use
-  #   raw_result = {}
-  #   # value_size = 0
-  #   for key in render:
-  #     if not key in relevant_keys:
-  #       continue
-  #     raw_result[key] = np.array(render[key])
-  #     # print(key, raw_result[key].size * raw_result[key].itemsize)
-  #     # value_size += raw_result[key].size * raw_result[key].itemsize
-  #   raw_result_list.append(raw_result)
-  #
-  #   rgb = np.array(render['rgb'])
-  #   depth_med = np.array(render['med_depth'])
-  #
-  #   dummy_image = np.zeros_like(rgb)
-  #
-  #   ray_norm = np.array(render['ray_norm'])
-  #   ray_norm = model_utils.normalize_vector(ray_norm)
-  #   ray_norm = ray_norm / 2.0 + 0.5
-  #
-  #   ray_delta_x = np.array(render['ray_delta_x'])
-  #   ray_delta_x = np.abs(ray_delta_x)
-  #   ray_delta_x = ray_delta_x * 10
-  #
-  #   med_points = np.array(render['med_points'])
-  #   med_points = (med_points + 1.5) / 3     # -1.5 ~ 1.5 --> 0 ~ 1
-  #
-  #   if 'ray_predicted_mask' in render:
-  #     ray_predicted_mask = np.array(render['ray_predicted_mask'])
-  #     ray_predicted_mask = np.broadcast_to(ray_predicted_mask, dummy_image.shape)  # grayscale to color
-  #   else:
-  #     ray_predicted_mask = dummy_image
-  #
-  #   results.append((rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image))
-  #
-  # # save raw render results
-  # raw_result_save_path = os.path.join(train_dir, "render_result_{}".format(camera_path_name))
-  # with open(raw_result_save_path, "wb+") as f:
-  #   np.save(f, raw_result_list)
-  #
-  # # @title Show rendered video.
-  # fps = 30  # @param {type:'number'}
-  # rgb_frames = []
-  # debug_frames = []
-  # for rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image in results:
-  #   depth_viz = viz.colorize(depth_med.squeeze(), cmin=datasource.near, cmax=datasource.far, invert=True)
-  #   med_points = med_points[..., :3].squeeze()
-  #
-  #   row1 = np.concatenate([rgb, depth_viz, ray_norm], axis=1)
-  #   row2 = np.concatenate([ray_predicted_mask, ray_delta_x, med_points], axis=1)
-  #   debug_frame = np.concatenate([row1, row2], axis=0)
-  #   debug_frames.append(image_utils.image_to_uint8(debug_frame))
-  #   rgb_frames.append(image_utils.image_to_uint8(rgb))
-  # mediapy.set_show_save_dir(train_dir)
-  # mediapy.show_video(rgb_frames, fps=fps, title="result_{}_rgb".format(camera_path_name))
-  # mediapy.show_video(debug_frames, fps=fps, title="result_{}".format(camera_path_name))
+
+    # save raw results for future use
+    raw_result = {}
+    # value_size = 0
+    for key in render:
+      if not key in relevant_keys:
+        continue
+      raw_result[key] = np.array(render[key])
+      # print(key, raw_result[key].size * raw_result[key].itemsize)
+      # value_size += raw_result[key].size * raw_result[key].itemsize
+    raw_result_list.append(raw_result)
+
+    rgb = np.array(render['rgb'])
+    depth_med = np.array(render['med_depth'])
+
+    dummy_image = np.zeros_like(rgb)
+
+    ray_norm = np.array(render['ray_norm'])
+    ray_norm = model_utils.normalize_vector(ray_norm)
+    ray_norm = ray_norm / 2.0 + 0.5
+
+    ray_delta_x = np.array(render['ray_delta_x'])
+    ray_delta_x = np.abs(ray_delta_x)
+    ray_delta_x = ray_delta_x * 10
+
+    med_points = np.array(render['med_points'])
+    med_points = (med_points + 1.5) / 3     # -1.5 ~ 1.5 --> 0 ~ 1
+
+    if 'ray_predicted_mask' in render:
+      ray_predicted_mask = np.array(render['ray_predicted_mask'])
+      ray_predicted_mask = np.broadcast_to(ray_predicted_mask, dummy_image.shape)  # grayscale to color
+    else:
+      ray_predicted_mask = dummy_image
+
+    results.append((rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image))
+
+  # save raw render results
+  raw_result_save_path = os.path.join(train_dir, "render_result_{}".format(camera_path_name))
+  with open(raw_result_save_path, "wb+") as f:
+    np.save(f, raw_result_list)
+
+  # @title Show rendered video.
+  fps = 30  # @param {type:'number'}
+  rgb_frames = []
+  debug_frames = []
+  for rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image in results:
+    depth_viz = viz.colorize(depth_med.squeeze(), cmin=datasource.near, cmax=datasource.far, invert=True)
+    med_points = med_points[..., :3].squeeze()
+
+    row1 = np.concatenate([rgb, depth_viz, ray_norm], axis=1)
+    row2 = np.concatenate([ray_predicted_mask, ray_delta_x, med_points], axis=1)
+    debug_frame = np.concatenate([row1, row2], axis=0)
+    debug_frames.append(image_utils.image_to_uint8(debug_frame))
+    rgb_frames.append(image_utils.image_to_uint8(rgb))
+  mediapy.set_show_save_dir(train_dir)
+  mediapy.show_video(rgb_frames, fps=fps, title="result_{}_rgb".format(camera_path_name))
+  mediapy.show_video(debug_frames, fps=fps, title="result_{}".format(camera_path_name))
 
 
 def sort_camera_paths(camera_paths):

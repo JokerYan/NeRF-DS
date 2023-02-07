@@ -499,9 +499,7 @@ class DataSource(abc.ABC):
         x = np.expand_dims(x, -1)
       if flatten:
         x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
-      logging.info(x.shape)
       if shuffle:
-        logging.info(len(shuffled_inds))
         x = x[shuffled_inds]
       return x
 

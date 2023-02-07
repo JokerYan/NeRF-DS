@@ -1,7 +1,7 @@
 import argparse
 from render import render_scene
 
-interval = 9
+interval = 100
 # camera_path_name = 'fix_camera_93'
 default_camera_path_name = 'vrig_camera'
 
