@@ -265,7 +265,7 @@ def main(argv):
   )
 
   points_iter = None
-  if train_config.use_background_loss and False:
+  if train_config.use_background_loss:
     points = datasource.load_points(shuffle=True)
     points_batch_size = min(
         len(points),
