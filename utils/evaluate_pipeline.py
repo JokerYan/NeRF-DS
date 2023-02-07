@@ -108,7 +108,8 @@ exp_pipeline = [
   # ("ref", "exp05"),
   # ("mso", "exp05"),
 
-  ('ms', "exp44"),
+  # ('ms', "exp44"),
+  ('base', 'exp02')
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/'
 def evaluate_pipeline():

@@ -7,8 +7,10 @@ default_camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
+  ("z-vrig-broom", "z-vrig-broom", "base", "exp02"),
+
   # ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp44"),
-  ("z-vrig-broom", "z-vrig-broom", "ms", "exp44"),
+  # ("z-vrig-broom", "z-vrig-broom", "ms", "exp44"),
   # ("z-vrig-chicken", "z-vrig-chicken", "ms", "exp44"),
   # ("z-vrig-peel-banana", "z-vrig-peel-banana", "ms", "exp44"),
 
