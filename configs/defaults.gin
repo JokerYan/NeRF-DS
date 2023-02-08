@@ -57,6 +57,13 @@ DELAYED_HYPER_ALPHA_SCHED = {
     (0, ('linear', 0.0, %hyper_point_max_deg, 10000))
   ],
 }
+LONG_DELAYED_HYPER_ALPHA_SCHED = {
+  'type': 'piecewise',
+  'schedules': [
+    (10000, ('constant', 0.0)),
+    (0, ('linear', 0.0, %hyper_point_max_deg, 100000))
+  ],
+}
 FAST_HYPER_ALPHA_SCHED = {
   'type': 'piecewise',
   'schedules': [

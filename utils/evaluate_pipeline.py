@@ -8,7 +8,7 @@ from data_abbreviations import data_abbr
 from load_results import load_gt, load_hypernerf, load_refnerf, load_hypernerf_gt
 from calculate_quantitative_results import calculate as calculate_quantitative
 
-interval = 100
+interval = 9
 
 def evaluate_single(dataset_name, config_key, exp_idx=''):
   print(f"==> Evaluating {dataset_name} {config_key} {exp_idx}")
@@ -20,6 +20,8 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
 
   if dataset_name.startswith('z-vrig'):
     gt_images = load_hypernerf_gt(dataset_name_nv, scale=2)
+
+    # # reduce scale 2 to scale 4
     # out_shape = (gt_images[0].shape[1] // 2, gt_images[0].shape[0] // 2)
     # gt_images = [
     #   cv2.resize(gt_image, out_shape) for gt_image in gt_images
@@ -75,7 +77,7 @@ dataset_pipeline = [
 
   # "z-vrig-3dprinter",
   "z-vrig-broom",
-  # "z-vrig-chicken",
+  "z-vrig-chicken",
   # "z-vrig-peel-banana",
 
   # "021_basin_01_um",
