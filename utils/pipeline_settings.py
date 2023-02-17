@@ -28,6 +28,18 @@ pipeline_settings = {
         "NerfModel.num_coarse_samples = 128",
         "TrainConfig.hyper_alpha_schedule = %LONG_DELAYED_HYPER_ALPHA_SCHED",
         "warp_alpha_steps = 800000"
+    ],
+    'exp46': [
+        "ExperimentConfig.image_scale = 2",
+        "batch_size=512",
+        "max_steps=2500000",
+        "lr_decay_steps=2500000",
+        "init_lr = 0.0001",
+        "final_lr = 0.00001",
+        "NerfModel.num_coarse_samples = 128",
+        "NerfModel.num_coarse_samples = 128",
+        "TrainConfig.hyper_alpha_schedule = %LONG_DELAYED_HYPER_ALPHA_SCHED",
+        "warp_alpha_steps = 800000"
     ]
   },
   'nerfies': {

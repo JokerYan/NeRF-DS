@@ -8,7 +8,7 @@ from data_abbreviations import data_abbr
 from load_results import load_gt, load_hypernerf, load_refnerf, load_hypernerf_gt
 from calculate_quantitative_results import calculate as calculate_quantitative
 
-interval = 9
+interval = 50
 
 def evaluate_single(dataset_name, config_key, exp_idx=''):
   print(f"==> Evaluating {dataset_name} {config_key} {exp_idx}")
@@ -77,7 +77,7 @@ dataset_pipeline = [
 
   # "z-vrig-3dprinter",
   "z-vrig-broom",
-  "z-vrig-chicken",
+  # "z-vrig-chicken",
   # "z-vrig-peel-banana",
 
   # "021_basin_01_um",
@@ -111,7 +111,8 @@ exp_pipeline = [
   # ("mso", "exp05"),
 
   # ('ms', "exp44"),
-  ('base', 'exp02')
+  # ('base', 'exp02'),
+  ('base', 'exp45'),
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/'
 def evaluate_pipeline():

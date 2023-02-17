@@ -29,6 +29,8 @@ def compute_multiscale_ssim(image1: np.ndarray, image2: np.ndarray):
 
 loss_fn_alex = lpips.LPIPS(net='alex')
 def compute_lpips(image1: np.ndarray, image2: np.ndarray):
+  cv2.imshow('', np.concatenate([image1, image2], axis=1))
+  cv2.waitKey(-1)
   """Compute the LPIPS metric."""
   # normalize to -1 to 1
   image1 = image1 * 2 - 1

@@ -5,7 +5,7 @@ import numpy as np
 from load_results import load_gt, load_output
 
 
-interval = 100
+interval = 1
 dataset_list = [
   "011_bell_07",
   "015_cup_02",
@@ -28,15 +28,17 @@ exp_configs = [
   # ("ms", "exp41"),
 
   # ("ref", "exp03"),
-  ("ms", "exp42")
+  ("base", "exp01"),
+  ("ms", "exp40")
 ]
 
 output_types = [
   # 'med_depth', 'med_points', 'ray_delta_x', 'ray_norm', 'ray_predicted_mask', 'rgb'
   # 'rgb', 'ray_norm', 'ray_predicted_mask'
   # 'ray_delta_x'
-  'rgb', "ray_rotation_field"
+  # 'rgb', "ray_rotation_field"
   # 'rgb', "ray_norm", "ray_rotation_field"
+  'rgb', 'med_depth'
 ]
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/images'
 
@@ -66,14 +68,14 @@ def select_visualization_for_dataset(dataset, selected_exp_config):
   images_list = []
   name_list = []
 
-  # gt_images = load_gt(dataset_nv)
-  # if interval > 0:
-  #   gt_images_selected = []
-  #   for i in range(0, len(gt_images), interval):
-  #     gt_images_selected.append(gt_images[i])
-  #   gt_images = gt_images_selected
-  # images_list.append(gt_images)
-  # name_list.append('gt')
+  gt_images = load_gt(dataset_nv)
+  if interval > 0:
+    gt_images_selected = []
+    for i in range(0, len(gt_images), interval):
+      gt_images_selected.append(gt_images[i])
+    gt_images = gt_images_selected
+  images_list.append(gt_images)
+  name_list.append('gt')
 
   config_key, exp_idx = selected_exp_config
   for output_type in output_types:
@@ -115,9 +117,9 @@ def select_visualization_for_dataset(dataset, selected_exp_config):
 
 
 if __name__ == "__main__":
-  dataset_idx = 9
+  dataset_idx = 4
   # exp_idx = 3
-  exp_idx = 0
+  exp_idx = 1
   selected_exp_config = exp_configs[exp_idx]
   select_visualization_for_dataset(dataset_list[dataset_idx], selected_exp_config)
   print(f"Visualizations saved to: {out_dir}")
