@@ -1,14 +1,16 @@
 import argparse
 from render import render_scene
 
-interval = 50
+interval = 25
 # camera_path_name = 'fix_camera_93'
 default_camera_path_name = 'vrig_camera'
 
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
-  ("z-vrig-3dprinter", "z-vrig-3dprinter", "base", "exp45"),
-  # ("z-vrig-broom", "z-vrig-broom", "base", "exp45"),
+  ("z-vrig-broom", "z-vrig-broom", "base", "exp47"),
+
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "base", "exp46"),
+  # ("z-vrig-broom", "z-vrig-broom", "base", "exp46"),
   # ("z-vrig-chicken", "z-vrig-chicken", "base", "exp02"),
 
   # ("z-vrig-3dprinter", "z-vrig-3dprinter", "ms", "exp44"),

@@ -427,11 +427,12 @@ class DataSource(abc.ABC):
         shuffle=shuffle,
         row_shuffle_buffer_size=shuffle_buffer_size,
         pixel_shuffle_buffer_size=shuffle_buffer_size)
-    return iterator_from_dataset(dataset=dataset,
-                                 batch_size=batch_size,
-                                 repeat=repeat,
-                                 prefetch_size=prefetch_size,
-                                 devices=devices)
+    iterator = iterator_from_dataset(dataset=dataset,
+                                     batch_size=batch_size,
+                                     repeat=repeat,
+                                     prefetch_size=prefetch_size,
+                                     devices=devices)
+    return iterator
 
   def create_dataset(self,
                      item_ids,
@@ -492,25 +493,31 @@ class DataSource(abc.ABC):
 
     def _prepare_array(x):
       if not isinstance(x, np.ndarray):
+        logging.info('convert')
         x = np.asarray(x)
       # Create last dimension if it doesn't exist.
       # The `and` part of the check ensures we're not touching ragged arrays.
       if x.ndim == 1 and x[0].ndim == 0:
+        logging.info('expand')
         x = np.expand_dims(x, -1)
       if flatten:
-        x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
+        logging.info('flatten')
+        logging.info(x.shape)
+        # x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
+        x = x.reshape(-1, x.shape[-1])
+        logging.info(x.shape)
       if shuffle:
+        logging.info('shuffle')
         x = x[shuffled_inds]
       return x
 
-    out_dict = {}
     logging.info(data_dict.keys())
+    out_dict = {}
     for key, value in data_dict.items():
       logging.info(key)
       out_dict[key] = jax.tree_util.tree_map(_prepare_array, value)
 
     dataset = tf.data.Dataset.from_tensor_slices(out_dict)
-
     return dataset
 
   def _create_lazy_dataset(self,

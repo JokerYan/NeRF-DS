@@ -36,7 +36,7 @@ dataset_name = '015_cup_02_novel_view'
 exp_name = '015_c02_nv_ms_exp36'
 camera_path_name = 'vrig_camera'
 interval = 100
-chunk_size = 2048
+chunk_size = 4096
 
 #####################################
 
@@ -209,20 +209,20 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
                       )
     return jax.lax.all_gather(out, axis_name='batch')
 
-  pmodel_fn = jax.pmap(
-      # Note rng_keys are useless in eval mode since there's no randomness.
-      _model_fn,
-      in_axes=(0, 0, 0, 0, 0, 0),  # Only distribute the data input.
-      devices=devices_to_use,
-      axis_name='batch',
-  )
-  # pmodel_fn = jax.vmap(
+  # pmodel_fn = jax.pmap(
   #     # Note rng_keys are useless in eval mode since there's no randomness.
   #     _model_fn,
   #     in_axes=(0, 0, 0, 0, 0, 0),  # Only distribute the data input.
-  #     # devices=devices_to_use,
+  #     devices=devices_to_use,
   #     axis_name='batch',
   # )
+  pmodel_fn = jax.vmap(
+      # Note rng_keys are useless in eval mode since there's no randomness.
+      _model_fn,
+      in_axes=(0, 0, 0, 0, 0, 0),  # Only distribute the data input.
+      # devices=devices_to_use,
+      axis_name='batch',
+  )
   render_fn = functools.partial(evaluation.render_image,
                                 model_fn=pmodel_fn,
                                 device_count=len(devices),

@@ -37,6 +37,8 @@ config_dict = {
   "bone": "test_local_spec_bone.gin",
   "nerfies": "test_local_spec_nerfies.gin",
   'mso': 'test_local_spec_mso.gin',
+
+  "re_ms": "test_local_re_ms.gin",
 }
 
 silent = False
@@ -54,10 +56,14 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
-  ("z-vrig-3dprinter", "z-vrig-3dprinter", "base", "exp46"),  # GPU4
-  ("z-vrig-broom", "z-vrig-broom", "base", "exp46"),
-  ("z-vrig-chicken", "z-vrig-chicken", "base", "exp46"),      # GPU4
-  ("z-vrig-peel-banana", "z-vrig-peel-banana", "base", "exp46"),
+  ("z-vrig-3dprinter", "z-vrig-3dprinter", "re_ms", "exp47"),   # GPU4
+  ("z-vrig-broom", "z-vrig-broom", "re_ms", "exp47"),           # GPU4
+  # ("z-vrig-broom", "z-vrig-broom", "base", "exp47"),
+
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "base", "exp46"),  # GPU4
+  # ("z-vrig-broom", "z-vrig-broom", "base", "exp46"),
+  # ("z-vrig-chicken", "z-vrig-chicken", "base", "exp46"),      # GPU4
+  # ("z-vrig-peel-banana", "z-vrig-peel-banana", "base", "exp46"),
 
   # ("z-vrig-broom", "z-vrig-broom", "base", "exp02"),
   # ("z-vrig-chicken", "z-vrig-chicken", "base", "exp02"),
