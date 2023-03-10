@@ -509,20 +509,20 @@ class DataSource(abc.ABC):
       logging.info(x.shape)
       if shuffle:
         logging.info('shuffle')
-        x = x[shuffled_inds]
-        # logging.info(x.shape)
-        # chunk_size = 50000000
-        # if len(shuffled_inds) <= chunk_size:
-        #   x = x[shuffled_inds]
-        # else:
-        #   chunk_count = int(np.ceil(len(shuffled_inds) / chunk_size))
-        #   chunks = []
-        #   for i in range(chunk_count):
-        #     logging.info(i)
-        #     chunk = x[shuffled_inds[i * chunk_size: (i+1) * chunk_size]]
-        #     chunks.append(chunk)
-        #   x = np.concatenate(chunks, axis=0)
-        #   logging.info(x.shape)
+        # x = x[shuffled_inds]
+        logging.info(x.shape)
+        chunk_size = 50000000
+        if len(shuffled_inds) <= chunk_size:
+          x = x[shuffled_inds]
+        else:
+          chunk_count = int(np.ceil(len(shuffled_inds) / chunk_size))
+          chunks = []
+          for i in range(chunk_count):
+            logging.info(i)
+            chunk = x[shuffled_inds[i * chunk_size: (i+1) * chunk_size]]
+            chunks.append(chunk)
+          x = np.concatenate(chunks, axis=0)
+          logging.info(x.shape)
         logging.info("shuffle finish")
       return x
 
