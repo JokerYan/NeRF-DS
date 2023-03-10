@@ -264,6 +264,8 @@ def main(argv):
       devices=devices,
   )
 
+  logging.info("dataset iterator created")
+
   points_iter = None
   if train_config.use_background_loss:
     points = datasource.load_points(shuffle=True)

@@ -426,7 +426,8 @@ class DataSource(abc.ABC):
         flatten=flatten,
         shuffle=shuffle,
         row_shuffle_buffer_size=shuffle_buffer_size,
-        pixel_shuffle_buffer_size=shuffle_buffer_size)
+        pixel_shuffle_buffer_size=shuffle_buffer_size,
+    )
     iterator = iterator_from_dataset(dataset=dataset,
                                      batch_size=batch_size,
                                      repeat=repeat,
@@ -442,15 +443,17 @@ class DataSource(abc.ABC):
                      pixel_shuffle_buffer_size=1000000):
     """Creates a tf.data.Dataset."""
     if self.preload:
-      return self._create_preloaded_dataset(
+      dataset = self._create_preloaded_dataset(
           item_ids, flatten=flatten, shuffle=shuffle)
+      return dataset
     else:
-      return self._create_lazy_dataset(
+      dataset = self._create_lazy_dataset(
           item_ids,
           flatten=flatten,
           shuffle=shuffle,
           row_shuffle_buffer_size=row_shuffle_buffer_size,
           pixel_shuffle_buffer_size=pixel_shuffle_buffer_size)
+      return dataset
 
   def _create_preloaded_dataset(self, item_ids, flatten=False, shuffle=False):
     """Crates a dataset completely preloaded in memory.
@@ -497,17 +500,37 @@ class DataSource(abc.ABC):
       # Create last dimension if it doesn't exist.
       # The `and` part of the check ensures we're not touching ragged arrays.
       if x.ndim == 1 and x[0].ndim == 0:
+        # logging.info('expand')
         x = np.expand_dims(x, -1)
       if flatten:
-        # x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
-        x = x.reshape(-1, x.shape[-1])
+        # logging.info('flatten')
+        x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
+        # x = x.reshape(-1, x.shape[-1])
+      logging.info(x.shape)
       if shuffle:
         x = x[shuffled_inds]
+        # logging.info('shuffle')
+        # logging.info(x.shape)
+        # chunk_size = 50000000
+        # if len(shuffled_inds) <= chunk_size:
+        #   x = x[shuffled_inds]
+        # else:
+        #   chunk_count = int(np.ceil(len(shuffled_inds) / chunk_size))
+        #   chunks = []
+        #   for i in range(chunk_count):
+        #     logging.info(i)
+        #     chunk = x[shuffled_inds[i * chunk_size: (i+1) * chunk_size]]
+        #     chunks.append(chunk)
+        #   x = np.concatenate(chunks, axis=0)
+        #   logging.info(x.shape)
+        # logging.info("shuffle finish")
       return x
 
     logging.info(data_dict.keys())
     out_dict = {}
     for key, value in data_dict.items():
+      logging.info(key)
+      # _prepare_array(value)
       out_dict[key] = jax.tree_util.tree_map(_prepare_array, value)
 
     dataset = tf.data.Dataset.from_tensor_slices(out_dict)
