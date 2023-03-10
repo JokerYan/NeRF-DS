@@ -2,7 +2,6 @@ import os
 
 import jax
 import jax.numpy as jnp
-import torch
 from jax import random
 
 import flax
@@ -41,7 +40,6 @@ chunk_size = 4096
 
 #####################################
 
-@torch.no_grad()
 def render_scene(dataset_name, exp_name, camera_path_name, interval):
   # print('Detected Devices:', jax.devices())
 
