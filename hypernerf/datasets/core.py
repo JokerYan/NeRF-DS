@@ -506,12 +506,9 @@ class DataSource(abc.ABC):
         logging.info('flatten')
         x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
         # x = x.reshape(-1, x.shape[-1])
-      logging.info(x.shape)
       if shuffle:
         logging.info('shuffle')
-        x = x[shuffled_inds]
-        logging.info(x.shape)
-        logging.info(np.max(shuffled_inds))
+        x = x[shuffled_inds, :]
         # chunk_size = 50000000
         # if len(shuffled_inds) <= chunk_size:
         #   x = x[shuffled_inds]
