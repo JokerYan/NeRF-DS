@@ -510,7 +510,8 @@ class DataSource(abc.ABC):
       if shuffle:
         logging.info('shuffle')
         x = x[shuffled_inds]
-        logging.info(x.shape, np.max(shuffled_inds))
+        logging.info(x.shape)
+        logging.info(np.max(shuffled_inds))
         # chunk_size = 50000000
         # if len(shuffled_inds) <= chunk_size:
         #   x = x[shuffled_inds]
