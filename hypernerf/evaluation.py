@@ -122,7 +122,9 @@ def render_image(
       ret_key = 'fine' if 'fine' in model_out else 'coarse'
     else:
       ret_key = default_ret_key
-    ret_map = jax_utils.unreplicate(model_out[ret_key])
+    # ret_map = jax_utils.unreplicate(model_out[ret_key])
+    ret_map = jax_utils.unreplicate(jax.device_put(model_out[ret_key], jax.devices("cpu")[0]))
+    del model_out
     # assert ret_map.keys() == 0, ret_map.keys()
     ret_map = jax.tree_util.tree_map(lambda x: utils.unshard(x, padding), ret_map)
     ret_maps.append(ret_map)

@@ -56,8 +56,11 @@ exp_root = "./experiments/"
 
 # training schedule in the tuple of dataset_name, exp_prefix, config_key, exp_idx
 training_schedule = [
-  ("z-vrig-3dprinter", "z-vrig-3dprinter", "re_ms", "exp47"),   # GPU4
-  ("z-vrig-broom", "z-vrig-broom", "re_ms", "exp47"),           # GPU4
+  ("z-vrig-peel-banana", "z-vrig-peel-banana", "re_ms", "exp47"),
+  # ("z-vrig-broom", "z-vrig-broom", "re_ms", "exp47"),
+  # ("z-vrig-3dprinter", "z-vrig-3dprinter", "re_ms", "exp47"),
+  # ("z-vrig-chicken", "z-vrig-chicken", "re_ms", "exp47"),
+
   # ("z-vrig-broom", "z-vrig-broom", "base", "exp47"),
 
   # ("z-vrig-3dprinter", "z-vrig-3dprinter", "base", "exp46"),  # GPU4

@@ -2,6 +2,7 @@ import os
 
 import jax
 import jax.numpy as jnp
+import torch
 from jax import random
 
 import flax
@@ -40,7 +41,7 @@ chunk_size = 4096
 
 #####################################
 
-
+@torch.no_grad()
 def render_scene(dataset_name, exp_name, camera_path_name, interval):
   # print('Detected Devices:', jax.devices())
 
@@ -103,7 +104,8 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
             dummy_model.nerf_embed_key == 'appearance'
             or dummy_model.hyper_embed_key == 'appearance'),
     use_camera_id=dummy_model.nerf_embed_key == 'camera',
-    use_time=dummy_model.warp_embed_key == 'time')
+    use_time=dummy_model.warp_embed_key == 'time',
+  )
 
   # @title Load model
   # @markdown Defines the model and initializes its parameters.

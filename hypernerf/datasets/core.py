@@ -493,28 +493,21 @@ class DataSource(abc.ABC):
 
     def _prepare_array(x):
       if not isinstance(x, np.ndarray):
-        logging.info('convert')
         x = np.asarray(x)
       # Create last dimension if it doesn't exist.
       # The `and` part of the check ensures we're not touching ragged arrays.
       if x.ndim == 1 and x[0].ndim == 0:
-        logging.info('expand')
         x = np.expand_dims(x, -1)
       if flatten:
-        logging.info('flatten')
-        logging.info(x.shape)
         # x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
         x = x.reshape(-1, x.shape[-1])
-        logging.info(x.shape)
       if shuffle:
-        logging.info('shuffle')
         x = x[shuffled_inds]
       return x
 
     logging.info(data_dict.keys())
     out_dict = {}
     for key, value in data_dict.items():
-      logging.info(key)
       out_dict[key] = jax.tree_util.tree_map(_prepare_array, value)
 
     dataset = tf.data.Dataset.from_tensor_slices(out_dict)

@@ -27,6 +27,7 @@ def compute_multiscale_ssim(image1: np.ndarray, image2: np.ndarray):
   return tf.image.ssim_multiscale(image1, image2, max_val=1.0)
 
 
+# loss_fn_alex = lpips.LPIPS(net='vgg')
 loss_fn_alex = lpips.LPIPS(net='alex')
 def compute_lpips(image1: np.ndarray, image2: np.ndarray):
   cv2.imshow('', np.concatenate([image1, image2], axis=1))
