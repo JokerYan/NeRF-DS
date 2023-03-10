@@ -500,16 +500,16 @@ class DataSource(abc.ABC):
       # Create last dimension if it doesn't exist.
       # The `and` part of the check ensures we're not touching ragged arrays.
       if x.ndim == 1 and x[0].ndim == 0:
-        # logging.info('expand')
+        logging.info('expand')
         x = np.expand_dims(x, -1)
       if flatten:
-        # logging.info('flatten')
+        logging.info('flatten')
         x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
         # x = x.reshape(-1, x.shape[-1])
       logging.info(x.shape)
       if shuffle:
+        logging.info('shuffle')
         x = x[shuffled_inds]
-        # logging.info('shuffle')
         # logging.info(x.shape)
         # chunk_size = 50000000
         # if len(shuffled_inds) <= chunk_size:
@@ -523,7 +523,7 @@ class DataSource(abc.ABC):
         #     chunks.append(chunk)
         #   x = np.concatenate(chunks, axis=0)
         #   logging.info(x.shape)
-        # logging.info("shuffle finish")
+        logging.info("shuffle finish")
       return x
 
     logging.info(data_dict.keys())
