@@ -30,8 +30,6 @@ def compute_multiscale_ssim(image1: np.ndarray, image2: np.ndarray):
 # loss_fn_alex = lpips.LPIPS(net='vgg')
 loss_fn_alex = lpips.LPIPS(net='alex')
 def compute_lpips(image1: np.ndarray, image2: np.ndarray):
-  cv2.imshow('', np.concatenate([image1, image2], axis=1))
-  cv2.waitKey(-1)
   """Compute the LPIPS metric."""
   # normalize to -1 to 1
   image1 = image1 * 2 - 1
@@ -75,6 +73,13 @@ def calculate(gt_images, frame_list, trim_ratio=0):
     psnr = utils.compute_psnr(mse)
     ms_ssim = compute_multiscale_ssim(gt_image, rendered_image)
     lpips = compute_lpips(gt_image, rendered_image)
+
+    # cv2.imshow('', np.concatenate([gt_image, rendered_image], axis=1))
+    # # image_diff = np.abs(gt_image - rendered_image)
+    # image_diff = (gt_image + rendered_image) / 2
+    # cv2.imshow('diff', image_diff)
+    # print(psnr, ms_ssim, lpips)
+    # cv2.waitKey(-1)
 
     mse_list.append(mse)
     psnr_list.append(psnr)
