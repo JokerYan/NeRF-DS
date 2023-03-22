@@ -74,12 +74,12 @@ def calculate(gt_images, frame_list, trim_ratio=0):
     ms_ssim = compute_multiscale_ssim(gt_image, rendered_image)
     lpips = compute_lpips(gt_image, rendered_image)
 
-    # cv2.imshow('', np.concatenate([gt_image, rendered_image], axis=1))
-    # # image_diff = np.abs(gt_image - rendered_image)
-    # image_diff = (gt_image + rendered_image) / 2
-    # cv2.imshow('diff', image_diff)
-    # print(psnr, ms_ssim, lpips)
-    # cv2.waitKey(-1)
+    cv2.imshow('', np.concatenate([gt_image, rendered_image], axis=1))
+    # image_diff = np.abs(gt_image - rendered_image)
+    image_diff = (gt_image + rendered_image) / 2
+    cv2.imshow('diff', image_diff)
+    print(psnr, ms_ssim, lpips)
+    cv2.waitKey(-1)
 
     mse_list.append(mse)
     psnr_list.append(psnr)
