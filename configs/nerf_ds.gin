@@ -1,6 +1,6 @@
 include 'configs/defaults.gin'
 
-image_scale = 4
+image_scale = 1
 batch_size = 512
 # eval_batch_size = 8192
 eval_batch_size = 4096
@@ -90,7 +90,7 @@ SpecularConfig.use_back_facing_reg = True
 SpecularConfig.back_facing_reg_weight = 0.1
 
 NerfModel.predict_norm = True
-NerfModel.norm_supervision_type = 'direct'
+NerfModel.norm_supervision_type = 'warped'
 
 # SpecularConfig.norm_input_alpha_schedule = %CONSTANT_NORM_INPUT_ALPHA_SCHED
 SpecularConfig.norm_input_alpha_schedule = %DELAYED_NORM_INPUT_ALPHA_SCHED
@@ -106,7 +106,7 @@ SpecularConfig.hyper_jacobian_reg_weight = 3e-6
 SpecularConfig.hyper_jacobian_reg_scale = 0.1
 
 NerfModel.use_viewdirs_in_hyper = False
-NerfModel.use_x_in_rgb_condition = False
+NerfModel.use_x_in_rgb_condition = True
 
 NerfModel.use_hyper_c = False
 NerfModel.hyper_c_hyper_input = True
@@ -137,42 +137,28 @@ SpecularConfig.norm_voxel_ratio_schedule = {
 # mask related
 NerfModel.use_mask_in_warp = True
 NerfModel.use_mask_in_hyper = True
-NerfModel.use_mask_in_rgb = True
+NerfModel.use_mask_in_rgb = False
 SpecularConfig.use_mask_weighted_loss = False
 SpecularConfig.in_mask_consistency_loss_weight = 0.001
 SpecularConfig.out_mask_consistency_loss_weight = 1.0
 SpecularConfig.predicted_mask_loss_weight = 0.1
 
-SpecularConfig.mask_ratio_schedule = {
-  'type': 'piecewise',
-  'schedules': [
-    (5000, ('constant', 0.0)),
-    (10000, ('linear', 0.0, 0.8, 10000)),
-    (10000, ('linear', 0.8, 1.0, 10000)),
-    (300000, ('constant', 1.0)),
-  ]
-}
+NerfModel.use_predicted_mask = True
+NerfModel.use_3d_mask = True
+NerfModel.use_mask_sharp_weights = True
 
-# SpecularConfig.mask_ratio_schedule = {
-#   'type': 'piecewise',
-#   'schedules': [
-#     (5000, ('constant', 0.0)),
-#     (30000, ('linear', 0.0, 1.0, 30000)),
-#     (300000, ('constant', 1.0)),
-#   ]
-# }
+SpecularConfig.mask_ratio_schedule = {'type': 'constant', 'value': 1}
 
-# SpecularConfig.mask_ratio_schedule = {
-#     'type': 'constant',
-#     'value': 1.0
-# }
+MaskMLP.depth = 8
+MaskMLP.width = 128
+MaskMLP.output_activation = @jax.nn.relu
 
 SpecularConfig.sharp_mask_std_schedule = {
-    'type': 'piecewise',
-    'schedules': [
-        (80000, ('exponential', 1, 0.001, 80000)),
-        (200000, ('constant', 0.001))
-    ]
+  'type': 'piecewise',
+  'schedules': [
+      (30000, ('exponential', 1, 0.1, 30000)),
+      (220000, ('constant', 0.1))
+  ]
 }
 
 # x for rgb

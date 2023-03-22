@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 from glob import glob
 
-from data_abbreviations import data_abbr
 from hypernerf import model_utils
 
 raw_data_root = '/home/zwyan/3d_cv/data/hypernerf/raw'
@@ -132,9 +131,9 @@ def load_output(dataset_name, config_key, exp_idx, output_type='rgb', skip=False
       out_images = load_refnerf(dataset_name)
     else:
       if vrig:
-        exp_prefix = data_abbr[dataset_name] + '_nv'
+        exp_prefix = dataset_name + '_nv'
       else:
-        exp_prefix = data_abbr[dataset_name]
+        exp_prefix = dataset_name
       out_images = load_hypernerf(exp_prefix, config_key, exp_idx, output_type, skip, vrig)
     return out_images
 

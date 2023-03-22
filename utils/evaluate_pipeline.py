@@ -4,11 +4,10 @@ import cv2
 import numpy as np
 import pickle
 
-from data_abbreviations import data_abbr
 from load_results import load_gt, load_hypernerf, load_refnerf, load_hypernerf_gt
 from calculate_quantitative_results import calculate as calculate_quantitative
 
-interval = 30
+interval = 1
 
 def evaluate_single(dataset_name, config_key, exp_idx=''):
   print(f"==> Evaluating {dataset_name} {config_key} {exp_idx}")
@@ -41,7 +40,7 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
     if dataset_name.startswith('z-vrig'):
       exp_prefix = dataset_name
     else:
-      exp_prefix = data_abbr[dataset_name] + '_nv'
+      exp_prefix = dataset_name + '_nv'
     out_images = load_hypernerf(exp_prefix, config_key, exp_idx, skip=interval > 1)
     gt_shape = (gt_images[0].shape[1], gt_images[0].shape[0])
     out_images = [
@@ -65,59 +64,20 @@ def evaluate_single(dataset_name, config_key, exp_idx=''):
 
 
 dataset_pipeline = [
-  # "011_bell_07",
-  # "015_cup_02",
-  # "018_as_01",
-  # "021_basin_01",
-  # "022_sieve_02",
-  # "025_press_01",
-  # "026_bowl_02",
-  # "028_plate_03",
-  # "029_2cup_01",
-
-  # "z-vrig-chicken",
-  # "z-vrig-3dprinter",
-  # "z-vrig-broom",
-  "z-vrig-broom-new",
-  # "z-vrig-peel-banana",
-
-  # "021_basin_01_um",
-  # "011_bell_07_um",
+  "bell",
+  "cup",
+  "as",
+  "basin",
+  "sieve",
+  "press",
+  "plate",
+  "2cup",
 ]
 exp_pipeline = [
-  # ("ms", "exp40"),
-  # ("ref", "exp01"),
-  # ("mso", "exp01"),
-  # ("base", "exp01"),
-  # ("nerfies", "exp01"),
-  # ("refnerf", ""),
-
-  # ("ms", "exp50"),
-  # ("ms", "exp51"),
-  # ("ms", "exp52"),
-  # ("ms", "exp53"),
-  # ("ms", "exp54"),
-
-  # ("ms", "exp60"),
-  # ("ms", "exp61"),
-  # ("ms", "exp62"),
-  # ("ms", "exp63"),
-
-  # ("ms", "exp70"),
-  # ("ms", "exp71"),
-
-  # ('ms', "exp42"),
-  # ('ms', "exp43"),
-  # ("ref", "exp05"),
-  # ("mso", "exp05"),
-
-  # ('ms', "exp44"),
-  # ('base', 'exp02'),
-  # ('base', 'exp45'),
-  # ('base', 'exp46'),
-  # ('base', 'exp47'),
-  ('re_ms', 'exp47'),
+  ('base', 'exp01'),
+  ('ds', 'exp01')
 ]
+
 out_dir = '/home/zwyan/3d_cv/repos/hypernerf_barf/evaluations/'
 def evaluate_pipeline():
   # permutation
