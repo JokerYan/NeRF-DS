@@ -173,8 +173,5 @@ EvalConfig.num_val_eval = None
 
 
 # Specular configs
-SpecularConfig.screw_input_mode = None
 SpecularConfig.use_sigma_gradient = False
-SpecularConfig.use_sigma_grad_diff_reg = False
-SpecularConfig.sigma_grad_diff_reg_weight = 0
 SpecularConfig.use_predicted_norm = False

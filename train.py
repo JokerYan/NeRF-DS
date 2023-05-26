@@ -244,6 +244,7 @@ def main(argv):
       embeddings_dict=datasource.embeddings_dict,
       near=datasource.near,
       far=datasource.far,
+      use_sigma_gradient=spec_config.use_sigma_gradient,
       use_predicted_norm=spec_config.use_predicted_norm
   )
 

@@ -56,7 +56,7 @@ def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):
   for gin_param in gin_params:
     process_str += ["--gin_bindings", gin_param]
 
-  total_steps = 2500000
+  total_steps = 250000
   pbar = tqdm(total=total_steps)
   with subprocess.Popen(process_str,
                         stdout=subprocess.PIPE,

@@ -7,14 +7,14 @@ default_camera_path_name = 'vrig_camera'
 # dataset_name, exp_prefix, config_key, exp_idx
 render_schedule = [
   ("bell_novel_view", "ds", "exp01"),
-  ("cup_novel_view", "ds", "exp01"),
-  ("as_novel_view", "ds", "exp01"),
-  ("basin_novel_view", "ds", "exp01"),
-  ("sieve_novel_view", "ds", "exp01"),
-  ("press_novel_view", "ds", "exp01"),
-  ("bowl_novel_view", "ds", "exp01"),
-  ('plate_novel_view', 'ds', "exp01"),
-  ("2cup_novel_view", "ds", "exp01"),
+  # ("cup_novel_view", "ds", "exp01"),
+  # ("as_novel_view", "ds", "exp01"),
+  # ("basin_novel_view", "ds", "exp01"),
+  # ("sieve_novel_view", "ds", "exp01"),
+  # ("press_novel_view", "ds", "exp01"),
+  # ("bowl_novel_view", "ds", "exp01"),
+  # ('plate_novel_view', 'ds', "exp01"),
+  # ("2cup_novel_view", "ds", "exp01"),
 ]
 
 if __name__ == "__main__":

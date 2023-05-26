@@ -48,7 +48,6 @@ class ScalarParams:
   background_noise_std: float = 0.001
   hyper_reg_loss_weight: float = 0.0
   back_facing_reg_weight: float = 0.0
-  norm_voxel_loss_weight: float = 0.0
   flow_model_light_learning_rate: float = 0.0
   predicted_mask_loss_weight: float = 1.0
   mask_ratio: float = 1.0
@@ -353,28 +352,6 @@ def train_step(model: models.CustomModel,
     if 'sigma_grad_diff' in model_out:
       stats['stats/sigma_grad_diff'] = jnp.mean(model_out['sigma_grad_diff'])
 
-    if 'inter_norm' in model_out:
-      weights = lax.stop_gradient(model_out['weights'])   # R x S
-      sigma = lax.stop_gradient(model_out['sigma'])   # R x S
-      inv_sigma = 1 - jnp.exp(-sigma)   # R x S
-
-      predicted_norm = lax.stop_gradient(model_out['predicted_norm'])   # R x S x 3
-      inter_norm = model_out['inter_norm']
-      nv_vertex_values = model_out['nv_vertex_values']    # R x S x 8 x 3
-      nv_vertex_coef = model_out['nv_vertex_coef']        # R x S x 8
-
-      # inter_norm_loss = jnp.mean(jnp.square(predicted_norm - inter_norm), axis=-1)
-
-      predicted_norm_expanded = jnp.tile(jnp.expand_dims(predicted_norm, axis=2), [1, 1, 8, 1])   # R x S x 8 x 3
-      inter_norm_loss = jnp.mean(jnp.square(predicted_norm_expanded - nv_vertex_values), axis=-1) # R x S x 8
-      inter_norm_loss = jnp.sum(inter_norm_loss * nv_vertex_coef, axis=-1)  # scale by inter coef, R x S
-
-      # inter_norm_loss = jnp.mean(weights * inter_norm_loss)
-      inter_norm_loss = jnp.mean(inv_sigma * inter_norm_loss)
-
-      stats['loss/inter_norm_loss'] = inter_norm_loss
-      loss += scalar_params.norm_voxel_loss_weight * inter_norm_loss
-
     if 'predicted_mask' in model_out and not model.use_3d_mask:
       alpha = lax.stop_gradient(model_out['alpha'])       # R x S   1 - exp(-sigma * dist)
       normalized_alpha = alpha / jnp.sum(alpha, axis=1)[:, jnp.newaxis]
@@ -473,8 +450,6 @@ def train_step(model: models.CustomModel,
                           'coarse': coarse_key
                       },
                       use_predicted_norm=use_predicted_norm,
-                      norm_voxel_lr=state.norm_voxel_lr,
-                      norm_voxel_ratio=state.norm_voxel_ratio,
                       mask_ratio=scalar_params.mask_ratio,
                       sharp_weights_std=scalar_params.sharp_weights_std,
                       )
@@ -529,11 +504,6 @@ def train_step(model: models.CustomModel,
     grad = utils.clip_gradients(grad, grad_max_val, grad_max_norm)
   stats = jax.lax.pmean(stats, axis_name='batch')
   model_out = jax.lax.pmean(model_out, axis_name='batch')
-
-  # # DEBUG grad for norm voxel
-  # norm_voxel_grad = lax.stop_gradient(grad['model']['norm_voxel']['norm_voxel_array'])
-  # norm_voxel_grad = jnp.max(jnp.abs(norm_voxel_grad))
-  # stats['norm_voxel_grad'] = norm_voxel_grad
 
   new_optimizer = optimizer.apply_gradient(
       grad, learning_rate=scalar_params.learning_rate)

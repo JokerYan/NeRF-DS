@@ -1,4 +1,5 @@
 import os
+import time
 
 import jax
 import jax.numpy as jnp
@@ -9,6 +10,7 @@ from flax import jax_utils
 from flax import optim
 from flax.training import checkpoints
 
+import cv2
 import functools
 from absl import logging
 import numpy as np
@@ -121,8 +123,6 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     train_config.hyper_sheet_alpha_schedule)
   norm_loss_weight_sched = schedules.from_config(spec_config.norm_loss_weight_schedule)
   norm_input_alpha_sched = schedules.from_config(spec_config.norm_input_alpha_schedule)
-  norm_voxel_lr_sched = schedules.from_config(spec_config.norm_voxel_lr_schedule)
-  norm_voxel_ratio_sched = schedules.from_config(spec_config.norm_voxel_ratio_schedule)
 
   rng, key = random.split(rng)
   params = {}
@@ -133,17 +133,12 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     embeddings_dict=datasource.embeddings_dict,
     near=datasource.near,
     far=datasource.far,
-    screw_input_mode=spec_config.screw_input_mode,
     use_sigma_gradient=spec_config.use_sigma_gradient,
     use_predicted_norm=spec_config.use_predicted_norm,
   )
 
   optimizer_def = optim.Adam(learning_rate_sched(0))
-  if model.use_flow_model:
-    focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
-    optimizer = optimizer_def.create(params, focus=focus)
-  else:
-    optimizer = optimizer_def.create(params)
+  optimizer = optimizer_def.create(params)
 
   # state = model_utils.TrainState(optimizer=optimizer)
   state = model_utils.TrainState(
@@ -154,8 +149,6 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     hyper_sheet_alpha=hyper_sheet_alpha_sched(0),
     norm_loss_weight=norm_loss_weight_sched(0),
     norm_input_alpha=norm_input_alpha_sched(0),
-    norm_voxel_lr=norm_voxel_lr_sched(0),
-    norm_voxel_ratio=norm_voxel_ratio_sched(0),
   )
 
   logging.info('Restoring checkpoint from %s', checkpoint_dir)
@@ -183,26 +176,25 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
                       use_predicted_norm=spec_config.use_predicted_norm,
                       return_points=False,
                       return_nv_details=False,
-                      norm_voxel_ratio=1,  # inference ratio is always 1
                       mask_ratio=1,  # inference ratio is always 1
                       sharp_weights_std=0.1
                       )
     return jax.lax.all_gather(out, axis_name='batch')
 
-  # pmodel_fn = jax.pmap(
-  #     # Note rng_keys are useless in eval mode since there's no randomness.
-  #     _model_fn,
-  #     in_axes=(0, 0, 0, 0, 0, 0),  # Only distribute the data input.
-  #     devices=devices_to_use,
-  #     axis_name='batch',
-  # )
-  pmodel_fn = jax.vmap(
+  pmodel_fn = jax.pmap(
       # Note rng_keys are useless in eval mode since there's no randomness.
       _model_fn,
       in_axes=(0, 0, 0, 0, 0, 0),  # Only distribute the data input.
-      # devices=devices_to_use,
+      devices=devices_to_use,
       axis_name='batch',
   )
+  # pmodel_fn = jax.vmap(
+  #     # Note rng_keys are useless in eval mode since there's no randomness.
+  #     _model_fn,
+  #     in_axes=(0, 0, 0, 0, 0, 0),  # Only distribute the data input.
+  #     # devices=devices_to_use,
+  #     axis_name='batch',
+  # )
   render_fn = functools.partial(evaluation.render_image,
                                 model_fn=pmodel_fn,
                                 device_count=len(devices),
@@ -285,6 +277,8 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     else:
       ray_predicted_mask = dummy_image
 
+    cv2.imshow('rgb', cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+    cv2.waitKey(1)
     results.append((rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image))
 
   # save raw render results
