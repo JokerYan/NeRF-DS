@@ -318,7 +318,6 @@ def main(argv):
     warp_reg_loss_scale=train_config.warp_reg_loss_scale,
     background_loss_weight=train_config.background_loss_weight,
     back_facing_reg_weight=spec_config.back_facing_reg_weight,
-    norm_voxel_loss_weight=spec_config.norm_voxel_loss_weight,
     predicted_mask_loss_weight=spec_config.predicted_mask_loss_weight,
     mask_ratio=mask_ratio_sched(0),
     mask_occlusion_reg_loss_weight=spec_config.mask_occlusion_reg_loss_weight,

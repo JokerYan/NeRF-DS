@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 
@@ -32,17 +33,8 @@ from hypernerf import visualization as viz
 from hypernerf import model_utils
 from hypernerf import utils
 
-######## parameter settings #########
 
-dataset_name = '015_cup_02_novel_view'
-exp_name = '015_c02_nv_ms_exp36'
-camera_path_name = 'vrig_camera'
-interval = 100
-chunk_size = 4096
-
-#####################################
-
-def render_scene(dataset_name, exp_name, camera_path_name, interval):
+def render_scene(exp_dir, data_dir, camera_path_name='vrig_camera', interval=1, chunk_size=4096):
   # print('Detected Devices:', jax.devices())
 
   # @title Define imports and utility functions.
@@ -54,29 +46,10 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
   logging.info = myprint
   logging.warn = myprint
   logging.error = myprint
-  # @title Model and dataset configuration
-  # @markdown Change the directories to where you saved your capture and experiment.
-  if os.path.exists('/ssd/zhiwen/data/hypernerf/raw/'):
-    data_root = '/ssd/zhiwen/data/hypernerf/raw/'
-    project_root = '/data/zwyan/hypernerf-barf'
-  elif os.path.exists('/hdd/zhiwen/data/hypernerf/raw/'):
-    data_root = '/hdd/zhiwen/data/hypernerf/raw/'
-    project_root = '/data/zwyan/hypernerf-barf'
-  elif os.path.exists('/home/zwyan/3d_cv/data/hypernerf/raw/'):
-    data_root = '/home/zwyan/3d_cv/data/hypernerf/raw/'
-    project_root = '/home/zwyan/3d_cv/repos/hypernerf_barf'
-  else:
-    raise NotImplemented
 
-  # @markdown The working directory where the trained model is.
-  train_dir = os.path.join(project_root, 'experiments', exp_name)
-
-  # @markdown The directory to the dataset capture.
-  data_dir = os.path.join(data_root, dataset_name)  # @param {type: "string"}
-
-  checkpoint_dir = Path(train_dir, 'checkpoints')
+  checkpoint_dir = Path(exp_dir, 'checkpoints')
   checkpoint_dir.mkdir(exist_ok=True, parents=True)
-  config_path = Path(train_dir, 'config.gin')
+  config_path = Path(exp_dir, 'config.gin')
   with open(config_path, 'r') as f:
     logging.info('Loading config from %s', config_path)
     config_str = f.read()
@@ -282,7 +255,7 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     results.append((rgb, depth_med, ray_norm, ray_predicted_mask, ray_delta_x, med_points, dummy_image))
 
   # save raw render results
-  raw_result_save_path = os.path.join(train_dir, "render_result_{}".format(camera_path_name))
+  raw_result_save_path = os.path.join(exp_dir, "render_result_{}".format(camera_path_name))
   with open(raw_result_save_path, "wb+") as f:
     np.save(f, raw_result_list)
 
@@ -299,7 +272,7 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     debug_frame = np.concatenate([row1, row2], axis=0)
     debug_frames.append(image_utils.image_to_uint8(debug_frame))
     rgb_frames.append(image_utils.image_to_uint8(rgb))
-  mediapy.set_show_save_dir(train_dir)
+  mediapy.set_show_save_dir(exp_dir)
   mediapy.show_video(rgb_frames, fps=fps, title="result_{}_rgb".format(camera_path_name))
   mediapy.show_video(debug_frames, fps=fps, title="result_{}".format(camera_path_name))
 
@@ -323,7 +296,20 @@ def sort_camera_paths(camera_paths):
 
 
 if __name__ == "__main__":
-  render_scene(dataset_name, exp_name, camera_path_name, interval)
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--base_folder", type=str)
+  parser.add_argument("--data_dir", type=str)
+  parser.add_argument("--interval", type=int, default=1)
+  parser.add_argument("--chunk_size", type=int, default=4096)
+
+  args = parser.parse_args()
+  exp_dir = args.base_folder
+  data_dir = args.data_dir
+  interval = args.interval
+  chunk_size = args.chunk_size
+  camera_path_name = 'vrig_camera'
+
+  render_scene(exp_dir, data_dir, camera_path_name=camera_path_name, interval=interval, chunk_size=chunk_size)
 
 
 
