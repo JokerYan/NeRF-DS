@@ -47,19 +47,9 @@ class ScalarParams:
   background_loss_weight: float = 0.0
   background_noise_std: float = 0.001
   hyper_reg_loss_weight: float = 0.0
-  sigma_grad_diff_reg_weight: float = 0.0
   back_facing_reg_weight: float = 0.0
-  hyper_concentration_reg_weight: float = 0.0
-  hyper_concentration_reg_scale: float = 0.0
-  hyper_jacobian_reg_weight: float = 0.0
-  hyper_jacobian_reg_scale: float = 0.0
-  hyper_c_jacobian_reg_weight: float = 0.0
-  hyper_c_jacobian_reg_scale: float = 0.0
   norm_voxel_loss_weight: float = 0.0
   flow_model_light_learning_rate: float = 0.0
-  mask_weight: float = 0.5
-  in_mask_consistency_loss_weight: float = 1.0
-  out_mask_consistency_loss_weight: float = 1.0
   predicted_mask_loss_weight: float = 1.0
   mask_ratio: float = 1.0
   mask_occlusion_reg_loss_weight: float = 1.0
@@ -201,17 +191,8 @@ def compute_background_loss(model, state, params, key, points, noise_std,
                                     'use_background_loss',
                                     'use_warp_reg_loss',
                                     'use_hyper_reg_loss',
-                                    'screw_input_mode',
-                                    'use_sigma_gradient',
-                                    'use_sigma_grad_diff_reg',
                                     'use_predicted_norm',
                                     'use_back_facing_reg',
-                                    'use_hyper_concentration_reg',
-                                    'use_hyper_jacobian_reg',
-                                    'use_hyper_c_jacobian_reg',
-                                    'use_mask_weighted_loss',
-                                    'use_mask_consistency_loss',
-                                    'canonical_camera',
                                     'use_shrinkage_loss',
                                     'use_mask_occlusion_reg_loss',
                                     ))
@@ -229,17 +210,8 @@ def train_step(model: models.CustomModel,
                use_background_loss: bool = False,
                use_warp_reg_loss: bool = False,
                use_hyper_reg_loss: bool = False,
-               screw_input_mode: str = None,
-               use_sigma_gradient: bool = False,
-               use_sigma_grad_diff_reg: bool = False,
                use_predicted_norm: bool = False,
                use_back_facing_reg: bool = False,
-               use_hyper_concentration_reg: bool = False,
-               use_hyper_jacobian_reg: bool = False,
-               use_hyper_c_jacobian_reg: bool = False,
-               use_mask_weighted_loss: bool = False,
-               use_mask_consistency_loss: bool = False,
-               canonical_camera: cam.Camera = None,
                use_shrinkage_loss: bool = False,
                use_mask_occlusion_reg_loss: bool = False,
                ):
@@ -297,16 +269,6 @@ def train_step(model: models.CustomModel,
       else:
         rgb_loss = l2_loss(rgb_loss)
 
-    # mask weighted loss
-    if use_mask_weighted_loss:
-      mask = batch['mask']
-      mask_weight = scalar_params.mask_weight
-      in_mask_rgb_loss = mask_weight * mask * rgb_loss
-      out_mask_rgb_loss = (1 - mask_weight) * (1 - mask) * rgb_loss
-      stats['loss/in_mask_rgb'] = in_mask_rgb_loss.mean()
-      stats['loss/out_mask_rgb'] = out_mask_rgb_loss.mean()
-      rgb_loss = in_mask_rgb_loss + out_mask_rgb_loss
-
     rgb_loss = rgb_loss.mean()
 
     stats['loss/rgb'] = rgb_loss
@@ -359,11 +321,6 @@ def train_step(model: models.CustomModel,
       stats['residual/hyper_reg'] = jnp.mean(jnp.sqrt(hyper_reg_residual))
       loss += scalar_params.hyper_reg_loss_weight * hyper_reg_loss
 
-    if use_sigma_grad_diff_reg:
-      sigma_grad_diff = jnp.mean(model_out['sigma_grad_diff'])
-      stats['loss/sigma_grad_diff'] = sigma_grad_diff
-      loss += scalar_params.sigma_grad_diff_reg_weight * sigma_grad_diff
-
     if use_predicted_norm:
       weights = lax.stop_gradient(model_out['weights'])
       predicted_norm = model_out['predicted_norm']
@@ -382,54 +339,6 @@ def train_step(model: models.CustomModel,
       back_facing_loss = jnp.mean(back_facing)
       stats['loss/back_facing_loss'] = back_facing_loss
       loss += scalar_params.back_facing_reg_weight * back_facing_loss
-
-    if use_hyper_concentration_reg:
-      weights = lax.stop_gradient(model_out['weights'])
-      hyper_points = model_out['warped_points'][..., 3:]
-      # hyper_concentration_reg_loss = utils.general_loss_with_squared_residual(
-      #   hyper_points, alpha=-2, scale=scalar_params.hyper_concentration_reg_scale
-      # )
-      hyper_concentration_reg_loss = utils.gm_loss(
-        hyper_points, scale=scalar_params.hyper_concentration_reg_scale
-      )
-      # assert weights.shape == 0, (weights.shape, hyper_concentration_reg_loss.shape)
-      hyper_concentration_reg_loss = hyper_concentration_reg_loss.sum(axis=-1)                    # sum over the w coordinates
-      hyper_concentration_reg_loss = (weights * hyper_concentration_reg_loss).sum(axis=1).mean()  # sum over the same ray, mean over different rays
-      stats['loss/hyper_concentration_reg_loss'] = hyper_concentration_reg_loss
-      loss += scalar_params.hyper_concentration_reg_weight * hyper_concentration_reg_loss
-
-      hyper_coord_scale = jnp.abs(hyper_points)
-      hyper_coord_scale = jnp.mean(hyper_coord_scale)
-      stats['stats/hyper_coord_scale'] = hyper_coord_scale
-
-      hyper_coord_top = jnp.percentile(jnp.abs(hyper_points).reshape(-1), 90)
-      stats['stats/hyper_coord_top'] = hyper_coord_top
-
-    if use_hyper_jacobian_reg:
-      weights = lax.stop_gradient(model_out['weights'])
-      hyper_jacobian = model_out['hyper_jacobian']
-      hyper_jacobian = hyper_jacobian.reshape(hyper_jacobian.shape[0], hyper_jacobian.shape[1], -1)
-      hyper_jacobian_reg_loss = utils.gm_loss(hyper_jacobian, scale=scalar_params.hyper_jacobian_reg_scale)
-      hyper_jacobian_reg_loss = hyper_jacobian_reg_loss.sum(axis=-1)
-      hyper_jacobian_reg_loss = (weights * hyper_jacobian_reg_loss).sum(axis=1).mean()
-      stats['loss/hyper_jacobian_reg_loss'] = hyper_jacobian_reg_loss
-      loss += scalar_params.hyper_jacobian_reg_weight * hyper_jacobian_reg_loss
-
-      hyper_jacobian_scale = jnp.mean(jnp.abs(hyper_jacobian))
-      stats['stats/hyper_jacobian_scale'] = hyper_jacobian_scale
-
-    if use_hyper_c_jacobian_reg:
-      weights = lax.stop_gradient(model_out['weights'])
-      hyper_c_jacobian = model_out['hyper_c_jacobian']
-      hyper_c_jacobian = hyper_c_jacobian.reshape(hyper_c_jacobian.shape[0], hyper_c_jacobian.shape[1], -1)
-      hyper_c_jacobian_reg_loss = utils.gm_loss(hyper_c_jacobian, scale=scalar_params.hyper_c_jacobian_reg_scale)
-      hyper_c_jacobian_reg_loss = hyper_c_jacobian_reg_loss.sum(axis=-1)
-      hyper_c_jacobian_reg_loss = (weights * hyper_c_jacobian_reg_loss).sum(axis=1).mean()
-      stats['loss/hyper_c_jacobian_reg_loss'] = hyper_c_jacobian_reg_loss
-      loss += scalar_params.hyper_c_jacobian_reg_weight * hyper_c_jacobian_reg_loss
-
-      hyper_c_jacobian_scale = jnp.mean(jnp.abs(hyper_c_jacobian))
-      stats['stats/hyper_c_jacobian_scale'] = hyper_c_jacobian_scale
 
     if 'warp_jacobian' in model_out:
       jacobian = model_out['warp_jacobian']
@@ -465,37 +374,6 @@ def train_step(model: models.CustomModel,
 
       stats['loss/inter_norm_loss'] = inter_norm_loss
       loss += scalar_params.norm_voxel_loss_weight * inter_norm_loss
-
-    if use_mask_consistency_loss:
-      canonical_mask = canonical_camera.get_mask().squeeze(axis=-1)
-      cur_mask = batch['mask']
-      warped_points = model_out['warped_points'][..., :3]
-
-      # project
-      warped_points_2d = canonical_camera.project_jnp(warped_points)
-      warped_points_2d = jnp.concatenate([warped_points_2d[..., 1, jnp.newaxis],
-                                          warped_points_2d[..., 0, jnp.newaxis]], axis=-1)    # x,y to y,x
-
-      # grid sample
-      warped_mask = grid_sample(canonical_mask, warped_points_2d)
-
-      # in mask consistency loss
-      weights = lax.stop_gradient(model_out['weights'])
-      cur_mask = jnp.broadcast_to(cur_mask, warped_mask.shape)  # broadcast to samples along the ray
-      in_mask_consistency_loss = (cur_mask * (1 - warped_mask) * weights).sum(axis=1).mean()
-      stats['loss/in_mask_cons_loss'] = in_mask_consistency_loss
-      loss += scalar_params.in_mask_consistency_loss_weight * in_mask_consistency_loss
-
-      # out mask consistency loss
-      delta_x = model_out['delta_x']
-      delta_x_magnitude = jnp.linalg.norm(delta_x, axis=-1)
-      # assert delta_x_magnitude.shape == 0, (delta_x_magnitude.shape, weights.shape)   # both 512 x 128
-      out_mask_consistency_loss = ((1 - cur_mask) * delta_x_magnitude * weights).sum(axis=1).mean()
-      stats['loss/out_mask_cons_loss'] = out_mask_consistency_loss
-      loss += scalar_params.out_mask_consistency_loss_weight * out_mask_consistency_loss
-
-      in_mask_delta_x = (cur_mask * delta_x_magnitude * weights).sum(axis=1).mean()
-      stats['stats/in_mask_delta_x'] = in_mask_delta_x
 
     if 'predicted_mask' in model_out and not model.use_3d_mask:
       alpha = lax.stop_gradient(model_out['alpha'])       # R x S   1 - exp(-sigma * dist)
@@ -589,15 +467,11 @@ def train_step(model: models.CustomModel,
                       return_points=True,
                       return_weights=True,
                       return_warp_jacobian=use_elastic_loss,
-                      return_hyper_jacobian=use_hyper_jacobian_reg,
-                      return_hyper_c_jacobian=use_hyper_c_jacobian_reg,
                       rngs={
                           'voxel': voxel_key,
                           'fine': fine_key,
                           'coarse': coarse_key
                       },
-                      screw_input_mode=screw_input_mode,
-                      use_sigma_gradient=use_sigma_gradient,
                       use_predicted_norm=use_predicted_norm,
                       norm_voxel_lr=state.norm_voxel_lr,
                       norm_voxel_ratio=state.norm_voxel_ratio,
@@ -661,17 +535,7 @@ def train_step(model: models.CustomModel,
   # norm_voxel_grad = jnp.max(jnp.abs(norm_voxel_grad))
   # stats['norm_voxel_grad'] = norm_voxel_grad
 
-  if model.use_flow_model:
-    hparams = optimizer.optimizer_def.hyper_params
-    new_optimizer = optimizer.apply_gradient(
-      grad,
-      hyper_params=[
-        hparams[0].replace(learning_rate=scalar_params.learning_rate),
-        hparams[1].replace(learning_rate=scalar_params.flow_model_light_learning_rate)
-      ]
-    )
-  else:
-    new_optimizer = optimizer.apply_gradient(
-        grad, learning_rate=scalar_params.learning_rate)
+  new_optimizer = optimizer.apply_gradient(
+      grad, learning_rate=scalar_params.learning_rate)
   new_state = state.replace(optimizer=new_optimizer)
   return new_state, stats, rng_key, model_out

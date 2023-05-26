@@ -157,24 +157,6 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
     norm_voxel_lr=norm_voxel_lr_sched(0),
     norm_voxel_ratio=norm_voxel_ratio_sched(0),
   )
-  scalar_params = training.ScalarParams(
-    learning_rate=learning_rate_sched(0),
-    elastic_loss_weight=elastic_loss_weight_sched(0),
-    warp_reg_loss_weight=train_config.warp_reg_loss_weight,
-    warp_reg_loss_alpha=train_config.warp_reg_loss_alpha,
-    warp_reg_loss_scale=train_config.warp_reg_loss_scale,
-    background_loss_weight=train_config.background_loss_weight,
-    hyper_reg_loss_weight=train_config.hyper_reg_loss_weight,
-    sigma_grad_diff_reg_weight=spec_config.sigma_grad_diff_reg_weight,
-    back_facing_reg_weight=spec_config.back_facing_reg_weight,
-    hyper_concentration_reg_weight=spec_config.hyper_concentration_reg_weight,
-    hyper_concentration_reg_scale=spec_config.hyper_concentration_reg_scale,
-    hyper_jacobian_reg_weight=spec_config.hyper_jacobian_reg_weight,
-    hyper_jacobian_reg_scale=spec_config.hyper_jacobian_reg_scale,
-    hyper_c_jacobian_reg_weight=spec_config.hyper_c_jacobian_reg_weight,
-    hyper_c_jacobian_reg_scale=spec_config.hyper_c_jacobian_reg_scale,
-    norm_voxel_loss_weight=spec_config.norm_voxel_loss_weight,
-  )
 
   logging.info('Restoring checkpoint from %s', checkpoint_dir)
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
@@ -198,8 +180,6 @@ def render_scene(dataset_name, exp_name, camera_path_name, interval):
                         'voxel': key_2
                       },
                       mutable=False,
-                      screw_input_mode=spec_config.screw_input_mode,
-                      use_sigma_gradient=spec_config.use_sigma_gradient,
                       use_predicted_norm=spec_config.use_predicted_norm,
                       return_points=False,
                       return_nv_details=False,

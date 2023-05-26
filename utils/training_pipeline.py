@@ -42,19 +42,21 @@ def train_single(dataset_name, exp_name, config_key, gin_params, flow_exp_name):
   dataset_path = os.path.join(data_root, dataset_name)
   exp_path = os.path.join(exp_root, exp_name)
   config_path = os.path.join(config_root, config_dict[config_key])
-  flow_path = os.path.join(exp_root, flow_exp_name)
 
+  print('exp_path', exp_path)
+  print('config_path', config_path)
+  print('dataset_path', dataset_path)
+  exit()
   process_str = [
     "python", "train.py",
     "--base_folder", exp_path,
-    "--flow_folder", flow_path,
     "--gin_bindings=data_dir=\'{}\'".format(dataset_path),
     "--gin_configs", config_path
   ]
   for gin_param in gin_params:
     process_str += ["--gin_bindings", gin_param]
 
-  total_steps = 2500000 if exp_name.endswith('exp44') else 250000
+  total_steps = 2500000
   pbar = tqdm(total=total_steps)
   with subprocess.Popen(process_str,
                         stdout=subprocess.PIPE,

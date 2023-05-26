@@ -500,14 +500,11 @@ class DataSource(abc.ABC):
       # Create last dimension if it doesn't exist.
       # The `and` part of the check ensures we're not touching ragged arrays.
       if x.ndim == 1 and x[0].ndim == 0:
-        logging.info('expand')
         x = np.expand_dims(x, -1)
       if flatten:
-        logging.info('flatten')
         x = np.concatenate([x.reshape(-1, x.shape[-1]) for x in x], axis=0)
         # x = x.reshape(-1, x.shape[-1])
       if shuffle:
-        logging.info('shuffle')
         x = x[shuffled_inds, :]
         # chunk_size = 50000000
         # if len(shuffled_inds) <= chunk_size:
@@ -521,13 +518,11 @@ class DataSource(abc.ABC):
         #     chunks.append(chunk)
         #   x = np.concatenate(chunks, axis=0)
         #   logging.info(x.shape)
-        logging.info("shuffle finish")
       return x
 
-    logging.info(data_dict.keys())
     out_dict = {}
     for key, value in data_dict.items():
-      logging.info(key)
+      # logging.info(key)
       # _prepare_array(value)
       out_dict[key] = jax.tree_util.tree_map(_prepare_array, value)
 

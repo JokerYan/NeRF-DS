@@ -48,7 +48,6 @@ flags.DEFINE_enum('mode', None, ['jax_cpu', 'jax_gpu', 'jax_tpu'],
                   'Distributed strategy approach.')
 
 flags.DEFINE_string('base_folder', None, 'where to store ckpts and logs')
-flags.DEFINE_string('flow_folder', '', 'which experiments is the flow model coming from')
 flags.mark_flag_as_required('base_folder')
 flags.DEFINE_multi_string('gin_bindings', None, 'Gin parameter bindings.')
 flags.DEFINE_multi_string('gin_configs', (), 'Gin config files.')
@@ -69,7 +68,6 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
       writer.scalar(tag, value, step)
 
   _log_scalar('params/learning_rate', scalar_params.learning_rate)
-  _log_scalar('params/flow_model_light_learning_rate', scalar_params.flow_model_light_learning_rate)
   _log_scalar('params/nerf_alpha', state.nerf_alpha)
   _log_scalar('params/warp_alpha', state.warp_alpha)
   _log_scalar('params/hyper_alpha', state.hyper_alpha)
@@ -79,7 +77,6 @@ def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
   _log_scalar('params/norm_voxel_lr', state.norm_voxel_lr)
   _log_scalar('params/norm_voxel_ratio', state.norm_voxel_ratio)
   _log_scalar('params/elastic_loss/weight', scalar_params.elastic_loss_weight)
-  _log_scalar('params/mask_weight', scalar_params.mask_weight)
   _log_scalar('params/mask_ratio', scalar_params.mask_ratio)
   _log_scalar('params/sharp_mask_std', scalar_params.sharp_weights_std)
 
@@ -247,8 +244,6 @@ def main(argv):
       embeddings_dict=datasource.embeddings_dict,
       near=datasource.near,
       far=datasource.far,
-      screw_input_mode=spec_config.screw_input_mode,
-      use_sigma_gradient=spec_config.use_sigma_gradient,
       use_predicted_norm=spec_config.use_predicted_norm
   )
 
@@ -302,19 +297,7 @@ def main(argv):
   if train_config.use_weight_norm:
     optimizer_def = optim.WeightNorm(optimizer_def)
 
-  if model.use_flow_model:
-    flow_optimizer_def = optim.Adam(flow_model_light_lr_sched(0))
-    nerf_focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
-    flow_focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' in p)
-    optimizer = flax.optim.MultiOptimizer(
-      (nerf_focus, optimizer_def),
-      (flow_focus, flow_optimizer_def)
-    ).create(params)
-
-    # focus = flax.traverse_util.ModelParamTraversal(lambda p, _: 'flow_model' not in p)
-    # optimizer = optimizer_def.create(params, focus=focus)
-  else:
-    optimizer = optimizer_def.create(params)
+  optimizer = optimizer_def.create(params)
   state = model_utils.TrainState(
     optimizer=optimizer,
     nerf_alpha=nerf_alpha_sched(0),
@@ -333,20 +316,8 @@ def main(argv):
     warp_reg_loss_alpha=train_config.warp_reg_loss_alpha,
     warp_reg_loss_scale=train_config.warp_reg_loss_scale,
     background_loss_weight=train_config.background_loss_weight,
-    hyper_reg_loss_weight=train_config.hyper_reg_loss_weight,
-    sigma_grad_diff_reg_weight=spec_config.sigma_grad_diff_reg_weight,
     back_facing_reg_weight=spec_config.back_facing_reg_weight,
-    hyper_concentration_reg_weight=spec_config.hyper_concentration_reg_weight,
-    hyper_concentration_reg_scale=spec_config.hyper_concentration_reg_scale,
-    hyper_jacobian_reg_weight=spec_config.hyper_jacobian_reg_weight,
-    hyper_jacobian_reg_scale=spec_config.hyper_jacobian_reg_scale,
-    hyper_c_jacobian_reg_weight=spec_config.hyper_c_jacobian_reg_weight,
-    hyper_c_jacobian_reg_scale=spec_config.hyper_c_jacobian_reg_scale,
     norm_voxel_loss_weight=spec_config.norm_voxel_loss_weight,
-    flow_model_light_learning_rate=flow_model_light_lr_sched(0),
-    mask_weight=mask_weight_sched(0),
-    in_mask_consistency_loss_weight=spec_config.in_mask_consistency_loss_weight,
-    out_mask_consistency_loss_weight=spec_config.out_mask_consistency_loss_weight,
     predicted_mask_loss_weight=spec_config.predicted_mask_loss_weight,
     mask_ratio=mask_ratio_sched(0),
     mask_occlusion_reg_loss_weight=spec_config.mask_occlusion_reg_loss_weight,
@@ -355,29 +326,6 @@ def main(argv):
   )
   state = checkpoints.restore_checkpoint(checkpoint_dir, state)
   init_step = state.optimizer.state.step + 1
-
-  # load flow model
-  if model.use_flow_model and init_step == 1:
-    flow_dir = gpath.GPath(FLAGS.flow_folder)
-    flow_checkpoint_dir = flow_dir / 'checkpoints_flow_only'
-    flow_params = checkpoints.restore_checkpoint(flow_checkpoint_dir, None)
-    # logging.info(state.optimizer.target['model']['flow_model'])
-    # logging.info(flow_params)
-    # exit()
-    """
-    {'model': {'warp_field': ..., 'warp_embed': ...}}
-    """
-    # add flow params
-    # params['model']['flow_model'] = flow_params
-    model_params = params['model'].unfreeze()
-    model_params['flow_model'] = flow_params['model']  # immutable problem
-    params['model'] = FrozenDict(model_params)
-
-    optimizer = state.optimizer.replace(target=params)
-    state = state.replace(optimizer=optimizer)
-
-    # logging.info(params['model']['flow_model'])
-    # logging.info(optimizer.target['model']['flow_model'])
 
   state = jax_utils.replicate(state, devices=devices)
   del params
@@ -400,17 +348,8 @@ def main(argv):
       use_background_loss=train_config.use_background_loss,
       use_warp_reg_loss=train_config.use_warp_reg_loss,
       use_hyper_reg_loss=train_config.use_hyper_reg_loss,
-      screw_input_mode=spec_config.screw_input_mode,
-      use_sigma_gradient=spec_config.use_sigma_gradient,
-      use_sigma_grad_diff_reg=spec_config.use_sigma_grad_diff_reg,
       use_predicted_norm=spec_config.use_predicted_norm,
       use_back_facing_reg=spec_config.use_back_facing_reg,
-      use_hyper_concentration_reg=spec_config.use_hyper_concentration_reg_loss,
-      use_hyper_jacobian_reg=spec_config.use_hyper_jacobian_reg_loss,
-      use_hyper_c_jacobian_reg=spec_config.use_hyper_c_jacobian_reg_loss,
-      use_mask_weighted_loss=spec_config.use_mask_weighted_loss,
-      use_mask_consistency_loss=spec_config.use_mask_consistency_loss,
-      canonical_camera=canonical_camera,
       use_shrinkage_loss=spec_config.use_shrinkage_loss,
       use_mask_occlusion_reg_loss=spec_config.use_mask_occlusion_reg_loss
   )
@@ -463,7 +402,6 @@ def main(argv):
         learning_rate=learning_rate_sched(step),
         elastic_loss_weight=elastic_loss_weight_sched(step),
         flow_model_light_learning_rate=flow_model_light_lr_sched(step),
-        mask_weight=mask_weight_sched(step),
         mask_ratio=mask_ratio_sched(step),
         sharp_weights_std=sharp_weights_sched(step),
         x_for_rgb_alpha=x_for_rgb_alpha_sched(step)

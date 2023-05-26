@@ -78,9 +78,6 @@ NerfModel.use_rgb_condition = False
 
 # Specular configs
 SpecularConfig.screw_input_mode = None
-SpecularConfig.use_sigma_gradient = False
-SpecularConfig.use_sigma_grad_diff_reg = False
-SpecularConfig.sigma_grad_diff_reg_weight = 0
 
 SpecularConfig.use_predicted_norm = True
 SpecularConfig.norm_loss_weight_schedule = %CONSTANT_NORM_LOSS_WEIGHT_SCHED
@@ -97,24 +94,12 @@ SpecularConfig.norm_input_alpha_schedule = %DELAYED_NORM_INPUT_ALPHA_SCHED
 
 # warp/GLOEmbed.num_dims = 2
 
-SpecularConfig.use_hyper_concentration_reg_loss = False
-SpecularConfig.hyper_concentration_reg_weight = 0.0001
-SpecularConfig.hyper_concentration_reg_scale = 0.1
-
-SpecularConfig.use_hyper_jacobian_reg_loss = False
-SpecularConfig.hyper_jacobian_reg_weight = 3e-6
-SpecularConfig.hyper_jacobian_reg_scale = 0.1
-
 NerfModel.use_viewdirs_in_hyper = False
 NerfModel.use_x_in_rgb_condition = True
 
 NerfModel.use_hyper_c = False
 NerfModel.hyper_c_hyper_input = True
 NerfModel.use_hyper_c_embed = False
-
-SpecularConfig.use_hyper_c_jacobian_reg_loss = False
-SpecularConfig.hyper_c_jacobian_reg_weight = 3e-5
-SpecularConfig.hyper_c_jacobian_reg_scale = 0.1
 
 # norm voxel
 NormVoxels.voxel_shape = (1000, 50, 50, 50, 3)
@@ -138,9 +123,6 @@ SpecularConfig.norm_voxel_ratio_schedule = {
 NerfModel.use_mask_in_warp = True
 NerfModel.use_mask_in_hyper = True
 NerfModel.use_mask_in_rgb = False
-SpecularConfig.use_mask_weighted_loss = False
-SpecularConfig.in_mask_consistency_loss_weight = 0.001
-SpecularConfig.out_mask_consistency_loss_weight = 1.0
 SpecularConfig.predicted_mask_loss_weight = 0.1
 
 NerfModel.use_predicted_mask = True
